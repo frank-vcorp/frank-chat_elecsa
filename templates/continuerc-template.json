@@ -1,0 +1,481 @@
+{
+  "name": "Farianergy App - Metodología INTEGRA",
+  "description": "Configuración de Continue.dev optimizada para desarrollo con agentes IA usando metodología INTEGRA",
+  "version": "1.0.0",
+  
+  "context": {
+    "autoContext": {
+      "enabled": true,
+      "files": [
+        "PROYECTO.md",
+        "metodologia-integra/ONBOARDING.md",
+        "metodologia-integra/meta/plantilla-checkpoint-enriquecido.md",
+        "metodologia-integra/meta/sistema-priorizacion.md",
+        "context/dossier_tecnico.md",
+        "AGENTS.md"
+      ],
+      "maxTokens": 8000
+    },
+    "customContext": [
+      {
+        "name": "Metodología INTEGRA",
+        "path": "metodologia-integra/**/*.md",
+        "description": "Sistema de documentación y flujos de trabajo"
+      },
+      {
+        "name": "Context Project",
+        "path": "context/**/*.md",
+        "description": "Documentación técnica y especificaciones"
+      },
+      {
+        "name": "Checkpoints",
+        "path": "Checkpoints/**/*.md",
+        "description": "Historial de progreso del proyecto"
+      },
+      {
+        "name": "ADRs",
+        "path": "metodologia-integra/context/decisions/**/*.md",
+        "description": "Decisiones arquitectónicas documentadas"
+      }
+    ]
+  },
+
+  "rules": [
+    {
+      "name": "Siempre leer PROYECTO.md primero",
+      "pattern": "**/*",
+      "message": "Antes de realizar cualquier tarea, lee PROYECTO.md para contexto actualizado"
+    },
+    {
+      "name": "Actualizar PROYECTO.md al completar tareas",
+      "pattern": "**/*",
+      "message": "Marca tareas completadas y actualiza estado en PROYECTO.md"
+    },
+    {
+      "name": "Crear checkpoint después de cambios significativos",
+      "pattern": "**/*.{ts,tsx,js,jsx}",
+      "message": "Usa la plantilla en metodologia-integra/meta/plantilla-checkpoint-enriquecido.md"
+    },
+    {
+      "name": "Documentar decisiones técnicas importantes",
+      "pattern": "**/*",
+      "message": "Crea ADR en metodologia-integra/context/decisions/ para decisiones arquitectónicas"
+    },
+    {
+      "name": "Seguir convenciones del monorepo",
+      "pattern": "apps/**/*",
+      "message": "Ver AGENTS.md para comandos de turbo, pnpm y testing"
+    },
+    {
+      "name": "Priorización de tareas",
+      "pattern": "**/*",
+      "message": "Consulta metodologia-integra/meta/sistema-priorizacion.md para decidir qué trabajar"
+    }
+  ],
+
+  "agents": {
+    "SOFIA": {
+      "role": "Arquitecta de Soluciones y Planificación",
+      "capabilities": [
+        "Análisis de requisitos",
+        "Diseño de arquitectura",
+        "Planificación de sprints",
+        "Creación de ADRs",
+        "Definición de especificaciones técnicas"
+      ],
+      "context": [
+        "PROYECTO.md",
+        "context/**/*.md",
+        "metodologia-integra/**/*.md"
+      ],
+      "prompts": [
+        "meta/prompts/sofia_kickoff.txt"
+      ],
+      "workflow": [
+        "1. Leer PROYECTO.md y documentación de context/",
+        "2. Analizar requisitos y crear/actualizar specs",
+        "3. Dividir en tareas con priorización",
+        "4. Documentar decisiones arquitectónicas (ADRs)",
+        "5. Handoff a CODEX o GEMINI con instrucciones claras"
+      ],
+      "outputFormats": [
+        "Specs técnicas en context/SPEC-*.md",
+        "ADRs en metodologia-integra/context/decisions/",
+        "Tareas priorizadas en PROYECTO.md",
+        "Documentos de diseño en propuestas/"
+      ]
+    },
+    
+    "CODEX": {
+      "role": "Implementador Backend y Lógica de Negocio",
+      "capabilities": [
+        "Desarrollo de APIs",
+        "Integración con Firebase (Firestore, Auth, Functions)",
+        "Lógica de negocio",
+        "Testing backend",
+        "Optimización de queries"
+      ],
+      "context": [
+        "PROYECTO.md",
+        "apps/web/src/app/api/**/*",
+        "apps/web/src/lib/**/*",
+        "context/dossier_tecnico.md",
+        "AGENTS.md"
+      ],
+      "prompts": [
+        "meta/prompts/aria_kickoff.txt"
+      ],
+      "workflow": [
+        "1. Recibir handoff de SOFIA (leer tarea en PROYECTO.md)",
+        "2. Implementar endpoints API y lógica",
+        "3. Escribir tests unitarios e integración",
+        "4. Ejecutar pnpm lint y pnpm test",
+        "5. Crear checkpoint con resultados",
+        "6. Handoff a GEMINI si requiere UI"
+      ],
+      "testCommands": [
+        "pnpm turbo run test --filter @farianergy/web",
+        "pnpm turbo run lint --filter @farianergy/web"
+      ],
+      "outputFormats": [
+        "API routes en apps/web/src/app/api/",
+        "Business logic en apps/web/src/lib/",
+        "Tests en *.test.ts",
+        "Checkpoint en Checkpoints/CHK_*.md"
+      ]
+    },
+    
+    "GEMINI": {
+      "role": "Implementador Frontend y UX",
+      "capabilities": [
+        "Desarrollo de componentes React",
+        "Integración de UI con APIs",
+        "Styling con Tailwind CSS",
+        "Testing frontend",
+        "Optimización de performance"
+      ],
+      "context": [
+        "PROYECTO.md",
+        "apps/web/src/app/**/*.tsx",
+        "apps/web/src/components/**/*",
+        "context/dossier_tecnico.md",
+        "AGENTS.md"
+      ],
+      "prompts": [
+        "meta/prompts/ines_kickoff.txt"
+      ],
+      "workflow": [
+        "1. Recibir handoff (leer tarea en PROYECTO.md)",
+        "2. Implementar componentes y páginas",
+        "3. Integrar con APIs de backend",
+        "4. Testear visualmente y con tests",
+        "5. Crear checkpoint",
+        "6. Handoff de vuelta o marcar completo"
+      ],
+      "testCommands": [
+        "pnpm run dev --filter @farianergy/web",
+        "pnpm turbo run test --filter @farianergy/web"
+      ],
+      "outputFormats": [
+        "Páginas en apps/web/src/app/",
+        "Componentes en apps/web/src/components/",
+        "Tests en *.test.tsx",
+        "Checkpoint en Checkpoints/CHK_*.md"
+      ]
+    }
+  },
+
+  "snippets": {
+    "new-task": {
+      "description": "Crear nueva tarea en PROYECTO.md",
+      "body": [
+        "### [${1:ID}] ${2:Nombre de la Tarea}",
+        "",
+        "**Metadatos:**",
+        "- 🎯 **Prioridad:** ${3|🔴 Alta,🟡 Media,🟢 Baja|}",
+        "- ⏱️ **Estimación:** ${4:X}h ${5:Y}m",
+        "- 👤 **Asignado:** ${6|SOFIA,CODEX,GEMINI,Sin asignar|}",
+        "- 📦 **Sprint:** ${7:Sprint X}",
+        "- 🏷️ **Tags:** ${8:#tag}",
+        "- 🔗 **Dependencias:** ${9:Ninguna}",
+        "- 🚧 **Bloqueadores:** ${10:Ninguno}",
+        "- 📅 **Deadline:** ${11:YYYY-MM-DD}",
+        "",
+        "**Descripción:**",
+        "${12:Descripción detallada}",
+        "",
+        "**Criterios de Aceptación:**",
+        "- [ ] ${13:Criterio 1}",
+        ""
+      ]
+    },
+
+    "checkpoint": {
+      "description": "Crear checkpoint enriquecido",
+      "body": [
+        "# Checkpoint - ${1:Título}",
+        "",
+        "## 📋 Metadata",
+        "",
+        "| Campo | Valor |",
+        "|-------|-------|",
+        "| **Fecha** | ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE} ${CURRENT_HOUR}:${CURRENT_MINUTE} |",
+        "| **Agente** | ${2|SOFIA,CODEX,GEMINI|} |",
+        "| **Tiempo Invertido** | ${3:X}h ${4:Y}m |",
+        "| **Estado** | ${5|✅ Completado,🚧 En Progreso,⚠️ Bloqueado|} |",
+        "",
+        "## 🎯 Objetivo",
+        "${6:Descripción del objetivo}",
+        "",
+        "## 📝 Cambios Realizados",
+        "### Archivos Modificados",
+        "- `${7:path/to/file}`: ${8:descripción}",
+        "",
+        "## 🧪 Tests",
+        "```bash",
+        "${9:comando de test}",
+        "```",
+        "",
+        "## 🚀 Próximos Pasos",
+        "- [ ] ${10:siguiente tarea}",
+        ""
+      ]
+    },
+
+    "adr": {
+      "description": "Crear ADR",
+      "body": [
+        "# ADR-${1:XXX}: ${2:Título}",
+        "",
+        "**Estado:** ${3|Propuesta,Aceptada,Rechazada|}",
+        "**Fecha:** ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+        "**Autores:** ${4:Nombre}",
+        "",
+        "## Contexto",
+        "${5:Descripción del problema}",
+        "",
+        "## Decisión",
+        "${6:Qué se decidió}",
+        "",
+        "## Alternativas Consideradas",
+        "### Alternativa 1: ${7:Nombre}",
+        "${8:Descripción}",
+        "",
+        "## Consecuencias",
+        "### Positivas",
+        "- ✅ ${9:Beneficio}",
+        "",
+        "### Negativas",
+        "- ❌ ${10:Trade-off}",
+        ""
+      ]
+    },
+
+    "handoff": {
+      "description": "Template de handoff entre agentes",
+      "body": [
+        "## 🤝 Handoff: ${1|SOFIA,CODEX,GEMINI|} → ${2|SOFIA,CODEX,GEMINI|}",
+        "",
+        "**Fecha:** ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+        "**Tarea:** [${3:ID}] ${4:Nombre}",
+        "",
+        "### Contexto",
+        "${5:Qué se hizo hasta ahora}",
+        "",
+        "### Próximos Pasos para ${2}",
+        "1. ${6:Paso 1}",
+        "2. ${7:Paso 2}",
+        "",
+        "### Archivos Relevantes",
+        "- `${8:path/to/file}`",
+        "",
+        "### Notas Importantes",
+        "${9:Cualquier cosa crítica que deba saber}",
+        ""
+      ]
+    },
+
+    "api-route": {
+      "description": "Template de API route Next.js con Firebase",
+      "body": [
+        "import { NextRequest, NextResponse } from 'next/server';",
+        "import { db } from '@/lib/firebase';",
+        "import { collection, getDocs, addDoc } from 'firebase/firestore';",
+        "",
+        "// GET - Obtener ${1:recursos}",
+        "export async function GET(request: NextRequest) {",
+        "  try {",
+        "    const ${2:collectionName}Ref = collection(db, '${2}');",
+        "    const snapshot = await getDocs(${2}Ref);",
+        "    const ${3:items} = snapshot.docs.map(doc => ({",
+        "      id: doc.id,",
+        "      ...doc.data()",
+        "    }));",
+        "    ",
+        "    return NextResponse.json(${3});",
+        "  } catch (error) {",
+        "    console.error('Error fetching ${1}:', error);",
+        "    return NextResponse.json(",
+        "      { error: 'Failed to fetch ${1}' },",
+        "      { status: 500 }",
+        "    );",
+        "  }",
+        "}",
+        "",
+        "// POST - Crear nuevo ${4:recurso}",
+        "export async function POST(request: NextRequest) {",
+        "  try {",
+        "    const data = await request.json();",
+        "    const ${2}Ref = collection(db, '${2}');",
+        "    const docRef = await addDoc(${2}Ref, {",
+        "      ...data,",
+        "      createdAt: new Date().toISOString()",
+        "    });",
+        "    ",
+        "    return NextResponse.json(",
+        "      { id: docRef.id, ...data },",
+        "      { status: 201 }",
+        "    );",
+        "  } catch (error) {",
+        "    console.error('Error creating ${4}:', error);",
+        "    return NextResponse.json(",
+        "      { error: 'Failed to create ${4}' },",
+        "      { status: 500 }",
+        "    );",
+        "  }",
+        "}",
+        ""
+      ]
+    },
+
+    "react-page": {
+      "description": "Template de página Next.js App Router",
+      "body": [
+        "'use client';",
+        "",
+        "import { useEffect, useState } from 'react';",
+        "",
+        "export default function ${1:PageName}Page() {",
+        "  const [${2:data}, set${2/(.*)/${1:/capitalize}/}] = useState<${3:Type}[]>([]);",
+        "  const [loading, setLoading] = useState(true);",
+        "",
+        "  useEffect(() => {",
+        "    async function fetch${2/(.*)/${1:/capitalize}/}() {",
+        "      try {",
+        "        const response = await fetch('/api/${4:endpoint}');",
+        "        const data = await response.json();",
+        "        set${2/(.*)/${1:/capitalize}/}(data);",
+        "      } catch (error) {",
+        "        console.error('Error fetching ${2}:', error);",
+        "      } finally {",
+        "        setLoading(false);",
+        "      }",
+        "    }",
+        "    fetch${2/(.*)/${1:/capitalize}/}();",
+        "  }, []);",
+        "",
+        "  if (loading) return <div>Loading...</div>;",
+        "",
+        "  return (",
+        "    <div className=\"container mx-auto p-6\">",
+        "      <h1 className=\"text-3xl font-bold mb-6\">${5:Título}</h1>",
+        "      {${2}.map((item) => (",
+        "        <div key={item.id}>",
+        "          {/* Render item */}",
+        "        </div>",
+        "      ))}",
+        "    </div>",
+        "  );",
+        "}",
+        ""
+      ]
+    }
+  },
+
+  "customCommands": [
+    {
+      "name": "status-proyecto",
+      "description": "Muestra estado del proyecto desde PROYECTO.md",
+      "command": "cat PROYECTO.md | grep -E '(##|###|Estado:|Prioridad:)'"
+    },
+    {
+      "name": "crear-checkpoint",
+      "description": "Crea checkpoint con fecha actual",
+      "command": "cp metodologia-integra/meta/plantilla-checkpoint-enriquecido.md Checkpoints/CHK_$(date +%Y-%m-%d_%H%M).md"
+    },
+    {
+      "name": "listar-tareas",
+      "description": "Lista todas las tareas pendientes",
+      "command": "grep -n '###.*\\[ \\]' PROYECTO.md"
+    },
+    {
+      "name": "test-full",
+      "description": "Ejecuta todos los tests del monorepo",
+      "command": "pnpm turbo run test lint build"
+    }
+  ],
+
+  "documentation": {
+    "readOrder": [
+      "1. metodologia-integra/ONBOARDING.md (10 min)",
+      "2. PROYECTO.md (5 min)",
+      "3. context/dossier_tecnico.md (15 min)",
+      "4. AGENTS.md (5 min)",
+      "5. metodologia-integra/meta/sistema-priorizacion.md (10 min)"
+    ],
+    "updateFrequency": {
+      "PROYECTO.md": "Cada cambio significativo",
+      "Checkpoints/*.md": "Al finalizar cada sesión",
+      "ADRs": "Cuando hay decisión arquitectónica",
+      "Specs": "Cuando cambian requisitos"
+    }
+  },
+
+  "qualityGates": {
+    "beforeCommit": [
+      "pnpm lint",
+      "pnpm test",
+      "Actualizar PROYECTO.md",
+      "Crear checkpoint si >2h de trabajo"
+    ],
+    "beforeHandoff": [
+      "Documentar cambios en PROYECTO.md",
+      "Crear checkpoint",
+      "Listar archivos modificados",
+      "Especificar próximos pasos claros"
+    ]
+  },
+
+  "shortcuts": {
+    "cmd+shift+p": "Crear nueva tarea en PROYECTO.md",
+    "cmd+shift+c": "Crear checkpoint",
+    "cmd+shift+a": "Crear ADR",
+    "cmd+shift+h": "Documentar handoff"
+  },
+
+  "integrations": {
+    "firebase": {
+      "emulators": {
+        "host": "localhost",
+        "ports": {
+          "firestore": 8080,
+          "auth": 9099,
+          "storage": 9199
+        }
+      }
+    },
+    "github": {
+      "conventionalCommits": true,
+      "commitFormat": "type(scope): description"
+    }
+  },
+
+  "meta": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-11-08",
+    "maintainers": ["SOFIA", "CODEX", "GEMINI"],
+    "changelog": [
+      "1.0.0 - Initial configuration for INTEGRA methodology"
+    ]
+  }
+}
