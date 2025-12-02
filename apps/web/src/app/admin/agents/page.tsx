@@ -147,10 +147,15 @@ export default function AgentsPage() {
                 body: JSON.stringify({ agentId: selectedAgent.id, message: testMessage }),
             });
             const data = await res.json();
-            setTestResponse(data.response || 'No response');
+
+            if (!res.ok) {
+                setTestResponse(`Error: ${data.error}`);
+            } else {
+                setTestResponse(data.response || 'No response');
+            }
         } catch (error) {
             console.error('Failed to test agent', error);
-            setTestResponse('Error testing agent');
+            setTestResponse('Error de conexión al probar el agente');
         } finally {
             setLoading(false);
         }

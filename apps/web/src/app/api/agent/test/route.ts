@@ -25,6 +25,11 @@ export async function POST(request: NextRequest) {
         const agentData = agentSnap.data();
         const systemPrompt = agentData?.prompt || 'You are a helpful assistant.';
 
+        // Check for API Key
+        if (!process.env.OPENAI_API_KEY) {
+            return NextResponse.json({ error: 'OpenAI API Key is missing in server environment' }, { status: 500 });
+        }
+
         // Call OpenAI
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -39,8 +44,11 @@ export async function POST(request: NextRequest) {
         const response = completion.choices[0].message?.content;
 
         return NextResponse.json({ response });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error testing agent:', error);
-        return NextResponse.json({ error: 'Failed to test agent' }, { status: 500 });
+        return NextResponse.json({
+            error: error.message || 'Failed to test agent',
+            details: error
+        }, { status: 500 });
     }
 }
