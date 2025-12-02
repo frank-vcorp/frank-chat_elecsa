@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
                 lastMessage: body,
                 lastMessageAt: FieldValue.serverTimestamp(),
                 unreadCount: FieldValue.increment(1),
+                // Ensure the conversation stays assigned to AI unless explicitly set to human
+                assignedTo: convDoc.data().assignedTo === 'human' ? 'human' : 'ai',
             });
         }
 
