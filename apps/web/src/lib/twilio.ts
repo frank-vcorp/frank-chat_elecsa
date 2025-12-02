@@ -18,10 +18,12 @@ const client = twilio(accountSid, authToken);
  * @returns The Twilio message object if successful.
  * @throws Error if the message fails to send.
  */
-export async function sendWhatsAppMessage(to: string, body: string) {
+export async function sendWhatsAppMessage(to: string, body: string, fromNumber?: string) {
     try {
+        const from = fromNumber ? (fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`) : `whatsapp:${whatsappNumber}`;
+
         const message = await client.messages.create({
-            from: `whatsapp:${whatsappNumber}`,
+            from,
             to: `whatsapp:${to}`,
             body,
         });

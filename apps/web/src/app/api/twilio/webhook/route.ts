@@ -118,6 +118,10 @@ export async function POST(request: NextRequest) {
         const currentConvSnap = await adminDb.collection('conversations').doc(conversationId).get();
         const currentConvData = currentConvSnap.data() as Conversation;
 
+        const to = formData.get('To') as string; // The number the user sent the message TO (our bot)
+
+        // ... (existing code)
+
         if (!currentConvData.assignedTo || currentConvData.assignedTo === 'ai') {
             console.log('[Webhook] Triggering AI response');
             try {
@@ -126,7 +130,9 @@ export async function POST(request: NextRequest) {
 
                 if (sofiaReply) {
                     console.log('[Webhook] Sending WhatsApp message via Twilio');
-                    await sendWhatsAppMessage(phoneNumber, sofiaReply);
+                    // Use the 'To' number from the incoming message as the sender for the reply
+                    // This ensures we reply from the correct channel (Sandbox or Production)
+                    await sendWhatsAppMessage(phoneNumber, sofiaReply, to);
 
                     const sofiaMsgRef = messagesRef.doc();
                     await sofiaMsgRef.set({
