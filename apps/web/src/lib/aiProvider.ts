@@ -40,15 +40,7 @@ export async function getSofiaResponse(
     phoneNumber: string
 ): Promise<string> {
     console.log(`[getSofiaResponse] Processing message: "${message}"`);
-
-    // Improved SKU regex: matches 4+ alphanumeric chars but MUST contain at least one digit
-    // This prevents common words like "HOLA", "COMO" from being treated as SKUs
-    const skuMatch = message.match(/\b[A-Z]*\d+[A-Z0-9-]*\b/i);
-    const sku = skuMatch ? skuMatch[0].toUpperCase() : null;
-
-    if (sku) {
-        console.log(`[getSofiaResponse] Detected SKU: ${sku}`);
-    console.log('[getSofiaResponse] No SKU detected. Using normal chat.');
+    // Simply fetch the prompt and let the LLM handle the response
     const prompt = await getAgentPrompt('sofia');
     return callOpenAI(prompt, message);
 }
