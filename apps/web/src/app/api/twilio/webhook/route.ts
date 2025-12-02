@@ -14,6 +14,17 @@ export async function POST(request: NextRequest) {
         const profileName = formData.get('ProfileName') as string;
         // const mediaUrl = formData.get('MediaUrl0') as string; // TODO: Handle media
 
+        const messageStatus = formData.get('MessageStatus') as string;
+
+        // ----------------------------------------------------------------------
+        // 0. Handle Status Callbacks (Sent, Delivered, Read)
+        // ----------------------------------------------------------------------
+        // Twilio sends status updates to the same webhook if configured.
+        // We just acknowledge them to avoid 400 errors.
+        if (messageStatus) {
+            return new NextResponse('OK', { status: 200 });
+        }
+
         if (!from || !body) {
             return NextResponse.json({ error: 'Missing From or Body' }, { status: 400 });
         }
