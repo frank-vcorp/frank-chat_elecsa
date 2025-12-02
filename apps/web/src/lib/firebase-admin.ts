@@ -1,20 +1,26 @@
 import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const serviceAccount = process.env.FIREBASE_PRIVATE_KEY
-    ? JSON.parse(process.env.FIREBASE_PRIVATE_KEY)
-    : undefined;
+// Only initialize if we have the required credentials
+const hasCredentials =
+    process.env.FIREBASE_PROJECT_ID &&
+    process.env.FIREBASE_CLIENT_EMAIL &&
+    process.env.FIREBASE_PRIVATE_KEY;
 
 if (!getApps().length) {
-    if (serviceAccount) {
+    if (hasCredentials) {
         initializeApp({
-            credential: cert(serviceAccount),
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            credential: cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                // Replace escaped newlines with actual newlines
+                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            }),
         });
     } else {
-        // Fallback for local dev or if using default credentials (e.g. GCloud CLI)
+        // Fallback for local dev or if using default credentials
         initializeApp({
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project',
         });
     }
 }
