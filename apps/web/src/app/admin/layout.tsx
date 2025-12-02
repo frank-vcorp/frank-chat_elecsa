@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Bot, MessageSquare, ArrowLeft, Settings } from 'lucide-react';
+import { Package, Bot, MessageSquare, ArrowLeft, Settings, Activity } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -11,6 +11,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const navItems = [
         { href: '/admin/products', label: 'Productos', icon: Package },
         { href: '/admin/agents', label: 'Agentes IA', icon: Bot },
+        { href: '/admin/settings', label: 'Configuración', icon: Settings },
+        { href: '/admin/logs', label: 'Logs del Sistema', icon: Activity },
     ];
 
     return (
@@ -37,8 +39,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             key={href}
                             href={href}
                             className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${pathname.includes(href.split('/').pop() || '')
-                                    ? 'bg-blue-50 text-blue-600 font-medium'
-                                    : 'text-gray-600 hover:bg-gray-50'
+                                ? 'bg-blue-50 text-blue-600 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
                             <Icon size={18} />
