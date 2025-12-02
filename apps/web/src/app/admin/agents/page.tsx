@@ -42,6 +42,16 @@ export default function AgentsPage() {
         fetchAgents();
     }, []);
 
+    // Auto-select Sofia or first AI agent on load
+    useEffect(() => {
+        if (agents.length > 0 && !selectedAgent) {
+            const sofia = agents.find(a => a.type === 'ai' && a.name.toLowerCase().includes('sofia')) || agents.find(a => a.type === 'ai');
+            if (sofia) {
+                handleSelectAgent(sofia);
+            }
+        }
+    }, [agents]);
+
     const handleSelectAgent = (agent: Agent) => {
         setSelectedAgent(agent);
         setPrompt(agent.prompt || '');

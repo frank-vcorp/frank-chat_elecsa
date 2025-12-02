@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
                 id: conversationId,
                 contactId: phoneNumber,
                 status: 'open',
+                assignedTo: 'ai', // Explicitly assign to AI by default
                 lastMessage: body,
                 lastMessageAt: FieldValue.serverTimestamp() as any,
                 unreadCount: 1,

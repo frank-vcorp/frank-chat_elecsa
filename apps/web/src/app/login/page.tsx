@@ -31,10 +31,12 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-600 to-purple-700 p-4">
             <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600">
-                        <MessageSquare size={32} />
-                    </div>
-                    <h1 className="text-2xl font-bold text-gray-900">Bienvenido a Frank Chat</h1>
+                    <img
+                        src="https://elecsa.com.mx/sites/default/files/LOGO-ELECSA%20mr.png"
+                        alt="Elecsa Logo"
+                        className="h-16 object-contain mb-4"
+                    />
+                    <h1 className="text-xl font-bold text-gray-900">Portal de Agentes</h1>
                     <p className="text-gray-500 text-sm mt-1">Inicia sesión para gestionar conversaciones</p>
                 </div>
 
@@ -88,7 +90,7 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-8 text-center text-xs text-gray-400">
-                    &copy; 2025 Frank Chat v1.0. Powered by Elecsa.
+                    &copy; 2025 Elecsa Chat. by Frank Saavedra.
                 </div>
             </div>
         </div>

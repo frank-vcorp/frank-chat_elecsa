@@ -61,10 +61,11 @@ export default function DashboardLayout({
                     {sidebarOpen ? (
                         <>
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                    <MessageSquare size={20} />
-                                </div>
-                                <span className="font-bold text-lg">Frank Chat</span>
+                                <img
+                                    src="https://elecsa.com.mx/sites/default/files/LOGO-ELECSA%20mr.png"
+                                    alt="Elecsa Logo"
+                                    className="h-8 object-contain bg-white rounded px-1"
+                                />
                             </div>
                             <button
                                 onClick={() => setSidebarOpen(false)}
@@ -93,8 +94,8 @@ export default function DashboardLayout({
                                 key={item.name}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
-                                        ? 'bg-blue-600 text-white shadow-lg'
-                                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                                     } ${!sidebarOpen && 'justify-center'}`}
                             >
                                 <Icon size={20} />
@@ -129,6 +130,11 @@ export default function DashboardLayout({
                         <LogOut size={18} />
                         {sidebarOpen && <span className="text-sm font-medium">Cerrar Sesión</span>}
                     </button>
+                    {sidebarOpen && (
+                        <div className="mt-4 text-center text-[10px] text-gray-500">
+                            by Frank Saavedra
+                        </div>
+                    )}
                 </div>
             </aside>
 
