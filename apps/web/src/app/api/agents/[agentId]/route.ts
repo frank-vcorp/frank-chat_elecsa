@@ -5,10 +5,11 @@ import { getAuth } from 'firebase-admin/auth';
 // GET /api/agents/[agentId] - Get single agent
 export async function GET(
     _request: NextRequest,
-    { params }: { params: { agentId: string } }
+    { params }: { params: Promise<{ agentId: string }> }
 ) {
     try {
-        const doc = await adminDb.collection('agents').doc(params.agentId).get();
+        const { agentId } = await params;
+        const doc = await adminDb.collection('agents').doc(agentId).get();
 
         if (!doc.exists) {
             return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
@@ -24,9 +25,10 @@ export async function GET(
 // PUT /api/agents/[agentId] - Update agent
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { agentId: string } }
+    { params }: { params: Promise<{ agentId: string }> }
 ) {
     try {
+        const { agentId } = await params;
         const data = await request.json();
         const { name, email, role, type, prompt } = data;
 
@@ -40,12 +42,12 @@ export async function PUT(
         if (type) updateData.type = type;
         if (prompt !== undefined) updateData.prompt = prompt;
 
-        await adminDb.collection('agents').doc(params.agentId).update(updateData);
+        await adminDb.collection('agents').doc(agentId).update(updateData);
 
         // If email changed and it's a human agent, update Firebase Auth
         if (email && type === 'human') {
             try {
-                await getAuth().updateUser(params.agentId, { email });
+                await getAuth().updateUser(agentId, { email });
             } catch (authError) {
                 console.warn('Could not update auth email:', authError);
             }
@@ -61,10 +63,11 @@ export async function PUT(
 // DELETE /api/agents/[agentId] - Delete agent
 export async function DELETE(
     _request: NextRequest,
-    { params }: { params: { agentId: string } }
+    { params }: { params: Promise<{ agentId: string }> }
 ) {
     try {
-        const doc = await adminDb.collection('agents').doc(params.agentId).get();
+        const { agentId } = await params;
+        const doc = await adminDb.collection('agents').doc(agentId).get();
 
         if (!doc.exists) {
             return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
@@ -73,12 +76,12 @@ export async function DELETE(
         const agentData = doc.data();
 
         // Delete from Firestore
-        await adminDb.collection('agents').doc(params.agentId).delete();
+        await adminDb.collection('agents').doc(agentId).delete();
 
         // If it's a human agent, delete from Firebase Auth
         if (agentData?.type === 'human') {
             try {
-                await getAuth().deleteUser(params.agentId);
+                await getAuth().deleteUser(agentId);
             } catch (authError) {
                 console.warn('Could not delete auth user:', authError);
             }
