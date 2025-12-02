@@ -156,6 +156,8 @@ export default function AgentsPage() {
         }
     };
 
+    const sofiaExists = agents.some(a => a.type === 'ai' && a.name.toLowerCase().includes('sofia'));
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
@@ -168,14 +170,16 @@ export default function AgentsPage() {
                         <UserPlus size={16} />
                         Crear Agente
                     </button>
-                    <button
-                        onClick={handleInitializeSofia}
-                        disabled={initializing}
-                        className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
-                    >
-                        <Bot size={16} />
-                        {initializing ? 'Inicializando...' : 'Inicializar Sofía'}
-                    </button>
+                    {!sofiaExists && (
+                        <button
+                            onClick={handleInitializeSofia}
+                            disabled={initializing}
+                            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+                        >
+                            <Bot size={16} />
+                            {initializing ? 'Inicializando...' : 'Inicializar Sofía'}
+                        </button>
+                    )}
                 </div>
             </div>
 
