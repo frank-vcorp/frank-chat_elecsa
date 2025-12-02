@@ -6,8 +6,23 @@ const db = getFirestore();
 
 /** Retrieve the prompt of a given agent (e.g., "sofia") */
 export async function getAgentPrompt(agentId: string): Promise<string> {
-    const snap = await db.doc(`agents/${agentId}`).get();
-    if (!snap.exists) throw new Error(`Agent ${agentId} not found`);
+    let snap = await db.doc(`agents/${agentId}`).get();
+
+    // Fallback: If specific agent not found (e.g. 'sofia'), try to find ANY AI agent
+    if (!snap.exists) {
+        console.warn(`Agent ${agentId} not found, searching for available AI agent...`);
+        const querySnap = await db.collection('agents')
+            .where('type', '==', 'ai')
+            .limit(1)
+            .get();
+
+        if (!querySnap.empty) {
+            snap = querySnap.docs[0];
+        } else {
+            throw new Error(`Agent ${agentId} not found and no AI agent available`);
+        }
+    }
+
     const data = snap.data() as any;
     return data.prompt as string;
 }
