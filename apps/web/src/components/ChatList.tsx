@@ -80,7 +80,11 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                                 <div className="flex justify-between items-center">
                                     <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-800' : 'text-gray-500'
                                         }`}>
-                                        {conv.lastMessage || 'Nueva conversación'}
+                                        {conv.lastMessageAt?.toDate().toLocaleDateString('es-MX', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            timeZone: 'America/Mexico_City'
+                                        })}
                                     </p>
 
                                     {conv.unreadCount > 0 && (

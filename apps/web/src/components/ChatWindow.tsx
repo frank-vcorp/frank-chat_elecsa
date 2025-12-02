@@ -147,10 +147,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                                 }`}>
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                 <div className="flex justify-end items-center gap-1 mt-1">
-                                    <span className="text-[10px] text-gray-500">
-                                        {msg.createdAt?.seconds
-                                            ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                            : '...'}
+                                    <span className="text-[10px] opacity-70 mt-1 block text-right">
+                                        {msg.createdAt?.toDate().toLocaleTimeString('es-MX', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            timeZone: 'America/Mexico_City'
+                                        })}
                                     </span>
                                 </div>
                             </div>
