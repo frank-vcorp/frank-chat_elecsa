@@ -132,47 +132,44 @@ export async function POST(request: NextRequest) {
         await newMessageRef.set(newMessage);
 
         // ----------------------------------------------------------------------
-        // 5. AI Auto‑Response (if conversation is assigned to AI)
+        // 5. AI Auto‑Response
         // ----------------------------------------------------------------------
-        const convSnap = await adminDb.collection('conversations').doc(conversationId).get();
-        const convData = convSnap.data() as Conversation;
-        // Trigger AI unless the conversation is explicitly assigned to a human agent
-        if (convData.assignedTo !== 'human') {
-            console.log('[Webhook] Triggering AI response');
-            try {
-                const sofiaReply = await getSofiaResponse(body, conversationId, phoneNumber);
-                if (sofiaReply) {
-                    console.log('[Webhook] Sending AI reply via Twilio');
-                    // Use the original "To" number as the sender to match sandbox/production
-                    await sendWhatsAppMessage(phoneNumber, sofiaReply, to);
+        console.log('[Webhook] Triggering AI response');
+        try {
+            const sofiaReply = await getSofiaResponse(body, conversationId, phoneNumber);
+            if (sofiaReply) {
+                console.log('[Webhook] Sending AI reply via Twilio');
+                // Use the original "To" number as the sender to match sandbox/production
+                await sendWhatsAppMessage(phoneNumber, sofiaReply, to);
 
-                    const sofiaMsgRef = messagesRef.doc();
-                    await sofiaMsgRef.set({
-                        id: sofiaMsgRef.id,
-                        conversationId,
-                        senderId: 'sofia',
-                        senderType: 'agent',
-                        content: sofiaReply,
-                        contentType: 'text',
-                        createdAt: FieldValue.serverTimestamp() as any,
-                        status: 'sent',
-                    } as Message);
+                const sofiaMsgRef = messagesRef.doc();
+                await sofiaMsgRef.set({
+                    id: sofiaMsgRef.id,
+                    conversationId,
+                    senderId: 'sofia',
+                    senderType: 'agent',
+                    content: sofiaReply,
+                    contentType: 'text',
+                    createdAt: FieldValue.serverTimestamp() as any,
+                    status: 'sent',
+                } as Message);
 
-                    await convSnap.ref.update({
-                        lastMessage: sofiaReply,
-                        lastMessageAt: FieldValue.serverTimestamp(),
-                    });
-                }
-            } catch (aiError) {
-                console.error('[Webhook] AI/Twilio error:', aiError);
-                await adminDb.collection('system_logs').add({
-                    type: 'webhook_ai_error',
-                    error: (aiError as any).message || 'unknown',
-                    timestamp: FieldValue.serverTimestamp(),
+                // Update the conversation's last message with Sofia's reply
+                const convSnap = await adminDb.collection('conversations').doc(conversationId).get();
+                await convSnap.ref.update({
+                    lastMessage: sofiaReply,
+                    lastMessageAt: FieldValue.serverTimestamp(),
                 });
+            } else {
+                console.log('[Webhook] AI did not generate a reply.');
             }
-        } else {
-            console.log('[Webhook] Conversation assigned to human, skipping AI');
+        } catch (aiError) {
+            console.error('[Webhook] AI/Twilio error:', aiError);
+            await adminDb.collection('system_logs').add({
+                type: 'webhook_ai_error',
+                error: (aiError as any).message || 'unknown',
+                timestamp: FieldValue.serverTimestamp(),
+            });
         }
 
         // ----------------------------------------------------------------------

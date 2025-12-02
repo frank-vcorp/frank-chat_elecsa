@@ -39,35 +39,18 @@ export async function getSofiaResponse(
     conversationId: string,
     phoneNumber: string
 ): Promise<string> {
-    // Try to extract a SKU from the incoming message
-    const skuMatch = message.match(/[A-Z0-9-]{4,}/i);
+    console.log(`[getSofiaResponse] Processing message: "${message}"`);
+
+    // Improved SKU regex: matches 4+ alphanumeric chars but MUST contain at least one digit
+    // This prevents common words like "HOLA", "COMO" from being treated as SKUs
+    const skuMatch = message.match(/\b[A-Z]*\d+[A-Z0-9-]*\b/i);
     const sku = skuMatch ? skuMatch[0].toUpperCase() : null;
 
-    // If no SKU, forward the raw message to the LLM using the stored prompt
-    if (!sku) {
-        const prompt = await getAgentPrompt('sofia');
-        return callOpenAI(prompt, message);
-    }
-
-    // Look up the product in the catalog
-    const product = await getProduct(sku);
-    if (!product) {
-        await handOffToHuman(conversationId, `SKU ${sku} no está en el catálogo`);
-        return `Entiendo que buscas ${sku}, pero ese artículo no está en nuestro catálogo. Te paso con un especialista.`;
-    }
-
-    // If the product is marked as obsolete/unavailable, hand‑off as well
-    if (product.status !== 'active') {
-        await handOffToHuman(conversationId, `SKU ${sku} está ${product.status}`);
-        return `El producto ${sku} está ${product.status}. Te conectaré con un ingeniero para validar una alternativa.`;
-    }
-
-    // Build a concise message that respects Sofía's style
+    if (sku) {
+        console.log(`[getSofiaResponse] Detected SKU: ${sku}`);
+    console.log('[getSofiaResponse] No SKU detected. Using normal chat.');
     const prompt = await getAgentPrompt('sofia');
-    const customMessage = `SKU: ${product.sku}\nDescripción: ${product.description}\nPrecio: $${product.price} ${product.currency} más IVA${product.related?.length ? `\nVenta cruzada: ${product.related[0]}` : ''}`;
-
-    // Let the LLM generate the final response using the stored prompt
-    return callOpenAI(prompt, customMessage);
+    return callOpenAI(prompt, message);
 }
 
 /** Generic wrapper around OpenAI's chat completion */
