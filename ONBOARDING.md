@@ -1,6 +1,6 @@
 # Onboarding - Metodología INTEGRA
 
-## 🎉 Bienvenido al Proyecto Farianergy App
+## 🎉 Bienvenido al Proyecto
 
 Esta guía te ayudará a entender la metodología de trabajo, estructura del proyecto y mejores prácticas. Ya seas un nuevo agente IA (SOFIA, CODEX, GEMINI) o un desarrollador humano, esta es tu primera parada.
 
@@ -16,7 +16,7 @@ Esta guía te ayudará a entender la metodología de trabajo, estructura del pro
 - ✅ **Priorizar trabajo** de forma consistente y objetiva
 - ✅ **Trackear progreso** con checkpoints enriquecidos
 
-### Principios Fundamentales
+### Principios Fundamentalesrepo 
 
 1. **Documentación como código:** La documentación es tan importante como el código
 2. **Contexto sobre memoria:** No asumas que el próximo agente recuerda lo anterior

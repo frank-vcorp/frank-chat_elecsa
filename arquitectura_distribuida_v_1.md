@@ -24,14 +24,14 @@
 - **Interoperabilidad Técnica (Puentes):**
   CODEX genera y documenta conectores hacia:
   - Google Workspace API (Docs, Sheets, Drive)
-  - Firebase / Firestore / Auth
+  - Firebase / Firestore / Authhttps://github.com/frank-vcorp/frank-chat_elecsa
   - Vertex AI / Gemini / PaLM
   - APIs externas (OpenAI, Twilio, IONOS, GitHub, Zapier, etc.)
 
   Estos puentes garantizan un flujo sin fricción entre ecosistemas y una capa de contexto unificada dentro de VS Code y Continue.
 
 ---
-
+https://github.com/frank-vcorp/frank-chat_elecsa
 ### III. Roles y Jerarquía de IA
 
 #### 🧠 CODEX – Arquitecto de Soluciones y Estratega de Producto

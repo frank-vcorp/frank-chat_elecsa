@@ -134,7 +134,8 @@ export async function POST(request: NextRequest) {
         // ----------------------------------------------------------------------
         const convSnap = await adminDb.collection('conversations').doc(conversationId).get();
         const convData = convSnap.data() as Conversation;
-        if (!convData.assignedTo || convData.assignedTo === 'ai') {
+        // Trigger AI unless the conversation is explicitly assigned to a human agent
+        if (convData.assignedTo !== 'human') {
             console.log('[Webhook] Triggering AI response');
             try {
                 const sofiaReply = await getSofiaResponse(body, conversationId, phoneNumber);
