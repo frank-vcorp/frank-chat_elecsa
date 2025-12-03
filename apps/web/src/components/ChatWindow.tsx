@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, where, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Message, Conversation } from '@/lib/types';
-import { Send, Phone, Video, MoreVertical, Paperclip, Smile, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Paperclip } from 'lucide-react';
 
 interface ChatWindowProps {
     conversationId: string;
@@ -32,7 +32,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         const q = query(
             collection(db, 'messages'),
             where('conversationId', '==', conversationId)
-            // orderBy removed to avoid index issues; sorting client-side
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -41,14 +40,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 ...doc.data(),
             })) as Message[];
 
-            // Sort client-side by createdAt
             msgs.sort((a, b) => {
                 const tA = a.createdAt?.seconds ?? 0;
                 const tB = b.createdAt?.seconds ?? 0;
                 return tA - tB;
             });
 
-            console.log('Fetched messages:', msgs);
             setMessages(msgs);
             setTimeout(scrollToBottom, 100);
         });
@@ -58,6 +55,50 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            console.log('Archivos adjuntos:', Array.from(files).map((f) => f.name));
+            e.target.value = '';
+        }
+    };
+
+    const handleCloseConversation = async () => {
+        try {
+            await fetch('/api/conversation/close', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId }),
+            });
+        } catch (e) {
+            console.error('Error al cerrar', e);
+        }
+    };
+
+    const handleReopenConversation = async () => {
+        try {
+            await fetch('/api/conversation/reopen', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId }),
+            });
+        } catch (e) {
+            console.error('Error al reabrir', e);
+        }
+    };
+
+    const handleResumeAI = async () => {
+        try {
+            await fetch('/api/conversation/assign/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId }),
+            });
+        } catch (e) {
+            console.error('Error al retomar IA', e);
+        }
     };
 
     const handleTakeConversation = async () => {
@@ -120,10 +161,43 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         </div>
                     </div>
                 </div>
-                {/* Icons removed as requested */}
             </div>
 
-            {/* Alert Bar - Dark Mode Optimized */}
+            {/* Toolbar (solo agentes humanos) */}
+            {conversation.assignedTo === 'human' && (
+                <div className="bg-gray-800 px-4 py-2 flex items-center gap-4 border-b border-gray-700">
+                    <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2">
+                        <Paperclip size={20} />
+                        <span className="text-xs">Adjuntar</span>
+                        <input type="file" className="hidden" multiple onChange={handleFileAttach} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
+                    </label>
+
+                    <button
+                        onClick={handleResumeAI}
+                        className="text-xs bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 transition-colors"
+                    >
+                        Retomar IA
+                    </button>
+
+                    {conversation.status !== 'closed' ? (
+                        <button
+                            onClick={handleCloseConversation}
+                            className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
+                        >
+                            Cerrar
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleReopenConversation}
+                            className="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 transition-colors"
+                        >
+                            Reabrir
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Alert Bar */}
             {(conversation.needsHuman || conversation.assignedTo === 'ai') && (
                 <div className={`px-4 py-3 flex justify-between items-center border-b animate-in slide-in-from-top ${conversation.needsHuman
                         ? 'bg-red-900/20 border-red-900/50'
@@ -202,7 +276,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         </button>
                     ) : (
                         <button type="button" className="text-gray-500 p-2.5">
-                            <div className="w-5 h-5" /> {/* Spacer */}
+                            <div className="w-5 h-5" />
                         </button>
                     )}
                 </form>
