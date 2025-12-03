@@ -164,44 +164,51 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             </div>
 
             {/* Toolbar (solo agentes humanos) */}
-            {conversation.assignedTo === 'human' && (
-                <div className="bg-gray-800 px-4 py-2 flex items-center gap-4 border-b border-gray-700">
-                    <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2">
-                        <Paperclip size={20} />
-                        <span className="text-xs">Adjuntar</span>
-                        <input type="file" className="hidden" multiple onChange={handleFileAttach} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
-                    </label>
+            {(() => {
+                console.log('DEBUG Toolbar:', {
+                    assignedTo: conversation.assignedTo,
+                    shouldShow: conversation.assignedTo === 'human',
+                    status: conversation.status
+                });
+                return conversation.assignedTo === 'human';
+            })() && (
+                    <div className="bg-gray-800 px-4 py-2 flex items-center gap-4 border-b border-gray-700">
+                        <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2">
+                            <Paperclip size={20} />
+                            <span className="text-xs">Adjuntar</span>
+                            <input type="file" className="hidden" multiple onChange={handleFileAttach} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
+                        </label>
 
-                    <button
-                        onClick={handleResumeAI}
-                        className="text-xs bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 transition-colors"
-                    >
-                        Retomar IA
-                    </button>
+                        <button
+                            onClick={handleResumeAI}
+                            className="text-xs bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 transition-colors"
+                        >
+                            Retomar IA
+                        </button>
 
-                    {conversation.status !== 'closed' ? (
-                        <button
-                            onClick={handleCloseConversation}
-                            className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
-                        >
-                            Cerrar
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleReopenConversation}
-                            className="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 transition-colors"
-                        >
-                            Reabrir
-                        </button>
-                    )}
-                </div>
-            )}
+                        {conversation.status !== 'closed' ? (
+                            <button
+                                onClick={handleCloseConversation}
+                                className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
+                            >
+                                Cerrar
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleReopenConversation}
+                                className="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 transition-colors"
+                            >
+                                Reabrir
+                            </button>
+                        )}
+                    </div>
+                )}
 
             {/* Alert Bar */}
             {(conversation.needsHuman || conversation.assignedTo === 'ai') && (
                 <div className={`px-4 py-3 flex justify-between items-center border-b animate-in slide-in-from-top ${conversation.needsHuman
-                        ? 'bg-red-900/20 border-red-900/50'
-                        : 'bg-blue-900/20 border-blue-900/50'
+                    ? 'bg-red-900/20 border-red-900/50'
+                    : 'bg-blue-900/20 border-blue-900/50'
                     }`}>
                     <div className={`flex items-center gap-2 text-sm font-medium ${conversation.needsHuman ? 'text-red-400' : 'text-blue-400'
                         }`}>
@@ -223,8 +230,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                     <button
                         onClick={handleTakeConversation}
                         className={`text-xs px-4 py-1.5 rounded-full shadow-sm transition-all font-medium ${conversation.needsHuman
-                                ? 'bg-red-600 text-white hover:bg-red-700'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-red-600 text-white hover:bg-red-700'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                     >
                         Tomar Conversación
