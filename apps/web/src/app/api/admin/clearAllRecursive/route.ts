@@ -5,7 +5,7 @@ import { adminDb } from '@/lib/firebase-admin';
 /**
  * Delete all documents in a collection in batches of 500 (Firestore limit).
  */
-async function deleteCollection(collectionPath: string) {
+async function deleteCollection(collectionPath: string): Promise<number> {
     const batchSize = 500;
     const collectionRef = adminDb.collection(collectionPath);
     const query = collectionRef.limit(batchSize);
