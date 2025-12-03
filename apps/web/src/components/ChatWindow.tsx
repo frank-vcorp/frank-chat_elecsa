@@ -124,18 +124,34 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             </div>
 
             {/* Alert Bar - Dark Mode Optimized */}
-            {conversation.needsHuman && (
-                <div className="bg-red-900/20 px-4 py-3 flex justify-between items-center border-b border-red-900/50 animate-in slide-in-from-top">
-                    <div className="flex items-center gap-2 text-red-400 text-sm font-medium">
-                        <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
-                        </span>
-                        El usuario solicita atención humana
+            {(conversation.needsHuman || conversation.assignedTo === 'ai') && (
+                <div className={`px-4 py-3 flex justify-between items-center border-b animate-in slide-in-from-top ${conversation.needsHuman
+                        ? 'bg-red-900/20 border-red-900/50'
+                        : 'bg-blue-900/20 border-blue-900/50'
+                    }`}>
+                    <div className={`flex items-center gap-2 text-sm font-medium ${conversation.needsHuman ? 'text-red-400' : 'text-blue-400'
+                        }`}>
+                        {conversation.needsHuman ? (
+                            <>
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                                </span>
+                                El usuario solicita atención humana
+                            </>
+                        ) : (
+                            <>
+                                <Bot size={16} />
+                                Conversación gestionada por IA
+                            </>
+                        )}
                     </div>
                     <button
                         onClick={handleTakeConversation}
-                        className="text-xs bg-red-600 text-white px-4 py-1.5 rounded-full hover:bg-red-700 shadow-sm transition-all font-medium"
+                        className={`text-xs px-4 py-1.5 rounded-full shadow-sm transition-all font-medium ${conversation.needsHuman
+                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
                     >
                         Tomar Conversación
                     </button>
