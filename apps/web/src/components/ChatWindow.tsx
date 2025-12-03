@@ -31,8 +31,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
         const q = query(
             collection(db, 'messages'),
-            where('conversationId', '==', conversationId),
-            orderBy('createdAt', 'asc')
+            where('conversationId', '==', conversationId)
+            // orderBy removed to avoid index issues; sorting client-side
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -40,7 +40,15 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 id: doc.id,
                 ...doc.data(),
             })) as Message[];
-            console.log('Fetched messages:', msgs); // Debug log
+
+            // Sort client-side by createdAt
+            msgs.sort((a, b) => {
+                const tA = a.createdAt?.seconds ?? 0;
+                const tB = b.createdAt?.seconds ?? 0;
+                return tA - tB;
+            });
+
+            console.log('Fetched messages:', msgs);
             setMessages(msgs);
             setTimeout(scrollToBottom, 100);
         });
@@ -87,7 +95,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         }
     };
 
-    if (!conversation) return <div className="flex-1 flex items-center justify-center">Cargando...</div>;
+    if (!conversation) return <div className="flex-1 flex items-center justify-center text-gray-400">Cargando...</div>;
 
     return (
         <div className="flex flex-col h-full bg-gray-900">
@@ -112,20 +120,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 text-gray-400">
-                    <button className="hover:bg-gray-700 p-2 rounded-full transition-colors"><Phone size={20} /></button>
-                    <button className="hover:bg-gray-700 p-2 rounded-full transition-colors"><Video size={20} /></button>
-                    <button className="hover:bg-gray-700 p-2 rounded-full transition-colors"><MoreVertical size={20} /></button>
-                </div>
+                {/* Icons removed as requested */}
             </div>
 
-            {/* Alert Bar */}
+            {/* Alert Bar - Dark Mode Optimized */}
             {conversation.needsHuman && (
-                <div className="bg-red-50 px-4 py-2 flex justify-between items-center border-b border-red-100 animate-in slide-in-from-top">
-                    <div className="flex items-center gap-2 text-red-700 text-sm font-medium">
+                <div className="bg-red-900/20 px-4 py-3 flex justify-between items-center border-b border-red-900/50 animate-in slide-in-from-top">
+                    <div className="flex items-center gap-2 text-red-400 text-sm font-medium">
                         <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
                         </span>
                         El usuario solicita atención humana
                     </div>
@@ -165,10 +169,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
             {/* Input Area */}
             <div className="bg-gray-800 px-4 py-3 flex items-center gap-4 border-t border-gray-700">
-                <div className="flex gap-2 text-gray-400">
-                    <button className="hover:text-gray-200 transition-colors"><Smile size={24} /></button>
-                    <button className="hover:text-gray-200 transition-colors"><Paperclip size={24} /></button>
-                </div>
                 <form onSubmit={handleSendMessage} className="flex-1 flex gap-2">
                     <input
                         type="text"
@@ -186,7 +186,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         </button>
                     ) : (
                         <button type="button" className="text-gray-500 p-2.5">
-                            <div className="w-5 h-5" /> {/* Spacer/Mic placeholder */}
+                            <div className="w-5 h-5" /> {/* Spacer */}
                         </button>
                     )}
                 </form>
