@@ -31,8 +31,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
         const q = query(
             collection(db, 'messages'),
-            where('conversationId', '==', conversationId),
-            orderBy('createdAt', 'asc')
+            where('conversationId', '==', conversationId)
+            // orderBy('createdAt', 'asc') // Commented out to test index issue
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
