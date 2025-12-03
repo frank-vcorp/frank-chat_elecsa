@@ -31,8 +31,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
         const q = query(
             collection(db, 'messages'),
-            where('conversationId', '==', conversationId)
-            // orderBy('createdAt', 'asc') // Commented out to test index issue
+            where('conversationId', '==', conversationId),
+            orderBy('createdAt', 'asc')
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -40,6 +40,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 id: doc.id,
                 ...doc.data(),
             })) as Message[];
+            console.log('Fetched messages:', msgs); // Debug log
             setMessages(msgs);
             setTimeout(scrollToBottom, 100);
         });
@@ -89,32 +90,32 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     if (!conversation) return <div className="flex-1 flex items-center justify-center">Cargando...</div>;
 
     return (
-        <div className="flex flex-col h-full bg-[#efeae2]">
+        <div className="flex flex-col h-full bg-gray-900">
             {/* Header */}
-            <div className="bg-white px-4 py-3 border-b flex justify-between items-center shadow-sm z-10">
+            <div className="bg-gray-800 px-4 py-3 border-b border-gray-700 flex justify-between items-center shadow-sm z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
+                    <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 font-bold">
                         {conversation.contactId.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <h2 className="font-semibold text-gray-800">{conversation.contactId}</h2>
+                        <h2 className="font-semibold text-white">{conversation.contactId}</h2>
                         <div className="flex items-center gap-1 text-xs">
                             {conversation.assignedTo === 'ai' ? (
-                                <span className="flex items-center gap-1 text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                                <span className="flex items-center gap-1 text-purple-400 bg-purple-900/30 px-2 py-0.5 rounded-full border border-purple-800">
                                     <Bot size={12} /> IA Activa
                                 </span>
                             ) : (
-                                <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                <span className="flex items-center gap-1 text-green-400 bg-green-900/30 px-2 py-0.5 rounded-full border border-green-800">
                                     <User size={12} /> Agente Humano
                                 </span>
                             )}
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 text-gray-500">
-                    <button className="hover:bg-gray-100 p-2 rounded-full transition-colors"><Phone size={20} /></button>
-                    <button className="hover:bg-gray-100 p-2 rounded-full transition-colors"><Video size={20} /></button>
-                    <button className="hover:bg-gray-100 p-2 rounded-full transition-colors"><MoreVertical size={20} /></button>
+                <div className="flex items-center gap-4 text-gray-400">
+                    <button className="hover:bg-gray-700 p-2 rounded-full transition-colors"><Phone size={20} /></button>
+                    <button className="hover:bg-gray-700 p-2 rounded-full transition-colors"><Video size={20} /></button>
+                    <button className="hover:bg-gray-700 p-2 rounded-full transition-colors"><MoreVertical size={20} /></button>
                 </div>
             </div>
 
@@ -138,12 +139,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             )}
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900">
                 {messages.map((msg) => {
                     const isMe = msg.senderType === 'agent' || msg.senderType === 'system';
                     return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] rounded-lg px-4 py-2 shadow-sm relative ${isMe ? 'bg-[#d9fdd3] text-gray-900 rounded-tr-none' : 'bg-white text-gray-900 rounded-tl-none'
+                            <div className={`max-w-[70%] rounded-lg px-4 py-2 shadow-sm relative ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-700 text-white rounded-tl-none'
                                 }`}>
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                 <div className="flex justify-end items-center gap-1 mt-1">
@@ -163,10 +164,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             </div>
 
             {/* Input Area */}
-            <div className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-4">
-                <div className="flex gap-2 text-gray-500">
-                    <button className="hover:text-gray-700 transition-colors"><Smile size={24} /></button>
-                    <button className="hover:text-gray-700 transition-colors"><Paperclip size={24} /></button>
+            <div className="bg-gray-800 px-4 py-3 flex items-center gap-4 border-t border-gray-700">
+                <div className="flex gap-2 text-gray-400">
+                    <button className="hover:text-gray-200 transition-colors"><Smile size={24} /></button>
+                    <button className="hover:text-gray-200 transition-colors"><Paperclip size={24} /></button>
                 </div>
                 <form onSubmit={handleSendMessage} className="flex-1 flex gap-2">
                     <input
@@ -174,12 +175,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Escribe un mensaje..."
-                        className="flex-1 rounded-lg border-none py-2.5 px-4 focus:ring-0 focus:outline-none shadow-sm"
+                        className="flex-1 rounded-lg border-none py-2.5 px-4 focus:ring-0 focus:outline-none shadow-sm bg-gray-700 text-white placeholder-gray-400"
                     />
                     {newMessage.trim() ? (
                         <button
                             type="submit"
-                            className="bg-[#00a884] text-white p-2.5 rounded-full hover:bg-[#008f6f] transition-colors shadow-sm"
+                            className="bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition-colors shadow-sm"
                         >
                             <Send size={20} />
                         </button>
