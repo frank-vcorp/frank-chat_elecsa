@@ -20,7 +20,7 @@ export interface Contact {
     lastSeen: Timestamp;
 }
 
-export type ConversationStatus = 'open' | 'resolved' | 'pending';
+export type ConversationStatus = 'open' | 'resolved' | 'pending' | 'closed';
 
 export interface Conversation {
     id: string;
