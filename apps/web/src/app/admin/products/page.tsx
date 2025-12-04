@@ -60,18 +60,94 @@ export default function ProductsPage() {
         }
     };
 
+    const detectDelimiter = (line: string) => {
+        const candidates = [',', ';', '\t', '|'];
+        let best = ',';
+        let maxCount = 0;
+        const sanitized = line.replace(/".*?"/g, (match) => match.replace(/,/g, '，').replace(/;/g, '；').replace(/\t/g, '␉').replace(/\|/g, '¦'));
+        candidates.forEach((delimiter) => {
+            const count = sanitized.split(delimiter).length - 1;
+            if (count > maxCount) {
+                maxCount = count;
+                best = delimiter;
+            }
+        });
+        return best;
+    };
+
+    const parseCsvLine = (line: string, delimiter: string) => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    current += '"';
+                    i++; // Skip escaped quote
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === delimiter && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+
+        return result.map((value) => value.replace(/^"|"$/g, ''));
+    };
+
+    const normalizeNumber = (value: string | number | undefined) => {
+        if (value === undefined || value === null) return 0;
+        if (typeof value === 'number') return value;
+
+        const cleaned = value
+            .replace(/[^0-9,.-]/g, '')
+            .trim();
+
+        if (!cleaned) return 0;
+
+        if (cleaned.includes(',') && !cleaned.includes('.')) {
+            return Number(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+        }
+
+        if ((cleaned.match(/,/g) || []).length > 1) {
+            return Number(cleaned.replace(/,/g, '')) || 0;
+        }
+
+        return Number(cleaned.replace(/,/g, '')) || 0;
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setUploading(true);
         try {
-            const text = await file.text();
-            const lines = text.split('\n').filter(line => line.trim());
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const rawText = await file.text();
+            const normalizedText = rawText
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .trim();
 
-            const parsedProducts = lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim());
+            const lines = normalizedText.split('\n').map((line) => line.trim()).filter(Boolean);
+            if (lines.length === 0) {
+                alert('❌ El archivo está vacío');
+                return;
+            }
+
+            const headerLine = lines[0].replace(/^\uFEFF/, '');
+            const delimiter = detectDelimiter(headerLine);
+            const headers = parseCsvLine(headerLine, delimiter).map((h) => h.trim().toLowerCase());
+
+            const parsedProducts = lines.slice(1).map((line) => {
+                const values = parseCsvLine(line, delimiter);
                 const product: any = {};
                 headers.forEach((header, index) => {
                     product[header] = values[index];
@@ -80,7 +156,7 @@ export default function ProductsPage() {
                     sku: product.sku?.toUpperCase() || '',
                     supplier: product.proveedor || product.supplier || '',
                     description: product.description || product.desc || '',
-                    price: Number(product.price) || 0,
+                    price: normalizeNumber(product.price ?? product.precio),
                     currency: product.currency || 'USD',
                     status: (product.status || 'active') as 'active' | 'archived',
                 };
