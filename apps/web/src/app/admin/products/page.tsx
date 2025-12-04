@@ -17,14 +17,6 @@ export default function ProductsPage() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [formData, setFormData] = useState<Partial<Product>>({
-        sku: '',
-        supplier: '',
-        description: '',
-        price: 0,
-        currency: 'USD',
-        status: 'active',
-    });
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -46,23 +38,6 @@ export default function ProductsPage() {
     useEffect(() => {
         fetchProducts();
     }, []);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.sku) return;
-
-        try {
-            await fetch('/api/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-            setFormData({ sku: '', supplier: '', description: '', price: 0, currency: 'USD', status: 'active' });
-            fetchProducts();
-        } catch (error) {
-            console.error('Failed to save product', error);
-        }
-    };
 
     const detectDelimiter = (line: string) => {
         const candidates = [',', ';', '\t', '|'];
@@ -254,72 +229,6 @@ export default function ProductsPage() {
                 className="hidden"
             />
 
-            {/* Create Form */}
-            <div className="bg-white p-6 rounded shadow mb-8">
-                <h3 className="text-lg font-semibold mb-4">Add New Product</h3>
-                <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">SKU</label>
-                        <input
-                            type="text"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                            value={formData.sku}
-                            onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Supplier</label>
-                        <input
-                            type="text"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                            value={formData.supplier}
-                            onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
-                        <input
-                            type="text"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Price</label>
-                        <input
-                            type="number"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                            value={formData.price}
-                            onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Currency</label>
-                        <select
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                            value={formData.currency}
-                            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                        >
-                            <option value="USD">USD</option>
-                            <option value="MXN">MXN</option>
-                            <option value="EUR">EUR</option>
-                        </select>
-                    </div>
-                    <div className="col-span-2">
-                        <button
-                            type="submit"
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                        >
-                            Save Product
-                        </button>
-                    </div>
-                </form>
-            </div>
-
             {/* List */}
             <div className="bg-white rounded shadow overflow-hidden">
                 <div className="px-6 py-3 bg-gray-50 border-b">
@@ -339,7 +248,7 @@ export default function ProductsPage() {
                         {loading ? (
                             <tr><td colSpan={5} className="p-4 text-center">Loading...</td></tr>
                         ) : products.length === 0 ? (
-                            <tr><td colSpan={5} className="p-4 text-center text-gray-500">No hay productos. Carga un archivo CSV o añade productos manualmente.</td></tr>
+                            <tr><td colSpan={5} className="p-4 text-center text-gray-500">No hay productos. Carga un archivo CSV para comenzar.</td></tr>
                         ) : products.map((product) => (
                             <tr key={product.sku}>
                                 <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{product.sku}</td>
