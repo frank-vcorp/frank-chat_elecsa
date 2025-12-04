@@ -67,13 +67,22 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
     const handleCloseConversation = async () => {
         try {
+            // 1. Close conversation
             await fetch('/api/conversation/close', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ conversationId }),
             });
+
+            // 2. Trigger AI Summary (fire and forget)
+            fetch('/api/conversation/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId }),
+            }).catch(err => console.error('Summary generation failed', err));
+
         } catch (e) {
-            console.error('Error al cerrar', e);
+            console.error('Close conversation error', e);
         }
     };
 

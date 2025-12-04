@@ -32,6 +32,8 @@ export interface Conversation {
     unreadCount: number;
     needsHuman?: boolean;
     tags?: string[];
+    summary?: string;
+    summarizedAt?: any;
 }
 
 export type SenderType = 'agent' | 'contact' | 'system';
