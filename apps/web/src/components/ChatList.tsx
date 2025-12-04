@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Conversation } from '@/lib/types';
-import { Search, User, Clock } from 'lucide-react';
+import { Search, User, Clock, Filter, X } from 'lucide-react';
 
 interface ChatListProps {
     onSelectConversation: (conversationId: string) => void;
@@ -14,6 +14,9 @@ interface ChatListProps {
 export default function ChatList({ onSelectConversation, selectedConversationId }: ChatListProps) {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [filterTags, setFilterTags] = useState<string[]>([]);
+    const [filterStatus, setFilterStatus] = useState<'all' | 'human' | 'ai'>('all');
 
     useEffect(() => {
         const q = query(collection(db, 'conversations'), orderBy('lastMessageAt', 'desc'));
@@ -28,9 +31,27 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
         return () => unsubscribe();
     }, []);
 
-    const filteredConversations = conversations.filter(c =>
-        c.contactId.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredConversations = conversations.filter(c => {
+        const matchesSearch = c.contactId.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesTags = filterTags.length === 0 || (c.tags && filterTags.every(t => c.tags?.includes(t)));
+        const matchesStatus = filterStatus === 'all'
+            ? true
+            : filterStatus === 'human'
+                ? c.assignedTo !== 'ai'
+                : c.assignedTo === 'ai';
+
+        return matchesSearch && matchesTags && matchesStatus;
+    });
+
+    const toggleTagFilter = (tag: string) => {
+        setFilterTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
+    };
+
+    const availableTags = [
+        'Nuevo', 'Interesado', 'Cotización', 'Seguimiento', 'Ganado', 'Perdido', 'Recurrente'
+    ];
 
     const formatTime = (timestamp: any) => {
         if (!timestamp) return '';
@@ -40,17 +61,82 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
 
     return (
         <div className="flex h-full flex-col bg-slate-950 border-r border-slate-800 w-full font-sans">
-            <div className="p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-                <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={16} />
-                    <input
-                        type="text"
-                        placeholder="Buscar conversación..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm text-slate-200 placeholder-slate-500"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            <div className="p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10 space-y-3">
+                <div className="flex gap-2">
+                    <div className="relative group flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Buscar conversación..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm text-slate-200 placeholder-slate-500"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`p-2.5 rounded-xl border transition-all ${showFilters || filterTags.length > 0 || filterStatus !== 'all'
+                            ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
+                            : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+                            }`}
+                        title="Filtros avanzados"
+                    >
+                        <Filter size={18} />
+                    </button>
                 </div>
+
+                {/* Filter Panel */}
+                {showFilters && (
+                    <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 animate-in slide-in-from-top-2 fade-in duration-200">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs font-semibold text-slate-400">Filtrar por Estado</span>
+                            {(filterTags.length > 0 || filterStatus !== 'all') && (
+                                <button
+                                    onClick={() => { setFilterTags([]); setFilterStatus('all'); }}
+                                    className="text-[10px] text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                                >
+                                    <X size={10} /> Limpiar
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex gap-2 mb-4">
+                            {[
+                                { id: 'all', label: 'Todos' },
+                                { id: 'human', label: 'Humanos' },
+                                { id: 'ai', label: 'IA' }
+                            ].map(status => (
+                                <button
+                                    key={status.id}
+                                    onClick={() => setFilterStatus(status.id as any)}
+                                    className={`flex-1 py-1.5 text-xs rounded-lg border transition-colors ${filterStatus === status.id
+                                        ? 'bg-indigo-600 text-white border-indigo-500'
+                                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                                        }`}
+                                >
+                                    {status.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mb-1">
+                            <span className="text-xs font-semibold text-slate-400 block mb-2">Filtrar por Etiquetas</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {availableTags.map(tag => (
+                                    <button
+                                        key={tag}
+                                        onClick={() => toggleTagFilter(tag)}
+                                        className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${filterTags.includes(tag)
+                                            ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50'
+                                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                                            }`}
+                                    >
+                                        {tag}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">

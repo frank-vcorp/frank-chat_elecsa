@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ChatList from '@/components/ChatList';
 import ChatWindow from '@/components/ChatWindow';
+import DashboardMetrics from '@/components/DashboardMetrics';
 import { MessageSquareText } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -26,16 +27,12 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Chat Window */}
-            <div className="flex-1 flex flex-col">
+            {/* Chat Window or Metrics */}
+            <div className="flex-1 flex flex-col bg-slate-950">
                 {selectedConversationId ? (
                     <ChatWindow conversationId={selectedConversationId} />
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-50 to-blue-50">
-                        <MessageSquareText size={64} className="mb-4 opacity-20" />
-                        <p className="text-lg font-medium">Selecciona una conversación</p>
-                        <p className="text-sm mt-1">Elige un chat de la lista para comenzar</p>
-                    </div>
+                    <DashboardMetrics />
                 )}
             </div>
         </div>
