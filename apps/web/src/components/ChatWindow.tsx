@@ -32,7 +32,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 const res = await fetch('/api/templates');
                 if (res.ok) {
                     const data = await res.json();
-                    setTemplates(data);
+                    const items = Array.isArray(data) ? data : Array.isArray(data?.templates) ? data.templates : [];
+                    setTemplates(items);
                 }
             } catch (e) {
                 console.error('Error fetching templates', e);
