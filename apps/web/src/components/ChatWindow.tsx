@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { collection, query, onSnapshot, where, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, where, doc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Message, Conversation } from '@/lib/types';
-import { Send, Bot, User, Paperclip, Tag, Check } from 'lucide-react';
+import { Send, Bot, User, Paperclip, Tag, Check, StickyNote } from 'lucide-react';
 
 interface ChatWindowProps {
     conversationId: string;
@@ -15,6 +15,31 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Notes State
+    const [showNotes, setShowNotes] = useState(false);
+    const [notes, setNotes] = useState<any[]>([]);
+    const [newNote, setNewNote] = useState('');
+
+    // Fetch Notes
+    useEffect(() => {
+        if (!conversationId || !showNotes) return;
+
+        const q = query(
+            collection(db, 'conversations', conversationId, 'notes'),
+            orderBy('createdAt', 'desc')
+        );
+
+        const unsub = onSnapshot(q, (snapshot) => {
+            const fetchedNotes = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setNotes(fetchedNotes);
+        });
+
+        return () => unsub();
+    }, [conversationId, showNotes]);
 
     useEffect(() => {
         if (!conversationId) return;
@@ -145,10 +170,28 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         }
     };
 
+    const handleSaveNote = async () => {
+        if (!newNote.trim()) return;
+        try {
+            await fetch('/api/conversation/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversationId,
+                    content: newNote,
+                    authorId: 'agent' // TODO: Get real agent ID
+                }),
+            });
+            setNewNote('');
+        } catch (e) {
+            console.error('Error saving note', e);
+        }
+    };
+
     if (!conversation) return <div className="flex-1 flex items-center justify-center text-gray-400">Cargando...</div>;
 
     return (
-        <div className="flex flex-col h-full bg-gray-900">
+        <div className="flex flex-col h-full bg-gray-900 relative">
             {/* Header */}
             <div className="bg-gray-800 px-4 py-3 border-b border-gray-700 flex justify-between items-center shadow-sm z-10">
                 <div className="flex items-center gap-3">
@@ -170,7 +213,63 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Header Actions */}
+                <button
+                    onClick={() => setShowNotes(!showNotes)}
+                    className={`p-2 rounded-lg transition-colors ${showNotes ? 'bg-yellow-900/50 text-yellow-400' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    title="Notas Internas"
+                >
+                    <StickyNote size={20} />
+                </button>
             </div>
+
+            {/* Notes Panel */}
+            {showNotes && (
+                <div className="absolute right-0 top-[65px] bottom-0 w-80 bg-gray-800 border-l border-gray-700 shadow-2xl z-20 flex flex-col animate-in slide-in-from-right">
+                    <div className="p-4 border-b border-gray-700 bg-gray-800/50">
+                        <h3 className="font-semibold text-white flex items-center gap-2">
+                            <StickyNote size={16} className="text-yellow-500" />
+                            Notas Internas
+                        </h3>
+                        <p className="text-xs text-gray-400 mt-1">Solo visibles para el equipo</p>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                        {notes.length === 0 ? (
+                            <div className="text-center text-gray-500 text-sm py-8">
+                                No hay notas aún.
+                            </div>
+                        ) : (
+                            notes.map(note => (
+                                <div key={note.id} className="bg-gray-700/50 p-3 rounded-lg border border-gray-600">
+                                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{note.content}</p>
+                                    <div className="flex justify-between items-center mt-2 text-[10px] text-gray-400">
+                                        <span>{note.authorId}</span>
+                                        <span>{note.createdAt?.toDate().toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="p-4 border-t border-gray-700 bg-gray-800">
+                        <textarea
+                            value={newNote}
+                            onChange={(e) => setNewNote(e.target.value)}
+                            placeholder="Escribe una nota..."
+                            className="w-full bg-gray-700 text-white rounded-lg p-3 text-sm border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none h-24 mb-2"
+                        />
+                        <button
+                            onClick={handleSaveNote}
+                            disabled={!newNote.trim()}
+                            className="w-full bg-yellow-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Guardar Nota
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Toolbar (solo agentes humanos) */}
             {(() => {
