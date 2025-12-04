@@ -58,7 +58,7 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                     <div
                         key={conv.id}
                         onClick={() => onSelectConversation(conv.id)}
-                        className={`group cursor-pointer p-4 hover:bg-gray-50 transition-colors border-b border-gray-50 relative ${selectedConversationId === conv.id ? 'bg-blue-50 hover:bg-blue-50' : ''
+                        className={`group cursor-pointer p-4 hover:bg-gray-800 transition-colors border-b border-gray-700 relative ${selectedConversationId === conv.id ? 'bg-gray-800' : 'bg-gray-900'
                             }`}
                     >
                         <div className="flex items-start gap-3">
@@ -69,16 +69,16 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
 
                             <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-baseline mb-1">
-                                    <h3 className={`text-sm font-semibold truncate ${selectedConversationId === conv.id ? 'text-blue-900' : 'text-gray-900'}`}>
+                                    <h3 className={`text-sm font-semibold truncate ${selectedConversationId === conv.id ? 'text-white' : 'text-gray-200'}`}>
                                         {conv.contactId}
                                     </h3>
-                                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                                    <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
                                         {formatTime(conv.lastMessageAt)}
                                     </span>
                                 </div>
 
                                 <div className="flex justify-between items-center">
-                                    <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-800' : 'text-gray-500'
+                                    <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-300' : 'text-gray-500'
                                         }`}>
                                         {conv.lastMessageAt?.toDate().toLocaleDateString('es-MX', {
                                             hour: '2-digit',
@@ -93,6 +93,28 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                                         </span>
                                     )}
                                 </div>
+
+                                {/* Tags Display */}
+                                {conv.tags && conv.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                        {conv.tags.map(tag => {
+                                            const colors: Record<string, string> = {
+                                                'Nuevo': 'bg-blue-900/40 text-blue-300 border-blue-800/50',
+                                                'Interesado': 'bg-orange-900/40 text-orange-300 border-orange-800/50',
+                                                'Cotización': 'bg-purple-900/40 text-purple-300 border-purple-800/50',
+                                                'Seguimiento': 'bg-yellow-900/40 text-yellow-300 border-yellow-800/50',
+                                                'Ganado': 'bg-green-900/40 text-green-300 border-green-800/50',
+                                                'Perdido': 'bg-red-900/40 text-red-300 border-red-800/50',
+                                                'Recurrente': 'bg-cyan-900/40 text-cyan-300 border-cyan-800/50',
+                                            };
+                                            return (
+                                                <span key={tag} className={`text-[9px] px-1.5 py-0.5 rounded border ${colors[tag] || 'bg-gray-700 text-gray-400 border-gray-600'}`}>
+                                                    {tag}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

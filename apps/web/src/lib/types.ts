@@ -31,6 +31,7 @@ export interface Conversation {
     lastMessageAt: Timestamp;
     unreadCount: number;
     needsHuman?: boolean;
+    tags?: string[];
 }
 
 export type SenderType = 'agent' | 'contact' | 'system';

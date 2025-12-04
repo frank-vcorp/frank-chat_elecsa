@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { collection, query, onSnapshot, where, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Message, Conversation } from '@/lib/types';
-import { Send, Bot, User, Paperclip } from 'lucide-react';
+import { Send, Bot, User, Paperclip, Tag, Check } from 'lucide-react';
 
 interface ChatWindowProps {
     conversationId: string;
@@ -165,19 +165,85 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
             {/* Toolbar (solo agentes humanos) */}
             {(() => {
-                console.log('DEBUG Toolbar:', {
-                    assignedTo: conversation.assignedTo,
-                    shouldShow: conversation.assignedTo !== 'ai',
-                    status: conversation.status
-                });
+                // Debug log removed for cleaner code, logic confirmed working
                 return conversation.assignedTo !== 'ai';
             })() && (
-                    <div className="bg-gray-800 px-4 py-2 flex items-center gap-4 border-b border-gray-700">
-                        <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2">
-                            <Paperclip size={20} />
-                            <span className="text-xs">Adjuntar</span>
+                    <div className="bg-gray-800 px-4 py-2 flex items-center gap-4 border-b border-gray-700 flex-wrap">
+                        {/* Attachments */}
+                        <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2" title="Adjuntar archivo">
+                            <Paperclip size={18} />
                             <input type="file" className="hidden" multiple onChange={handleFileAttach} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
                         </label>
+
+                        <div className="h-4 w-px bg-gray-700 mx-2"></div>
+
+                        {/* Tags Dropdown */}
+                        <div className="relative group">
+                            <button className="flex items-center gap-2 text-xs bg-gray-700 text-gray-300 px-3 py-1.5 rounded hover:bg-gray-600 transition-colors">
+                                <Tag size={14} />
+                                {conversation.tags && conversation.tags.length > 0 ? `${conversation.tags.length} Etiquetas` : 'Etiquetar'}
+                            </button>
+                            <div className="absolute top-full left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 hidden group-hover:block p-1">
+                                {[
+                                    { label: 'Nuevo', color: 'bg-blue-500', id: 'new' },
+                                    { label: 'Interesado', color: 'bg-orange-500', id: 'interested' },
+                                    { label: 'Cotización', color: 'bg-purple-500', id: 'quoted' },
+                                    { label: 'Seguimiento', color: 'bg-yellow-500', id: 'followup' },
+                                    { label: 'Ganado', color: 'bg-green-500', id: 'won' },
+                                    { label: 'Perdido', color: 'bg-red-500', id: 'lost' },
+                                    { label: 'Recurrente', color: 'bg-cyan-500', id: 'returning' },
+                                ].map((tag) => (
+                                    <button
+                                        key={tag.id}
+                                        onClick={async () => {
+                                            const currentTags = conversation.tags || [];
+                                            const newTags = currentTags.includes(tag.label)
+                                                ? currentTags.filter(t => t !== tag.label)
+                                                : [...currentTags, tag.label];
+
+                                            // Optimistic update
+                                            setConversation(prev => prev ? ({ ...prev, tags: newTags }) : null);
+
+                                            await fetch('/api/conversation/tags', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ conversationId, tags: newTags }),
+                                            });
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-xs rounded flex items-center justify-between hover:bg-gray-700 ${(conversation.tags || []).includes(tag.label) ? 'text-white font-medium' : 'text-gray-400'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${tag.color}`}></div>
+                                            {tag.label}
+                                        </div>
+                                        {(conversation.tags || []).includes(tag.label) && <Check size={12} />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Display Active Tags */}
+                        <div className="flex gap-1 overflow-x-auto max-w-[200px] no-scrollbar">
+                            {(conversation.tags || []).map(tag => {
+                                const colors: Record<string, string> = {
+                                    'Nuevo': 'bg-blue-900/50 text-blue-300 border-blue-800',
+                                    'Interesado': 'bg-orange-900/50 text-orange-300 border-orange-800',
+                                    'Cotización': 'bg-purple-900/50 text-purple-300 border-purple-800',
+                                    'Seguimiento': 'bg-yellow-900/50 text-yellow-300 border-yellow-800',
+                                    'Ganado': 'bg-green-900/50 text-green-300 border-green-800',
+                                    'Perdido': 'bg-red-900/50 text-red-300 border-red-800',
+                                    'Recurrente': 'bg-cyan-900/50 text-cyan-300 border-cyan-800',
+                                };
+                                return (
+                                    <span key={tag} className={`text-[10px] px-1.5 py-0.5 rounded border ${colors[tag] || 'bg-gray-700 text-gray-300'}`}>
+                                        {tag}
+                                    </span>
+                                );
+                            })}
+                        </div>
+
+                        <div className="flex-1"></div>
 
                         <button
                             onClick={handleResumeAI}
