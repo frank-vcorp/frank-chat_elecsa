@@ -58,6 +58,23 @@ async function callOpenAI(systemPrompt: string, userMsg: string): Promise<string
     return completion.choices[0].message?.content ?? '';
 }
 
+/** Generate a summary of the conversation */
+export async function generateConversationSummary(messages: { role: string; content: string }[]): Promise<string> {
+    const systemPrompt = `Eres un asistente experto en resumir conversaciones de atención al cliente.
+Tu objetivo es generar un resumen conciso (máximo 3 frases) que capture:
+1. El motivo principal de la consulta.
+2. La solución ofrecida o el estado final.
+3. Cualquier detalle crítico (ej. cliente enojado, venta cerrada).
+
+Formato: Texto plano, directo y profesional.`;
+
+    const conversationText = messages
+        .map(m => `${m.role === 'user' ? 'Cliente' : 'Agente'}: ${m.content}`)
+        .join('\n');
+
+    return callOpenAI(systemPrompt, conversationText);
+}
+
 /** Create a hand‑off alert and assign the conversation to a human */
 export async function handOffToHuman(conversationId: string, reason: string) {
     const convRef = db.doc(`conversations/${conversationId}`);

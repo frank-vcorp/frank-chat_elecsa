@@ -43,7 +43,14 @@
 - [✓] `task.md` - Lista de tareas actualizada
 - [✓] `implementation_plan.md` - Plan de implementación Fase 2
 - [✓] `walkthrough.md` - Guía de uso actualizada
-- [✓] `Checkpoints/CHK_2025-11-29_2200.md` - Checkpoint Fase 2 (Pendiente)
+- [✓] `Checkpoints/CHK_2025-11-29_2200.md` - Checkpoint Fase 2
+
+## Actualización SOFIA (2025-12-04)
+- [✓] Implementación de Automatización Faltante
+  - [✓] Resumen Automático con IA al cerrar conversación (`/api/conversation/close`)
+  - [✓] Endpoint para Cron Job de Cierre Automático (`/api/cron/close-inactive`)
+- [✓] Documentación de Pruebas
+  - [✓] Crear `TESTING.md` con instrucciones de validación manual
 
 ## Notas y Referencias
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
