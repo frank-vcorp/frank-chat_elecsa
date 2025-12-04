@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     try {
         const snapshot = await adminDb.collection('products').get();
         const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('[API/products] returning', products.length);
         return NextResponse.json(products);
     } catch (error) {
         console.error('Error fetching products:', error);
