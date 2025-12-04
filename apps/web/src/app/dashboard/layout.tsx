@@ -5,7 +5,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { MessageSquare, Settings, Users, Package, LogOut, Menu, X } from 'lucide-react';
+import { MessageSquare, Settings, Users, Package, LogOut, Menu, X, FileText } from 'lucide-react';
 
 export default function DashboardLayout({
     children,
@@ -44,6 +44,7 @@ export default function DashboardLayout({
 
     const navigation = [
         { name: 'Conversaciones', href: '/dashboard', icon: MessageSquare },
+        { name: 'Reportes', href: '/admin/reports', icon: FileText },
         { name: 'Productos', href: '/admin/products', icon: Package },
         { name: 'Agentes', href: '/admin/agents', icon: Users },
         { name: 'Configuración', href: '/admin/settings', icon: Settings },
