@@ -5,6 +5,7 @@ import { Upload, Trash2, Download } from 'lucide-react';
 
 interface Product {
     sku: string;
+    supplier?: string;
     description: string;
     price: number;
     currency: string;
@@ -18,6 +19,7 @@ export default function ProductsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [formData, setFormData] = useState<Partial<Product>>({
         sku: '',
+        supplier: '',
         description: '',
         price: 0,
         currency: 'USD',
@@ -51,7 +53,7 @@ export default function ProductsPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
-            setFormData({ sku: '', description: '', price: 0, currency: 'USD', status: 'active' });
+            setFormData({ sku: '', supplier: '', description: '', price: 0, currency: 'USD', status: 'active' });
             fetchProducts();
         } catch (error) {
             console.error('Failed to save product', error);
@@ -76,6 +78,7 @@ export default function ProductsPage() {
                 });
                 return {
                     sku: product.sku?.toUpperCase() || '',
+                    supplier: product.proveedor || product.supplier || '',
                     description: product.description || product.desc || '',
                     price: Number(product.price) || 0,
                     currency: product.currency || 'USD',
@@ -124,7 +127,7 @@ export default function ProductsPage() {
     };
 
     const downloadTemplate = () => {
-        const csv = 'sku,description,price,currency,status\nSOLAR-PANEL-X1,Panel Solar 450W,150,USD,active\nINVERSOR-5KW,Inversor 5kW,800,USD,active';
+        const csv = 'sku,proveedor,description,price,currency,status\nSOLAR-PANEL-X1,SolarTech,Panel Solar 450W,150,USD,active\nINVERSOR-5KW,PowerSystems,Inversor 5kW,800,USD,active';
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -186,6 +189,15 @@ export default function ProductsPage() {
                         />
                     </div>
                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Supplier</label>
+                        <input
+                            type="text"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                            value={formData.supplier}
+                            onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                        />
+                    </div>
+                    <div>
                         <label className="block text-sm font-medium text-gray-700">Description</label>
                         <input
                             type="text"
@@ -237,6 +249,7 @@ export default function ProductsPage() {
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -244,12 +257,13 @@ export default function ProductsPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr><td colSpan={4} className="p-4 text-center">Loading...</td></tr>
+                            <tr><td colSpan={5} className="p-4 text-center">Loading...</td></tr>
                         ) : products.length === 0 ? (
-                            <tr><td colSpan={4} className="p-4 text-center text-gray-500">No hay productos. Carga un archivo CSV o añade productos manualmente.</td></tr>
+                            <tr><td colSpan={5} className="p-4 text-center text-gray-500">No hay productos. Carga un archivo CSV o añade productos manualmente.</td></tr>
                         ) : products.map((product) => (
                             <tr key={product.sku}>
                                 <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{product.sku}</td>
+                                <td className="px-6 py-4 text-gray-500">{product.supplier}</td>
                                 <td className="px-6 py-4 text-gray-500">{product.description}</td>
                                 <td className="px-6 py-4 text-gray-500">${product.price} {product.currency}</td>
                                 <td className="px-6 py-4 text-gray-500">

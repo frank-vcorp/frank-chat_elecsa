@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
             const docRef = adminDb.collection('products').doc(product.sku);
             batch.set(docRef, {
                 sku: product.sku.toUpperCase(),
+                supplier: product.supplier || '',
                 description: product.description || '',
                 price: Number(product.price) || 0,
                 currency: product.currency || 'USD',
