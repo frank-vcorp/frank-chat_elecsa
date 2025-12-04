@@ -39,5 +39,21 @@ Herramientas para análisis y gestión histórica.
 - **Cierre Automático**: Las conversaciones asignadas a un humano se cierran automáticamente tras 30 minutos de inactividad del agente (si no hay nuevos mensajes).
 - **Reasignación**: Botones para "Retomar IA" (devolver a bot) o "Tomar Conversación" (asignar a humano).
 
-## 6. Accesibilidad
-- Todos los botones interactivos cuentan con etiquetas `aria-label` para compatibilidad con lectores de pantalla.
+## 6. Dashboard de Métricas en Tiempo Real
+Panel visual que aparece cuando no hay ninguna conversación seleccionada.
+- **Contadores en Vivo**:
+  - Conversaciones que requieren atención humana (Prioridad Alta).
+  - Total de chats activos.
+  - Distribución de carga (IA vs Humanos).
+- **Estado del Sistema**: Muestra mensajes sin leer y porcentaje de ocupación de la IA.
+
+## 7. Búsqueda Avanzada y Filtros
+Herramientas mejoradas para encontrar conversaciones específicas.
+- **Búsqueda de Texto**: Filtra por nombre del contacto.
+- **Filtros Avanzados** (Icono de Embudo):
+  - **Por Estado**: Todos, Solo Humanos, Solo IA.
+  - **Por Etiquetas**: Selecciona una o varias etiquetas para ver solo los chats que coincidan.
+
+## 8. Accesibilidad y Diseño
+- **Interfaz "Dark Glass"**: Nuevo diseño moderno con modo oscuro profundo y efectos de transparencia para reducir fatiga visual.
+- **Accesibilidad**: Todos los botones interactivos cuentan con etiquetas `aria-label`.
