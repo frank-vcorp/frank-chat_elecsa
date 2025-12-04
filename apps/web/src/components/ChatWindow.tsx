@@ -167,10 +167,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             {(() => {
                 console.log('DEBUG Toolbar:', {
                     assignedTo: conversation.assignedTo,
-                    shouldShow: conversation.assignedTo === 'human',
+                    shouldShow: conversation.assignedTo !== 'ai',
                     status: conversation.status
                 });
-                return conversation.assignedTo === 'human';
+                return conversation.assignedTo !== 'ai';
             })() && (
                     <div className="bg-gray-800 px-4 py-2 flex items-center gap-4 border-b border-gray-700">
                         <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2">
