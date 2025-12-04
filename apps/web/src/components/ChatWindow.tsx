@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { collection, query, onSnapshot, where, doc, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { Message, Conversation } from '@/lib/types';
-import { Send, Bot, User, Paperclip, Tag, Check, StickyNote } from 'lucide-react';
+import { Send, Bot, User, Paperclip, Tag, Check, StickyNote, FileText, Trash2 } from 'lucide-react';
 
 interface ChatWindowProps {
     conversationId: string;
@@ -20,6 +20,26 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     const [showNotes, setShowNotes] = useState(false);
     const [notes, setNotes] = useState<any[]>([]);
     const [newNote, setNewNote] = useState('');
+
+    // Templates State
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [showTemplates, setShowTemplates] = useState(false);
+
+    // Fetch Templates
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                const res = await fetch('/api/templates');
+                if (res.ok) {
+                    const data = await res.json();
+                    setTemplates(data);
+                }
+            } catch (e) {
+                console.error('Error fetching templates', e);
+            }
+        };
+        fetchTemplates();
+    }, []);
 
     // Fetch Notes
     useEffect(() => {
@@ -169,9 +189,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             alert('Failed to send message');
         }
     };
-
     const handleSaveNote = async () => {
-        if (!newNote.trim()) return;
+        if (!newNote.trim() || !conversationId) return;
+
         try {
             await fetch('/api/conversation/notes', {
                 method: 'POST',
@@ -179,14 +199,52 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 body: JSON.stringify({
                     conversationId,
                     content: newNote,
-                    authorId: 'agent' // TODO: Get real agent ID
+                    authorId: auth.currentUser?.uid || 'unknown',
                 }),
             });
             setNewNote('');
-        } catch (e) {
-            console.error('Error saving note', e);
+            if (typeof window !== 'undefined') {
+                import('react-hot-toast').then(({ toast }) => {
+                    toast.success('Nota guardada');
+                });
+            }
+        } catch (error) {
+            console.error('Error saving note:', error);
+            if (typeof window !== 'undefined') {
+                import('react-hot-toast').then(({ toast }) => {
+                    toast.error('Error al guardar nota');
+                });
+            }
         }
     };
+
+    const handleDeleteNote = async (noteId: string) => {
+        try {
+            await fetch(`/api/conversation/notes/${noteId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId }),
+            });
+            // Optimistically remove from UI
+            setNotes(prev => prev.filter(n => n.id !== noteId));
+            if (typeof window !== 'undefined') {
+                import('react-hot-toast').then(({ toast }) => {
+                    toast.success('Nota eliminada');
+                });
+            }
+        } catch (e) {
+            console.error('Error deleting note', e);
+            if (typeof window !== 'undefined') {
+                import('react-hot-toast').then(({ toast }) => {
+                    toast.error('Error al eliminar nota');
+                });
+            }
+        }
+    };
+
+    // Inside notes map (replace existing note JSX)
+    // We'll modify the note rendering block later.
+
 
     if (!conversation) return <div className="flex-1 flex items-center justify-center text-gray-400">Cargando...</div>;
 
@@ -219,6 +277,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                     onClick={() => setShowNotes(!showNotes)}
                     className={`p-2 rounded-lg transition-colors ${showNotes ? 'bg-yellow-900/50 text-yellow-400' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                     title="Notas Internas"
+                    aria-label="Alternar panel de notas internas"
                 >
                     <StickyNote size={20} />
                 </button>
@@ -242,12 +301,22 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                             </div>
                         ) : (
                             notes.map(note => (
-                                <div key={note.id} className="bg-gray-700/50 p-3 rounded-lg border border-gray-600">
-                                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{note.content}</p>
-                                    <div className="flex justify-between items-center mt-2 text-[10px] text-gray-400">
-                                        <span>{note.authorId}</span>
-                                        <span>{note.createdAt?.toDate().toLocaleString()}</span>
+                                <div key={note.id} className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex justify-between items-start">
+                                    <div className="flex-1 mr-2">
+                                        <p className="text-sm text-gray-200 whitespace-pre-wrap">{note.content}</p>
+                                        <div className="flex justify-between items-center mt-2 text-[10px] text-gray-400">
+                                            <span>{note.authorId}</span>
+                                            <span>{note.createdAt?.toDate().toLocaleString()}</span>
+                                        </div>
                                     </div>
+                                    <button
+                                        onClick={() => handleDeleteNote(note.id)}
+                                        className="text-red-400 hover:text-red-200"
+                                        title="Eliminar nota"
+                                        aria-label="Eliminar nota"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
                             ))
                         )}
@@ -259,26 +328,30 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                             onChange={(e) => setNewNote(e.target.value)}
                             placeholder="Escribe una nota..."
                             className="w-full bg-gray-700 text-white rounded-lg p-3 text-sm border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none h-24 mb-2"
+                            aria-label="Contenido de la nueva nota"
                         />
                         <button
                             onClick={handleSaveNote}
                             disabled={!newNote.trim()}
                             className="w-full bg-yellow-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Guardar nota"
                         >
                             Guardar Nota
                         </button>
                     </div>
-                </div>
-            )}
+                </div >
+            )
+            }
 
             {/* Toolbar (solo agentes humanos) */}
-            {(() => {
-                // Debug log removed for cleaner code, logic confirmed working
-                return conversation.assignedTo !== 'ai';
-            })() && (
+            {
+                (() => {
+                    // Debug log removed for cleaner code, logic confirmed working
+                    return conversation.assignedTo !== 'ai';
+                })() && (
                     <div className="bg-gray-800 px-4 py-2 flex items-center gap-4 border-b border-gray-700 flex-wrap">
                         {/* Attachments */}
-                        <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2" title="Adjuntar archivo">
+                        <label className="cursor-pointer text-gray-400 hover:text-gray-200 flex items-center gap-2" title="Adjuntar archivo" aria-label="Adjuntar archivo">
                             <Paperclip size={18} />
                             <input type="file" className="hidden" multiple onChange={handleFileAttach} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
                         </label>
@@ -287,7 +360,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
                         {/* Tags Dropdown */}
                         <div className="relative group">
-                            <button className="flex items-center gap-2 text-xs bg-gray-700 text-gray-300 px-3 py-1.5 rounded hover:bg-gray-600 transition-colors">
+                            <button
+                                className="flex items-center gap-2 text-xs bg-gray-700 text-gray-300 px-3 py-1.5 rounded hover:bg-gray-600 transition-colors"
+                                aria-label="Menú de etiquetas"
+                            >
                                 <Tag size={14} />
                                 {conversation.tags && conversation.tags.length > 0 ? `${conversation.tags.length} Etiquetas` : 'Etiquetar'}
                             </button>
@@ -320,6 +396,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                                         }}
                                         className={`w-full text-left px-3 py-2 text-xs rounded flex items-center justify-between hover:bg-gray-700 ${(conversation.tags || []).includes(tag.label) ? 'text-white font-medium' : 'text-gray-400'
                                             }`}
+                                        aria-label={`Etiqueta ${tag.label}`}
                                     >
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${tag.color}`}></div>
@@ -328,6 +405,34 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                                         {(conversation.tags || []).includes(tag.label) && <Check size={12} />}
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Templates Dropdown */}
+                        <div className="relative group">
+                            <button
+                                className="flex items-center gap-2 text-xs bg-gray-700 text-gray-300 px-3 py-1.5 rounded hover:bg-gray-600 transition-colors"
+                                aria-label="Plantillas de respuesta"
+                            >
+                                <FileText size={14} />
+                                Plantillas
+                            </button>
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 hidden group-hover:block p-1 max-h-64 overflow-y-auto">
+                                {templates.length === 0 ? (
+                                    <div className="p-2 text-xs text-gray-500 text-center">No hay plantillas</div>
+                                ) : (
+                                    templates.map((t) => (
+                                        <button
+                                            key={t.id}
+                                            onClick={() => setNewMessage(t.content)}
+                                            className="w-full text-left px-3 py-2 text-xs rounded hover:bg-gray-700 text-gray-300 hover:text-white"
+                                            title={t.content}
+                                        >
+                                            <div className="font-medium">{t.title}</div>
+                                            <div className="text-[10px] text-gray-500 truncate">{t.content}</div>
+                                        </button>
+                                    ))
+                                )}
                             </div>
                         </div>
 
@@ -356,6 +461,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         <button
                             onClick={handleResumeAI}
                             className="text-xs bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 transition-colors"
+                            aria-label="Retomar control por IA"
                         >
                             Retomar IA
                         </button>
@@ -364,6 +470,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                             <button
                                 onClick={handleCloseConversation}
                                 className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
+                                aria-label="Cerrar conversación"
                             >
                                 Cerrar
                             </button>
@@ -371,47 +478,52 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                             <button
                                 onClick={handleReopenConversation}
                                 className="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 transition-colors"
+                                aria-label="Reabrir conversación"
                             >
                                 Reabrir
                             </button>
                         )}
                     </div>
-                )}
+                )
+            }
 
             {/* Alert Bar */}
-            {(conversation.needsHuman || conversation.assignedTo === 'ai') && (
-                <div className={`px-4 py-3 flex justify-between items-center border-b animate-in slide-in-from-top ${conversation.needsHuman
-                    ? 'bg-red-900/20 border-red-900/50'
-                    : 'bg-blue-900/20 border-blue-900/50'
-                    }`}>
-                    <div className={`flex items-center gap-2 text-sm font-medium ${conversation.needsHuman ? 'text-red-400' : 'text-blue-400'
+            {
+                (conversation.needsHuman || conversation.assignedTo === 'ai') && (
+                    <div className={`px-4 py-3 flex justify-between items-center border-b animate-in slide-in-from-top ${conversation.needsHuman
+                        ? 'bg-red-900/20 border-red-900/50'
+                        : 'bg-blue-900/20 border-blue-900/50'
                         }`}>
-                        {conversation.needsHuman ? (
-                            <>
-                                <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
-                                </span>
-                                El usuario solicita atención humana
-                            </>
-                        ) : (
-                            <>
-                                <Bot size={16} />
-                                Conversación gestionada por IA
-                            </>
-                        )}
+                        <div className={`flex items-center gap-2 text-sm font-medium ${conversation.needsHuman ? 'text-red-400' : 'text-blue-400'
+                            }`}>
+                            {conversation.needsHuman ? (
+                                <>
+                                    <span className="relative flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                                    </span>
+                                    El usuario solicita atención humana
+                                </>
+                            ) : (
+                                <>
+                                    <Bot size={16} />
+                                    Conversación gestionada por IA
+                                </>
+                            )}
+                        </div>
+                        <button
+                            onClick={handleTakeConversation}
+                            className={`text-xs px-4 py-1.5 rounded-full shadow-sm transition-all font-medium ${conversation.needsHuman
+                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                                }`}
+                            aria-label="Tomar control de la conversación"
+                        >
+                            Tomar Conversación
+                        </button>
                     </div>
-                    <button
-                        onClick={handleTakeConversation}
-                        className={`text-xs px-4 py-1.5 rounded-full shadow-sm transition-all font-medium ${conversation.needsHuman
-                            ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
-                    >
-                        Tomar Conversación
-                    </button>
-                </div>
-            )}
+                )
+            }
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900">
@@ -447,21 +559,23 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Escribe un mensaje..."
                         className="flex-1 rounded-lg border-none py-2.5 px-4 focus:ring-0 focus:outline-none shadow-sm bg-gray-700 text-white placeholder-gray-400"
+                        aria-label="Escribir mensaje"
                     />
                     {newMessage.trim() ? (
                         <button
                             type="submit"
                             className="bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition-colors shadow-sm"
+                            aria-label="Enviar mensaje"
                         >
                             <Send size={20} />
                         </button>
                     ) : (
-                        <button type="button" className="text-gray-500 p-2.5">
+                        <button type="button" className="text-gray-500 p-2.5" aria-hidden="true">
                             <div className="w-5 h-5" />
                         </button>
                     )}
                 </form>
             </div>
-        </div>
+        </div >
     );
 }

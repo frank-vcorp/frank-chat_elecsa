@@ -1,9 +1,40 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to all documents for any user signed in to the application
+    // Only authenticated users can read/write any data
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Conversations collection
+    match /conversations/{conversationId} {
+      allow read, update, delete: if isSignedIn();
+      allow create: if isSignedIn();
+
+      // Allow updating tags, status, summary fields only by signed-in users
+      allow update: if isSignedIn() &&
+        (request.resource.data.keys().hasOnly(['tags', 'status', 'needsHuman', 'assignedTo', 'summary', 'summarizedAt', 'closedAt', 'reopenedAt']));
+
+      // Subcollection for notes (internal agent notes)
+      match /notes/{noteId} {
+        allow read, create, delete: if isSignedIn();
+        // Ensure note contains required fields
+        allow create: if isSignedIn() &&
+          request.resource.data.keys().hasAll(['content', 'authorId', 'createdAt']) &&
+          request.resource.data.content is string &&
+          request.resource.data.authorId is string;
+      }
+    }
+
+    // Templates collection for quick reply templates
+    match /templates/{templateId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Fallback: deny everything else
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
