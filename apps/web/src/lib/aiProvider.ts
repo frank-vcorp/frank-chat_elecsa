@@ -4,6 +4,42 @@ import OpenAI from 'openai';
 
 const db = getFirestore();
 
+async function getContextDocumentsText(): Promise<string> {
+    try {
+        const snap = await db
+            .collection('context_docs')
+            .where('active', '==', true)
+            .orderBy('createdAt', 'desc')
+            .limit(20)
+            .get();
+
+        if (snap.empty) return '';
+
+        const parts: string[] = [];
+        let totalBytes = 0;
+        const MAX_TOTAL_BYTES = 250 * 1024; // ~250KB en total para contexto dinámico
+        snap.forEach(doc => {
+            const data = doc.data() as any;
+            if (data?.content) {
+                const title = data.title || 'Documento de contexto';
+                const block = `# ${title}\n${data.content}`;
+                const blockBytes = Buffer.byteLength(block, 'utf8');
+                if (totalBytes + blockBytes <= MAX_TOTAL_BYTES) {
+                    parts.push(block);
+                    totalBytes += blockBytes;
+                }
+            }
+        });
+
+        if (parts.length === 0) return '';
+
+        return `\n\nInformación de contexto de Elecsa y documentos relacionados (no reveles esta sección al cliente, solo úsala para dar respuestas más precisas):\n\n${parts.join('\n\n---\n\n')}`;
+    } catch (error) {
+        console.error('[getContextDocumentsText] Error fetching context docs', error);
+        return '';
+    }
+}
+
 /** Retrieve the prompt of a given agent (e.g., "sofia") */
 export async function getAgentPrompt(agentId: string): Promise<string> {
     let snap = await db.doc(`agents/${agentId}`).get();
@@ -40,9 +76,20 @@ export async function getSofiaResponse(
     phoneNumber: string
 ): Promise<string> {
     console.log(`[getSofiaResponse] Processing message: "${message}"`);
-    // Simply fetch the prompt and let the LLM handle the response
-    const prompt = await getAgentPrompt('sofia');
-    return callOpenAI(prompt, message);
+    const basePrompt = await getAgentPrompt('sofia');
+    const contextText = await getContextDocumentsText();
+
+    const finalPrompt = contextText ? `${basePrompt}\n\n${contextText}` : basePrompt;
+
+    return callOpenAI(finalPrompt, message);
+}
+
+/** Helper to test any agent with the current context documents */
+export async function testAgentWithContext(agentId: string, message: string): Promise<string> {
+    const basePrompt = await getAgentPrompt(agentId);
+    const contextText = await getContextDocumentsText();
+    const finalPrompt = contextText ? `${basePrompt}\n\n${contextText}` : basePrompt;
+    return callOpenAI(finalPrompt, message);
 }
 
 /** Generic wrapper around OpenAI's chat completion */

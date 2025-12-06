@@ -1,7 +1,7 @@
 // src/app/admin/products/page.tsx
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, Trash2, Download } from 'lucide-react';
+import { Upload, Trash2, Download, FileText, X } from 'lucide-react';
 
 interface Product {
     sku: string;
@@ -17,6 +17,16 @@ export default function ProductsPage() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [contextDocs, setContextDocs] = useState<any[]>([]);
+    const [contextUploading, setContextUploading] = useState(false);
+    const contextFileInputRef = useRef<HTMLInputElement>(null);
+    const MAX_CONTEXT_DOC_SIZE_KB = 250;
+
+    const totalContextBytes = contextDocs.reduce((sum, doc) => sum + (typeof doc.size === 'number' ? doc.size : 0), 0);
+    const activeContextBytes = contextDocs
+        .filter((doc) => doc.active)
+        .reduce((sum, doc) => sum + (typeof doc.size === 'number' ? doc.size : 0), 0);
+    const activeCount = contextDocs.filter((doc) => doc.active).length;
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -37,7 +47,19 @@ export default function ProductsPage() {
 
     useEffect(() => {
         fetchProducts();
+        fetchContextDocs();
     }, []);
+
+    const fetchContextDocs = async () => {
+        try {
+            const res = await fetch('/api/context-docs');
+            if (!res.ok) throw new Error('Failed to fetch context docs');
+            const data = await res.json();
+            setContextDocs(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Failed to fetch context docs', error);
+        }
+    };
 
     const detectDelimiter = (line: string) => {
         const candidates = [',', ';', '\t', '|'];
@@ -191,6 +213,70 @@ export default function ProductsPage() {
         a.click();
     };
 
+    const handleContextFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.name.endsWith('.md') && !file.name.endsWith('.txt')) {
+            alert('Solo se permiten archivos .md o .txt');
+            return;
+        }
+
+        setContextUploading(true);
+        try {
+            const content = await file.text();
+            const sizeKb = Math.round((new Blob([content]).size / 1024) * 10) / 10;
+            if (sizeKb > MAX_CONTEXT_DOC_SIZE_KB) {
+                alert(`El documento es demasiado grande (${sizeKb} KB). Máximo permitido: ${MAX_CONTEXT_DOC_SIZE_KB} KB.`);
+                return;
+            }
+            const res = await fetch('/api/context-docs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: file.name, content, source: 'products-page' }),
+            });
+            if (!res.ok) {
+                throw new Error('Failed to upload context doc');
+            }
+            await fetchContextDocs();
+        } catch (error) {
+            console.error('Context upload error', error);
+            alert('Error al subir el documento de contexto');
+        } finally {
+            setContextUploading(false);
+            if (contextFileInputRef.current) contextFileInputRef.current.value = '';
+        }
+    };
+
+    const handleDeleteContextDoc = async (id: string) => {
+        if (!confirm('¿Eliminar este documento de contexto?')) return;
+        try {
+            const res = await fetch(`/api/context-docs?id=${encodeURIComponent(id)}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) throw new Error('Failed to delete context doc');
+            await fetchContextDocs();
+        } catch (error) {
+            console.error('Context delete error', error);
+            alert('Error al eliminar el documento de contexto');
+        }
+    };
+
+    const handleToggleActiveContextDoc = async (docId: string, currentActive: boolean) => {
+        try {
+            const res = await fetch('/api/context-docs', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: docId, active: !currentActive }),
+            });
+            if (!res.ok) throw new Error('Failed to update context doc');
+            await fetchContextDocs();
+        } catch (error) {
+            console.error('Context toggle error', error);
+            alert('Error al actualizar el estado del documento');
+        }
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
@@ -228,6 +314,91 @@ export default function ProductsPage() {
                 onChange={handleFileUpload}
                 className="hidden"
             />
+
+            <input
+                ref={contextFileInputRef}
+                type="file"
+                accept=".md,.txt"
+                onChange={handleContextFileUpload}
+                className="hidden"
+            />
+
+            {/* Context documents */}
+            <div className="bg-white rounded shadow mb-8 p-6">
+                <div className="flex justify-between items-start mb-4 gap-4">
+                    <div>
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                            <FileText size={18} /> Documentos de contexto para la IA
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Activos: {activeCount} / {contextDocs.length}{' '}
+                            · Tamaño activo aprox: {(activeContextBytes / 1024).toFixed(1)} KB
+                            {totalContextBytes > 0 && activeContextBytes !== totalContextBytes && (
+                                <>
+                                    {' '}· Total cargado: {(totalContextBytes / 1024).toFixed(1)} KB
+                                </>
+                            )}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => contextFileInputRef.current?.click()}
+                        disabled={contextUploading}
+                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50 text-sm"
+                    >
+                        <Upload size={16} />
+                        {contextUploading ? 'Subiendo...' : 'Subir .md / .txt'}
+                    </button>
+                </div>
+                {contextDocs.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                        No hay documentos de contexto cargados. Puedes subir archivos .md o .txt
+                        con información de referencia (por ejemplo, textos de la página de Elecsa)
+                        que Sofía usará como conocimiento base.
+                    </p>
+                ) : (
+                    <ul className="space-y-2">
+                        {contextDocs.map((doc) => (
+                            <li
+                                key={doc.id}
+                                className="flex items-center justify-between border rounded px-3 py-2 text-sm"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <FileText size={16} className="text-gray-500" />
+                                    <span className="font-medium">{doc.title}</span>
+                                    <span className="text-xs text-gray-400">
+                                        {doc.createdAt ? new Date(doc.createdAt).toLocaleString() : ''}
+                                        {typeof doc.size === 'number' && (
+                                            <>
+                                                {' '}· {(doc.size / 1024).toFixed(1)} KB
+                                            </>
+                                        )}
+                                    </span>
+                                    <span
+                                        className={`text-xs px-2 py-0.5 rounded-full ${doc.active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}
+                                    >
+                                        {doc.active ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </span>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => handleToggleActiveContextDoc(doc.id, !!doc.active)}
+                                        className="text-xs px-2 py-1 rounded border text-gray-700 hover:bg-gray-50"
+                                    >
+                                        {doc.active ? 'Desactivar' : 'Activar'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteContextDoc(doc.id)}
+                                        className="text-red-500 hover:text-red-700"
+                                        title="Eliminar documento"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
 
             {/* List */}
             <div className="bg-white rounded shadow overflow-hidden">
