@@ -1,7 +1,24 @@
 // src/app/admin/agents/page.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X } from 'lucide-react';
+import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X, MapPin } from 'lucide-react';
+import { BranchId } from '@/lib/types';
+
+// Nombres legibles de las sucursales
+const BRANCH_NAMES: Record<BranchId, string> = {
+    guadalajara: 'Guadalajara',
+    coahuila: 'Coahuila',
+    leon: 'León',
+    queretaro: 'Querétaro',
+    toluca: 'Toluca',
+    monterrey: 'Monterrey',
+    centro: 'CDMX Centro',
+    armas: 'CDMX Armas',
+    veracruz: 'Veracruz',
+    slp: 'San Luis Potosí',
+    puebla: 'Puebla',
+    general: 'General (Todas)',
+};
 
 interface Agent {
     id: string;
@@ -11,6 +28,7 @@ interface Agent {
     type: 'human' | 'ai';
     prompt?: string;
     active?: boolean;
+    branch?: BranchId;
 }
 
 export default function AgentsPage() {
@@ -29,6 +47,7 @@ export default function AgentsPage() {
         password: '',
         role: 'agent',
         type: 'human' as 'human' | 'ai',
+        branch: 'general' as BranchId,
     });
 
     const fetchAgents = () => {
@@ -92,7 +111,7 @@ export default function AgentsPage() {
             if (res.ok) {
                 alert('✅ Agente creado correctamente');
                 setShowCreateModal(false);
-                setFormData({ name: '', email: '', password: '', role: 'agent', type: 'human' });
+                setFormData({ name: '', email: '', password: '', role: 'agent', type: 'human', branch: 'general' });
                 fetchAgents();
             } else {
                 alert(`❌ ${data.error || 'Error al crear agente'}`);
@@ -210,8 +229,12 @@ export default function AgentsPage() {
                                             <Bot size={16} className={agent.type === 'ai' ? 'text-purple-600' : 'text-blue-600'} />
                                             <div>
                                                 <div className="font-semibold">{agent.name}</div>
-                                                <div className="text-xs text-gray-500 capitalize">{agent.type} - {agent.role}</div>
-                                            </div>
+                                                <div className="text-xs text-gray-500 capitalize">{agent.type} - {agent.role}</div>                                                {agent.branch && agent.branch !== 'general' && (
+                                                    <div className="text-xs text-teal-600 flex items-center gap-1 mt-0.5">
+                                                        <MapPin size={10} />
+                                                        {BRANCH_NAMES[agent.branch]}
+                                                    </div>
+                                                )}                                            </div>
                                         </div>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleDeleteAgent(agent.id); }}
@@ -359,8 +382,27 @@ export default function AgentsPage() {
                                             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                         >
                                             <option value="agent">Agente</option>
-                                            <option value="administrator">Administrador</option>
+                                            <option value="supervisor">Supervisor</option>
+                                            <option value="admin">Administrador</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                                            <MapPin size={14} className="text-teal-600" />
+                                            Sucursal
+                                        </label>
+                                        <select
+                                            className="w-full border rounded p-2"
+                                            value={formData.branch}
+                                            onChange={(e) => setFormData({ ...formData, branch: e.target.value as BranchId })}
+                                        >
+                                            {Object.entries(BRANCH_NAMES).map(([id, name]) => (
+                                                <option key={id} value={id}>{name}</option>
+                                            ))}
+                                        </select>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            El agente solo verá conversaciones de esta sucursal
+                                        </p>
                                     </div>
                                 </>
                             )}
