@@ -4,6 +4,52 @@ import OpenAI from 'openai';
 
 const db = getFirestore();
 
+/**
+ * Obtiene el catálogo de productos activos de Firestore y lo formatea
+ * como texto para inyectarlo al prompt de Sofía.
+ * Formato optimizado para que la IA pueda buscar por SKU o descripción.
+ */
+async function getProductsCatalogText(): Promise<string> {
+    try {
+        const snap = await db
+            .collection('products')
+            .where('status', '==', 'active')
+            .get();
+
+        if (snap.empty) return '';
+
+        const products: string[] = [];
+        let totalBytes = 0;
+        const MAX_TOTAL_BYTES = 150 * 1024; // ~150KB para catálogo de productos
+
+        snap.forEach(doc => {
+            const p = doc.data() as any;
+            if (p?.sku) {
+                // Formato: SKU | Descripción | Precio | Moneda | Proveedor
+                const line = `- ${p.sku} | ${p.description || 'Sin descripción'} | ${p.price || 0} | ${p.currency || 'MXN'} | ${p.supplier || ''}`;
+                const lineBytes = Buffer.byteLength(line, 'utf8');
+                if (totalBytes + lineBytes <= MAX_TOTAL_BYTES) {
+                    products.push(line);
+                    totalBytes += lineBytes;
+                }
+            }
+        });
+
+        if (products.length === 0) return '';
+
+        console.log(`[getProductsCatalogText] Loaded ${products.length} products (~${Math.round(totalBytes / 1024)}KB)`);
+
+        return `\n\n## CATÁLOGO DE PRODUCTOS ELECSA (${products.length} productos activos)
+Formato: SKU | Descripción | Precio orientativo | Moneda | Proveedor
+IMPORTANTE: Estos precios son orientativos y pueden variar. Siempre menciona "más IVA" y "precio orientativo".
+
+${products.join('\n')}`;
+    } catch (error) {
+        console.error('[getProductsCatalogText] Error fetching products', error);
+        return '';
+    }
+}
+
 async function getContextDocumentsText(): Promise<string> {
     try {
         const snap = await db
@@ -76,19 +122,42 @@ export async function getSofiaResponse(
     phoneNumber: string
 ): Promise<string> {
     console.log(`[getSofiaResponse] Processing message: "${message}"`);
-    const basePrompt = await getAgentPrompt('sofia');
-    const contextText = await getContextDocumentsText();
+    
+    // Cargar en paralelo para mejor performance
+    const [basePrompt, contextText, productsText] = await Promise.all([
+        getAgentPrompt('sofia'),
+        getContextDocumentsText(),
+        getProductsCatalogText(),
+    ]);
 
-    const finalPrompt = contextText ? `${basePrompt}\n\n${contextText}` : basePrompt;
+    // Construir prompt final: base + catálogo de productos + documentos de contexto
+    let finalPrompt = basePrompt;
+    if (productsText) {
+        finalPrompt += productsText;
+    }
+    if (contextText) {
+        finalPrompt += contextText;
+    }
 
     return callOpenAI(finalPrompt, message);
 }
 
-/** Helper to test any agent with the current context documents */
+/** Helper to test any agent with the current context documents AND products catalog */
 export async function testAgentWithContext(agentId: string, message: string): Promise<string> {
-    const basePrompt = await getAgentPrompt(agentId);
-    const contextText = await getContextDocumentsText();
-    const finalPrompt = contextText ? `${basePrompt}\n\n${contextText}` : basePrompt;
+    const [basePrompt, contextText, productsText] = await Promise.all([
+        getAgentPrompt(agentId),
+        getContextDocumentsText(),
+        getProductsCatalogText(),
+    ]);
+
+    let finalPrompt = basePrompt;
+    if (productsText) {
+        finalPrompt += productsText;
+    }
+    if (contextText) {
+        finalPrompt += contextText;
+    }
+
     return callOpenAI(finalPrompt, message);
 }
 

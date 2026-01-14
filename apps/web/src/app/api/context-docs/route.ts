@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/app/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 
 const COLLECTION = 'context_docs';
 

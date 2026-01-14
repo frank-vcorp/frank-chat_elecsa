@@ -52,5 +52,13 @@
 - [✓] Documentación de Pruebas
   - [✓] Crear `TESTING.md` con instrucciones de validación manual
 
+## Actualización SOFIA (2026-01-14) - Integración Catálogo Dinámico
+- [✓] Inyección de Catálogo de Productos al Prompt de Sofía
+  - [✓] Nueva función `getProductsCatalogText()` en `aiProvider.ts`
+  - [✓] Modificar `getSofiaResponse()` para incluir productos activos
+  - [✓] Modificar `testAgentWithContext()` para incluir productos en pruebas
+  - [✓] Formato: `SKU | Descripción | Precio | Moneda | Proveedor`
+- [✓] Checkpoint: `Checkpoints/CHK_2026-01-14_SOFIA_CATALOGO.md`
+
 ## Notas y Referencias
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
