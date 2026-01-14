@@ -191,17 +191,58 @@ Formato: Texto plano, directo y profesional.`;
     return callOpenAI(systemPrompt, conversationText);
 }
 
-/** Create a hand‑off alert and assign the conversation to a human */
-export async function handOffToHuman(conversationId: string, reason: string) {
+// Configuración de sucursales y mapeo de ciudades
+const BRANCHES_CONFIG: Record<string, { cities: string[] }> = {
+    guadalajara: { cities: ['guadalajara', 'gdl', 'zapopan', 'tlaquepaque', 'tonala', 'tlajomulco', 'jalisco'] },
+    coahuila: { cities: ['saltillo', 'torreon', 'monclova', 'piedras negras', 'coahuila', 'acuña', 'sabinas'] },
+    leon: { cities: ['leon', 'guanajuato', 'irapuato', 'celaya', 'salamanca', 'silao'] },
+    queretaro: { cities: ['queretaro', 'qro', 'san juan del rio', 'corregidora', 'el marques'] },
+    toluca: { cities: ['toluca', 'metepec', 'zinacantepec', 'estado de mexico', 'edomex', 'lerma'] },
+    monterrey: { cities: ['monterrey', 'mty', 'san pedro', 'apodaca', 'guadalupe', 'san nicolas', 'santa catarina', 'nuevo leon'] },
+    centro: { cities: ['cdmx centro', 'centro historico', 'cuauhtemoc', 'venustiano carranza', 'benito juarez'] },
+    armas: { cities: ['cdmx', 'ciudad de mexico', 'mexico df', 'df', 'azcapotzalco', 'miguel hidalgo', 'gustavo a madero'] },
+    veracruz: { cities: ['veracruz', 'xalapa', 'boca del rio', 'coatzacoalcos', 'poza rica', 'cordoba', 'orizaba'] },
+    slp: { cities: ['san luis potosi', 'slp', 'soledad', 'matehuala', 'ciudad valles'] },
+    puebla: { cities: ['puebla', 'cholula', 'atlixco', 'tehuacan', 'san andres cholula'] }
+};
+
+/** Detecta la sucursal basándose en una ciudad mencionada */
+export function detectBranchByCity(cityText: string): string | null {
+    const normalized = cityText.toLowerCase().trim();
+    
+    for (const [branchId, config] of Object.entries(BRANCHES_CONFIG)) {
+        for (const city of config.cities) {
+            if (normalized.includes(city) || city.includes(normalized)) {
+                return branchId;
+            }
+        }
+    }
+    
+    return null;
+}
+
+/** Create a hand‑off alert and assign the conversation to a human/branch */
+export async function handOffToHuman(conversationId: string, reason: string, detectedCity?: string) {
     const convRef = db.doc(`conversations/${conversationId}`);
-    await convRef.update({ assignedTo: 'human', needsHuman: true });
+    
+    // Detectar sucursal por ciudad si se proporciona
+    const branch = detectedCity ? detectBranchByCity(detectedCity) : null;
+    
+    await convRef.update({ 
+        assignedTo: branch || 'human',  // Sucursal específica o "human" genérico
+        needsHuman: true,
+        branch: branch || 'general',    // Para filtrar en el dashboard
+    });
 
     await db.collection('alerts').add({
         convId: conversationId,
         type: 'handOff',
         message: reason,
+        branch: branch || 'general',
         createdAt: FieldValue.serverTimestamp(),
     });
+    
+    console.log(`[handOffToHuman] Conversation ${conversationId} assigned to branch: ${branch || 'general'}`);
 }
 
 /** Helper to create / update a product (used by admin UI) */

@@ -60,5 +60,21 @@
   - [✓] Formato: `SKU | Descripción | Precio | Moneda | Proveedor`
 - [✓] Checkpoint: `Checkpoints/CHK_2026-01-14_SOFIA_CATALOGO.md`
 
+## Actualización SOFIA (2025-01-15) - Sistema de Routing por Sucursales
+- [✓] Routing Automático de Conversaciones por Sucursal
+  - [✓] Tipo `BranchId` con 11 sucursales de ELECSA
+  - [✓] `detectBranchByCity()` mapea ciudades a sucursales
+  - [✓] `handOffToHuman()` ahora asigna sucursal automáticamente
+  - [✓] Detección de escalación en webhook (`[SEMÁFORO: ROJO]`)
+- [✓] Filtrado de Dashboard por Sucursal
+  - [✓] `AuthContext` con información del agente logueado
+  - [✓] `ChatList` filtra por `branch` del agente
+  - [✓] Supervisores pueden ver todas las sucursales
+  - [✓] Badge visual de sucursal en cada conversación
+- [✓] API de Agentes con soporte de sucursal
+  - [✓] Campo `branch` al crear agentes humanos
+- [ ] Pendiente: Crear agente de prueba (Ana Díaz → Querétaro)
+- [✓] Checkpoint: `Checkpoints/CHK_2025-01-15_BRANCH_ROUTING.md`
+
 ## Notas y Referencias
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)

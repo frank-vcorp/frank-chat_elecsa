@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { id, name, email, password, role, type, prompt } = await request.json();
+        const { id, name, email, password, role, type, prompt, branch } = await request.json();
 
         // If creating a human agent, create in Firebase Auth first
         if (type === 'human' && email && password) {
@@ -32,11 +32,12 @@ export async function POST(request: NextRequest) {
                     email,
                     role: role || 'agent',
                     type: 'human',
+                    branch: branch || 'general', // Sucursal del agente
                     active: true,
                     createdAt: new Date().toISOString(),
                 });
 
-                return NextResponse.json({ success: true, id: userRecord.uid });
+                return NextResponse.json({ success: true, id: userRecord.uid, branch });
             } catch (authError: any) {
                 console.error('Auth error:', authError);
                 return NextResponse.json({
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
             if (prompt !== undefined) updateData.prompt = prompt;
             if (name) updateData.name = name;
             if (role) updateData.role = role;
+            if (branch) updateData.branch = branch;
 
             await adminDb.collection('agents').doc(id).update(updateData);
             return NextResponse.json({ success: true });

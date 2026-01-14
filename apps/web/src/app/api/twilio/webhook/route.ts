@@ -2,8 +2,38 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Message, Conversation, Contact } from '@/lib/types';
-import { getSofiaResponse } from '@/lib/aiProvider';
+import { getSofiaResponse, handOffToHuman, detectBranchByCity } from '@/lib/aiProvider';
 import { sendWhatsAppMessage } from '@/lib/twilio';
+
+/** Detecta si Sofia indica escalación a humano (semáforo rojo) */
+function detectEscalation(response: string): boolean {
+    const escalationPatterns = [
+        /\[SEMÁFORO:\s*ROJO\]/i,
+        /transferir.*asesor/i,
+        /comunic.*humano/i,
+        /escalando.*conversación/i,
+    ];
+    return escalationPatterns.some(pattern => pattern.test(response));
+}
+
+/** Extrae menciones de ciudades en el mensaje del usuario o historial */
+function extractCityMention(text: string): string | null {
+    // Lista de ciudades/términos a detectar (ordenadas por especificidad)
+    const cityPatterns = [
+        'san luis potosi', 'san juan del rio', 'ciudad de mexico', 'cdmx',
+        'guadalajara', 'monterrey', 'queretaro', 'toluca', 'puebla',
+        'veracruz', 'leon', 'saltillo', 'torreon', 'coahuila',
+        'jalisco', 'nuevo leon', 'guanajuato', 'slp'
+    ];
+    
+    const normalized = text.toLowerCase();
+    for (const city of cityPatterns) {
+        if (normalized.includes(city)) {
+            return city;
+        }
+    }
+    return null;
+}
 
 /**
  * Twilio webhook endpoint for incoming WhatsApp messages.
@@ -160,6 +190,25 @@ export async function POST(request: NextRequest) {
                     lastMessage: sofiaReply,
                     lastMessageAt: FieldValue.serverTimestamp(),
                 });
+
+                // --------------------------------------------------------------
+                // 5.1 Detect escalation and route to correct branch
+                // --------------------------------------------------------------
+                if (detectEscalation(sofiaReply)) {
+                    console.log('[Webhook] Escalation detected, routing to human agent');
+                    
+                    // Try to detect city from user's message or sofia's reply
+                    const detectedCity = extractCityMention(body) || extractCityMention(sofiaReply);
+                    const branch = detectedCity ? detectBranchByCity(detectedCity) : null;
+                    
+                    console.log(`[Webhook] Detected city: ${detectedCity}, Branch: ${branch}`);
+                    
+                    await handOffToHuman(
+                        conversationId,
+                        `Sofia escaló la conversación. Ciudad detectada: ${detectedCity || 'no detectada'}`,
+                        detectedCity || undefined
+                    );
+                }
             } else {
                 console.log('[Webhook] AI did not generate a reply.');
             }

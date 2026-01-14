@@ -1,13 +1,20 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type Role = 'admin' | 'agent' | 'ai';
+export type Role = 'admin' | 'supervisor' | 'agent' | 'ai';
 export type AgentStatus = 'online' | 'offline' | 'busy';
+
+// Sucursales de ELECSA
+export type BranchId = 
+    | 'guadalajara' | 'coahuila' | 'leon' | 'queretaro' | 'toluca'
+    | 'monterrey' | 'centro' | 'armas' | 'veracruz' | 'slp' | 'puebla'
+    | 'general'; // Para agentes que ven todas las sucursales
 
 export interface Agent {
     id: string;
     name: string;
     email: string;
     role: Role;
+    branch?: BranchId;  // Sucursal asignada al agente
     avatarUrl?: string;
     isOnline: boolean;
 }
@@ -25,7 +32,8 @@ export type ConversationStatus = 'open' | 'resolved' | 'pending' | 'closed';
 export interface Conversation {
     id: string;
     contactId: string;
-    assignedTo?: string; // Agent ID
+    assignedTo?: string; // Agent ID or 'ai' or 'human'
+    branch?: BranchId;   // Sucursal detectada para routing
     status: ConversationStatus;
     lastMessage: string;
     lastMessageAt: Timestamp;

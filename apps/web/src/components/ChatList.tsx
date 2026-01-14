@@ -3,8 +3,25 @@
 import { useEffect, useState } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Conversation } from '@/lib/types';
-import { Search, User, Clock, Filter, X } from 'lucide-react';
+import { Conversation, BranchId } from '@/lib/types';
+import { useAuth } from '@/lib/AuthContext';
+import { Search, User, Clock, Filter, X, MapPin } from 'lucide-react';
+
+// Nombres legibles de sucursales
+const BRANCH_NAMES: Record<BranchId, string> = {
+    guadalajara: 'Guadalajara',
+    coahuila: 'Coahuila',
+    leon: 'León',
+    queretaro: 'Querétaro',
+    toluca: 'Toluca',
+    monterrey: 'Monterrey',
+    centro: 'CDMX Centro',
+    armas: 'CDMX Armas',
+    veracruz: 'Veracruz',
+    slp: 'San Luis Potosí',
+    puebla: 'Puebla',
+    general: 'General',
+};
 
 interface ChatListProps {
     onSelectConversation: (conversationId: string) => void;
@@ -12,11 +29,13 @@ interface ChatListProps {
 }
 
 export default function ChatList({ onSelectConversation, selectedConversationId }: ChatListProps) {
+    const { branch, isSupervisor, isAdmin } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [filterTags, setFilterTags] = useState<string[]>([]);
     const [filterStatus, setFilterStatus] = useState<'all' | 'human' | 'ai'>('all');
+    const [filterBranch, setFilterBranch] = useState<BranchId | 'all'>('all');
 
     useEffect(() => {
         const q = query(collection(db, 'conversations'), orderBy('lastMessageAt', 'desc'));
@@ -39,8 +58,20 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
             : filterStatus === 'human'
                 ? c.assignedTo !== 'ai'
                 : c.assignedTo === 'ai';
+        
+        // Filtro por sucursal:
+        // - Admin/Supervisor: ve todas o puede filtrar por sucursal
+        // - Agente normal: solo ve conversaciones de su sucursal + las genéricas
+        let matchesBranch = true;
+        if (isSupervisor || isAdmin) {
+            // Supervisores pueden filtrar manualmente
+            matchesBranch = filterBranch === 'all' || c.branch === filterBranch || !c.branch;
+        } else if (branch) {
+            // Agentes normales solo ven su sucursal + general (sin sucursal asignada)
+            matchesBranch = c.branch === branch || c.branch === 'general' || !c.branch;
+        }
 
-        return matchesSearch && matchesTags && matchesStatus;
+        return matchesSearch && matchesTags && matchesStatus && matchesBranch;
     });
 
     const toggleTagFilter = (tag: string) => {
@@ -90,9 +121,9 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                     <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 animate-in slide-in-from-top-2 fade-in duration-200">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-xs font-semibold text-slate-400">Filtrar por Estado</span>
-                            {(filterTags.length > 0 || filterStatus !== 'all') && (
+                            {(filterTags.length > 0 || filterStatus !== 'all' || filterBranch !== 'all') && (
                                 <button
-                                    onClick={() => { setFilterTags([]); setFilterStatus('all'); }}
+                                    onClick={() => { setFilterTags([]); setFilterStatus('all'); setFilterBranch('all'); }}
                                     className="text-[10px] text-rose-400 hover:text-rose-300 flex items-center gap-1"
                                 >
                                     <X size={10} /> Limpiar
@@ -117,6 +148,25 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                                 </button>
                             ))}
                         </div>
+
+                        {/* Filtro por Sucursal (solo para supervisores/admins) */}
+                        {(isSupervisor || isAdmin) && (
+                            <div className="mb-4">
+                                <span className="text-xs font-semibold text-slate-400 block mb-2 flex items-center gap-1">
+                                    <MapPin size={12} /> Filtrar por Sucursal
+                                </span>
+                                <select
+                                    value={filterBranch}
+                                    onChange={(e) => setFilterBranch(e.target.value as BranchId | 'all')}
+                                    className="w-full py-1.5 px-2 text-xs rounded-lg border bg-slate-800 text-slate-300 border-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                >
+                                    <option value="all">Todas las sucursales</option>
+                                    {Object.entries(BRANCH_NAMES).map(([id, name]) => (
+                                        id !== 'general' && <option key={id} value={id}>{name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         <div className="mb-1">
                             <span className="text-xs font-semibold text-slate-400 block mb-2">Filtrar por Etiquetas</span>
@@ -202,6 +252,16 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                                                 </span>
                                             );
                                         })}
+                                    </div>
+                                )}
+
+                                {/* Branch Badge */}
+                                {conv.branch && conv.branch !== 'general' && (
+                                    <div className="mt-2">
+                                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/20 flex items-center gap-1 w-fit">
+                                            <MapPin size={10} />
+                                            {BRANCH_NAMES[conv.branch] || conv.branch}
+                                        </span>
                                     </div>
                                 )}
                             </div>
