@@ -45,7 +45,7 @@ export interface Conversation {
 }
 
 export type SenderType = 'agent' | 'contact' | 'system';
-export type ContentType = 'text' | 'image' | 'file';
+export type ContentType = 'text' | 'image' | 'file' | 'video' | 'audio' | 'document';
 export type MessageStatus = 'sent' | 'delivered' | 'read';
 
 export interface Message {

@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { collection, query, onSnapshot, where, doc, orderBy } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, db, storage } from '@/lib/firebase';
 import { Message, Conversation } from '@/lib/types';
 import { useAuth } from '@/lib/AuthContext';
-import { Send, Bot, User, Paperclip, Tag, Check, StickyNote, FileText, Trash2, Smile, Zap, MessageSquare, X } from 'lucide-react';
+import { Send, Bot, User, Paperclip, Tag, Check, StickyNote, FileText, Trash2, Smile, Zap, MessageSquare, X, Image, File, Loader2 } from 'lucide-react';
 
 interface ChatWindowProps {
     conversationId: string;
@@ -18,6 +19,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     const [newMessage, setNewMessage] = useState('');
     const [showQuickReplies, setShowQuickReplies] = useState(false);
     const [sending, setSending] = useState(false);
+    const [attachedFile, setAttachedFile] = useState<File | null>(null);
+    const [attachedFilePreview, setAttachedFilePreview] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -123,9 +127,54 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            console.log('Archivos adjuntos:', Array.from(files).map((f) => f.name));
+            const file = files[0];
+            
+            // Validar tipo de archivo
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'video/mp4'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Tipo de archivo no soportado. Solo se permiten imágenes (JPG, PNG, GIF, WebP), PDF y videos MP4.');
+                e.target.value = '';
+                return;
+            }
+            
+            // Validar tamaño (máximo 16MB para WhatsApp)
+            if (file.size > 16 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 16MB.');
+                e.target.value = '';
+                return;
+            }
+            
+            setAttachedFile(file);
+            
+            // Crear preview para imágenes
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setAttachedFilePreview(event.target?.result as string);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                setAttachedFilePreview(null);
+            }
+            
             e.target.value = '';
         }
+    };
+
+    const removeAttachedFile = () => {
+        setAttachedFile(null);
+        setAttachedFilePreview(null);
+    };
+
+    const uploadFileToStorage = async (file: File): Promise<string> => {
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filePath = `chat-attachments/${conversationId}/${timestamp}_${safeName}`;
+        const storageRef = ref(storage, filePath);
+        
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+        return downloadUrl;
     };
 
     const handleCloseConversation = async () => {
@@ -208,21 +257,50 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || sending) return;
+        
+        // Permitir envío si hay mensaje O archivo adjunto
+        if ((!newMessage.trim() && !attachedFile) || sending) return;
 
         setSending(true);
+        setUploading(!!attachedFile);
+        
         try {
+            let mediaUrl: string | undefined;
+            let mediaType: string | undefined;
+            
+            // Si hay archivo adjunto, primero subirlo
+            if (attachedFile) {
+                try {
+                    mediaUrl = await uploadFileToStorage(attachedFile);
+                    mediaType = attachedFile.type;
+                } catch (uploadError) {
+                    console.error('Error uploading file:', uploadError);
+                    alert('Error al subir el archivo. Intenta de nuevo.');
+                    setSending(false);
+                    setUploading(false);
+                    return;
+                }
+            }
+            
             const response = await fetch('/api/chat/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     conversationId,
-                    content: newMessage,
+                    content: newMessage.trim() || (attachedFile ? `📎 ${attachedFile.name}` : ''),
+                    mediaUrl,
+                    mediaType,
                 }),
             });
 
-            if (!response.ok) throw new Error('Failed to send message');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to send message');
+            }
+            
             setNewMessage('');
+            setAttachedFile(null);
+            setAttachedFilePreview(null);
             setShowQuickReplies(false);
             inputRef.current?.focus();
         } catch (error) {
@@ -230,6 +308,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             alert('Error al enviar mensaje');
         } finally {
             setSending(false);
+            setUploading(false);
         }
     };
 
@@ -598,7 +677,49 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                                     ? 'bg-gradient-to-br from-indigo-600 to-blue-600 text-white rounded-tr-sm shadow-indigo-900/20'
                                     : 'bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700/50'
                                 }`}>
-                                <p className="whitespace-pre-wrap">{msg.content}</p>
+                                {/* Renderizar media si existe */}
+                                {msg.mediaUrl && (
+                                    <div className="mb-2">
+                                        {msg.contentType === 'image' ? (
+                                            <a href={msg.mediaUrl} target="_blank" rel="noopener noreferrer">
+                                                <img 
+                                                    src={msg.mediaUrl} 
+                                                    alt="Imagen adjunta" 
+                                                    className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                                    style={{ maxHeight: '300px' }}
+                                                />
+                                            </a>
+                                        ) : msg.contentType === 'video' ? (
+                                            <video 
+                                                src={msg.mediaUrl} 
+                                                controls 
+                                                className="max-w-full rounded-lg"
+                                                style={{ maxHeight: '300px' }}
+                                            />
+                                        ) : msg.contentType === 'document' ? (
+                                            <a 
+                                                href={msg.mediaUrl} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? 'bg-indigo-700/50 hover:bg-indigo-700/70' : 'bg-slate-700/50 hover:bg-slate-700/70'} transition-colors`}
+                                            >
+                                                <FileText size={24} className={isMe ? 'text-indigo-200' : 'text-red-400'} />
+                                                <span className="text-sm underline">Ver documento PDF</span>
+                                            </a>
+                                        ) : (
+                                            <a 
+                                                href={msg.mediaUrl} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? 'bg-indigo-700/50 hover:bg-indigo-700/70' : 'bg-slate-700/50 hover:bg-slate-700/70'} transition-colors`}
+                                            >
+                                                <File size={24} />
+                                                <span className="text-sm underline">Ver archivo</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
+                                {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
                                 <div className={`flex items-center gap-1 mt-1.5 ${isMe ? 'justify-end text-indigo-200/70' : 'justify-start text-slate-500'}`}>
                                     <span className="text-[10px] font-medium">
                                         {msg.createdAt?.toDate().toLocaleTimeString('es-MX', {
@@ -648,6 +769,50 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 )}
 
                 {/* Preview del mensaje (si hay texto) */}
+                {/* Vista previa de archivo adjunto */}
+                {attachedFile && (
+                    <div className="mb-2 px-3 py-2 bg-emerald-600/10 border border-emerald-500/30 rounded-lg">
+                        <div className="flex items-center gap-3">
+                            {attachedFilePreview ? (
+                                <img 
+                                    src={attachedFilePreview} 
+                                    alt="Preview" 
+                                    className="w-12 h-12 object-cover rounded-lg border border-emerald-500/30"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center">
+                                    {attachedFile.type === 'application/pdf' ? (
+                                        <FileText size={24} className="text-red-400" />
+                                    ) : attachedFile.type.startsWith('video/') ? (
+                                        <File size={24} className="text-purple-400" />
+                                    ) : (
+                                        <File size={24} className="text-slate-400" />
+                                    )}
+                                </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm text-emerald-300 font-medium truncate">{attachedFile.name}</p>
+                                <p className="text-xs text-slate-500">{(attachedFile.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={removeAttachedFile}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                title="Quitar archivo"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        {uploading && (
+                            <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400">
+                                <Loader2 size={12} className="animate-spin" />
+                                Subiendo archivo...
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Vista previa del mensaje */}
                 {newMessage.trim() && (
                     <div className="mb-2 px-3 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-lg text-xs text-indigo-300">
                         <span className="text-indigo-400 font-medium">Vista previa: </span>
@@ -676,9 +841,18 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         >
                             <FileText size={16} />
                         </button>
-                        <label className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer" title="Adjuntar">
+                        <label className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            attachedFile 
+                                ? 'bg-emerald-500/20 text-emerald-400' 
+                                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+                        }`} title="Adjuntar archivo (imagen, PDF, video)">
                             <Paperclip size={16} />
-                            <input type="file" className="hidden" multiple onChange={handleFileAttach} />
+                            <input 
+                                type="file" 
+                                className="hidden" 
+                                onChange={handleFileAttach}
+                                accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,video/mp4"
+                            />
                         </label>
                         
                         <div className="flex-1" />
@@ -702,9 +876,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         />
                         <button
                             type="submit"
-                            disabled={!newMessage.trim() || sending}
+                            disabled={(!newMessage.trim() && !attachedFile) || sending}
                             className={`p-2.5 rounded-xl transition-all shadow-md ${
-                                newMessage.trim() && !sending
+                                (newMessage.trim() || attachedFile) && !sending
                                     ? 'bg-indigo-600 text-white hover:bg-indigo-500 hover:scale-105 active:scale-95'
                                     : 'bg-slate-800 text-slate-600 cursor-not-allowed'
                             }`}

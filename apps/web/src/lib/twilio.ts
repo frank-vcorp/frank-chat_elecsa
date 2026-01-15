@@ -17,13 +17,20 @@ if (!accountSid || !authToken || !whatsappNumber) {
  * 
  * @param to - The recipient's phone number (without 'whatsapp:' prefix, but with country code).
  * @param body - The text content of the message.
+ * @param fromNumber - Optional custom sender number.
+ * @param mediaUrl - Optional URL of media to attach (must be publicly accessible).
  * @returns The Twilio message object if successful.
  * @throws Error if the message fails to send.
  */
-export async function sendWhatsAppMessage(to: string, body: string, fromNumber?: string) {
+export async function sendWhatsAppMessage(
+    to: string, 
+    body: string, 
+    fromNumber?: string,
+    mediaUrl?: string
+) {
     try {
         if (!client) {
-            console.log('[Twilio] Credentials missing; skipping outbound send. Message stored only.', { to });
+            console.log('[Twilio] Credentials missing; skipping outbound send. Message stored only.', { to, mediaUrl });
             return {
                 sid: 'mock-sid',
                 status: 'queued',
@@ -34,11 +41,23 @@ export async function sendWhatsAppMessage(to: string, body: string, fromNumber?:
 
         const from = fromNumber ? (fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`) : `whatsapp:${whatsappNumber}`;
 
-        const message = await client.messages.create({
+        const messageOptions: {
+            from: string;
+            to: string;
+            body: string;
+            mediaUrl?: string[];
+        } = {
             from,
             to: `whatsapp:${to}`,
             body,
-        });
+        };
+        
+        // Agregar mediaUrl si existe
+        if (mediaUrl) {
+            messageOptions.mediaUrl = [mediaUrl];
+        }
+
+        const message = await client.messages.create(messageOptions);
         return message;
     } catch (error) {
         console.error('Error sending WhatsApp message:', error);

@@ -1,7 +1,8 @@
 // src/app/api/agent/test/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
-import { testAgentWithContext } from '@/lib/aiProvider';
+
+// Force dynamic rendering to avoid build-time Firebase initialization
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/agent/test
@@ -10,6 +11,9 @@ import { testAgentWithContext } from '@/lib/aiProvider';
  */
 export async function POST(request: NextRequest) {
     try {
+        // Lazy import to avoid build-time initialization
+        const { testAgentWithContext } = await import('@/lib/aiProvider');
+        
         const body = await request.json();
         const { agentId, message } = body;
 
