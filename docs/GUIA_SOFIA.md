@@ -325,6 +325,132 @@ Cuando Sofía detecta una ciudad en la conversación, automáticamente asigna la
 
 ---
 
+## 🔔 Cómo Sabe el Agente que Debe Intervenir
+
+### Indicadores Visuales en el Dashboard
+
+Cuando Sofía activa un semáforo 🟡 o 🔴, la conversación aparece con señales claras:
+
+#### 1. Punto Rojo Parpadeante
+Las conversaciones que necesitan atención humana muestran un **punto rojo animado** en la esquina:
+
+```
+┌────────────────────────────────┐
+│ 📱 +52 442 XXX XXXX        🔴 │  ← Punto parpadeante
+│ Querétaro                      │
+│ "Necesito hablar con alguien"  │
+│ Hace 2 min                     │
+└────────────────────────────────┘
+```
+
+#### 2. Indicador "Needs Human"
+El avatar de la conversación cambia a **color rojo/rosa** cuando requiere atención:
+
+| Estado | Color del Avatar |
+|--------|------------------|
+| Sofía atendiendo (🟢) | Azul/Índigo |
+| Necesita humano (🟡🔴) | Rojo/Rosa |
+
+#### 3. Badge de Sucursal
+Cada conversación muestra la sucursal detectada con un badge verde azulado:
+
+```
+┌────────────────────────────────┐
+│ 📱 +52 442 XXX XXXX            │
+│ 📍 Querétaro                   │  ← Badge de sucursal
+│ [Cotización] [Seguimiento]     │
+└────────────────────────────────┘
+```
+
+### Filtros Rápidos
+
+En el panel de filtros, el agente puede ver rápidamente:
+
+| Filtro | Qué Muestra |
+|--------|-------------|
+| **Todos** | Todas las conversaciones de su sucursal |
+| **Humanos** | Solo las que necesitan atención humana (🟡🔴) |
+| **IA** | Solo las que Sofía está manejando (🟢) |
+
+### Flujo de Trabajo del Agente
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    DASHBOARD DEL AGENTE                  │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  1️⃣  Agente abre el dashboard                           │
+│      ↓                                                   │
+│  2️⃣  Ve lista de conversaciones de SU SUCURSAL          │
+│      ↓                                                   │
+│  3️⃣  Identifica las que tienen:                         │
+│      • Punto rojo parpadeante 🔴                        │
+│      • Avatar en color rojo                             │
+│      ↓                                                   │
+│  4️⃣  Click en la conversación                           │
+│      ↓                                                   │
+│  5️⃣  Lee el historial (ve qué habló con Sofía)         │
+│      ↓                                                   │
+│  6️⃣  Continúa la conversación donde Sofía dejó         │
+│      ↓                                                   │
+│  7️⃣  Resuelve y cierra la conversación                 │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Priorización
+
+El agente debe atender primero las conversaciones según esta prioridad:
+
+| Prioridad | Tipo | Indicador |
+|-----------|------|-----------|
+| 🔴 **Alta** | Quejas, problemas, urgencias | Punto parpadeante + avatar rojo |
+| 🟡 **Media** | Cotizaciones, preguntas técnicas | Avatar rojo, sin punto |
+| 🟢 **Baja** | Seguimiento general | Avatar azul (Sofía maneja) |
+
+### Notificaciones (Próximamente)
+
+> ⚠️ **Nota**: Actualmente el agente debe revisar el dashboard periódicamente. 
+> En futuras versiones se agregarán:
+> - Notificaciones push en el navegador
+> - Alertas por email
+> - Sonido de nueva conversación
+
+### Ejemplo Visual
+
+Así se ve el dashboard cuando hay conversaciones pendientes:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🔍 Buscar...                    [Filtros ▼]            │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌────────────────────────────┐                         │
+│  │ 🔴 +52 442 123 4567    🔴 │  ← ¡ATENDER PRIMERO!    │
+│  │ 📍 Querétaro               │                         │
+│  │ "Tengo un problema..."     │                         │
+│  │ Hace 5 min            (3)  │  ← 3 mensajes sin leer │
+│  └────────────────────────────┘                         │
+│                                                          │
+│  ┌────────────────────────────┐                         │
+│  │ 🟡 +52 81 234 5678         │  ← Cotización pendiente │
+│  │ 📍 Monterrey               │                         │
+│  │ "¿Precio de 100m cable?"   │                         │
+│  │ Hace 12 min           (1)  │                         │
+│  └────────────────────────────┘                         │
+│                                                          │
+│  ┌────────────────────────────┐                         │
+│  │ 🟢 +52 33 345 6789         │  ← Sofía está atendiendo│
+│  │ 📍 Guadalajara             │                         │
+│  │ "Gracias por la info"      │                         │
+│  │ Hace 1 hora                │                         │
+│  └────────────────────────────┘                         │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Buenas Prácticas para Agentes Humanos
 
 ### Al Tomar una Conversación
