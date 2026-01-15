@@ -4,17 +4,34 @@ import { useEffect, useState, useRef } from 'react';
 import { collection, query, onSnapshot, where, doc, orderBy } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Message, Conversation } from '@/lib/types';
-import { Send, Bot, User, Paperclip, Tag, Check, StickyNote, FileText, Trash2 } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
+import { Send, Bot, User, Paperclip, Tag, Check, StickyNote, FileText, Trash2, Smile, Zap, MessageSquare, X } from 'lucide-react';
 
 interface ChatWindowProps {
     conversationId: string;
 }
 
 export default function ChatWindow({ conversationId }: ChatWindowProps) {
+    const { isAdmin } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
+    const [showQuickReplies, setShowQuickReplies] = useState(false);
+    const [sending, setSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Respuestas rápidas predefinidas
+    const quickReplies = [
+        { emoji: '👋', text: 'Hola, gracias por contactarnos. ¿En qué puedo ayudarte?' },
+        { emoji: '⏰', text: 'Dame un momento para verificar esa información.' },
+        { emoji: '✅', text: '¡Perfecto! Ya quedó registrado.' },
+        { emoji: '📦', text: 'Te confirmo que tu pedido está en camino.' },
+        { emoji: '💰', text: 'El precio incluye IVA. ¿Te genero la cotización formal?' },
+        { emoji: '📞', text: 'Para mayor información, puedes llamarnos al número de la sucursal.' },
+        { emoji: '🙏', text: '¡Gracias por tu preferencia! ¿Hay algo más en lo que pueda ayudarte?' },
+        { emoji: '📧', text: 'Te envío la cotización a tu correo. ¿Me confirmas el email?' },
+    ];
 
     // Notes State
     const [showNotes, setShowNotes] = useState(false);
@@ -169,10 +186,31 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         }
     };
 
+    const handleDeleteConversation = async () => {
+        if (!conversationId || !isAdmin) return;
+        if (!confirm('¿Estás seguro de eliminar esta conversación? Esta acción no se puede deshacer.')) return;
+        
+        try {
+            // Eliminar mensajes de la conversación
+            const res = await fetch(`/api/conversation/${conversationId}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                window.location.reload(); // Recargar para limpiar el estado
+            } else {
+                alert('Error al eliminar la conversación');
+            }
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+            alert('Error al eliminar la conversación');
+        }
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || sending) return;
 
+        setSending(true);
         try {
             const response = await fetch('/api/chat/send', {
                 method: 'POST',
@@ -185,10 +223,20 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
             if (!response.ok) throw new Error('Failed to send message');
             setNewMessage('');
+            setShowQuickReplies(false);
+            inputRef.current?.focus();
         } catch (error) {
             console.error('Error sending message:', error);
-            alert('Failed to send message');
+            alert('Error al enviar mensaje');
+        } finally {
+            setSending(false);
         }
+    };
+
+    const insertQuickReply = (text: string) => {
+        setNewMessage(text);
+        setShowQuickReplies(false);
+        inputRef.current?.focus();
     };
     const handleSaveNote = async () => {
         if (!newNote.trim() || !conversationId) return;
@@ -274,16 +322,30 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 </div>
 
                 {/* Header Actions */}
-                <button
-                    onClick={() => setShowNotes(!showNotes)}
-                    className={`p-2.5 rounded-xl transition-all duration-200 ${showNotes
-                        ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
-                    title="Notas Internas"
-                    aria-label="Alternar panel de notas internas"
-                >
-                    <StickyNote size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowNotes(!showNotes)}
+                        className={`p-2.5 rounded-xl transition-all duration-200 ${showNotes
+                            ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
+                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                        title="Notas Internas"
+                        aria-label="Alternar panel de notas internas"
+                    >
+                        <StickyNote size={20} />
+                    </button>
+                    
+                    {/* Botón eliminar - Solo Admin */}
+                    {isAdmin && (
+                        <button
+                            onClick={handleDeleteConversation}
+                            className="p-2.5 rounded-xl text-slate-400 hover:bg-rose-500/20 hover:text-rose-400 transition-all duration-200"
+                            title="Eliminar conversación"
+                            aria-label="Eliminar conversación"
+                        >
+                            <Trash2 size={20} />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Notes Panel (Glassy & Animated) */}
@@ -553,32 +615,117 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area (Floating) */}
-            <div className="p-4 bg-slate-950">
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-lg flex items-center gap-2 p-2 focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
-                    <form onSubmit={handleSendMessage} className="flex-1 flex gap-2">
+            {/* Input Area (Mejorado) */}
+            <div className="p-4 bg-slate-950 border-t border-slate-800/50">
+                {/* Quick Replies Panel */}
+                {showQuickReplies && (
+                    <div className="mb-3 bg-slate-900 rounded-xl border border-slate-700 p-3 animate-in slide-in-from-bottom-2 duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <Zap size={12} className="text-amber-400" />
+                                Respuestas Rápidas
+                            </span>
+                            <button 
+                                onClick={() => setShowQuickReplies(false)}
+                                className="text-slate-500 hover:text-slate-300 p-1"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {quickReplies.map((reply, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => insertQuickReply(reply.text)}
+                                    className="text-left text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white p-2.5 rounded-lg transition-all border border-slate-700 hover:border-slate-600"
+                                >
+                                    <span className="mr-2">{reply.emoji}</span>
+                                    <span className="line-clamp-1">{reply.text}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Preview del mensaje (si hay texto) */}
+                {newMessage.trim() && (
+                    <div className="mb-2 px-3 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-lg text-xs text-indigo-300">
+                        <span className="text-indigo-400 font-medium">Vista previa: </span>
+                        <span className="text-slate-300">{newMessage.length > 100 ? newMessage.substring(0, 100) + '...' : newMessage}</span>
+                    </div>
+                )}
+
+                <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-lg focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
+                    {/* Toolbar del input */}
+                    <div className="flex items-center gap-1 px-3 pt-2 border-b border-slate-800/50">
+                        <button
+                            type="button"
+                            onClick={() => setShowQuickReplies(!showQuickReplies)}
+                            className={`p-1.5 rounded-lg text-xs transition-colors ${showQuickReplies 
+                                ? 'bg-amber-500/20 text-amber-400' 
+                                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
+                            title="Respuestas rápidas"
+                        >
+                            <Zap size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowTemplates(!showTemplates)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+                            title="Plantillas"
+                        >
+                            <FileText size={16} />
+                        </button>
+                        <label className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer" title="Adjuntar">
+                            <Paperclip size={16} />
+                            <input type="file" className="hidden" multiple onChange={handleFileAttach} />
+                        </label>
+                        
+                        <div className="flex-1" />
+                        
+                        <span className={`text-[10px] px-2 py-0.5 rounded ${newMessage.length > 500 ? 'text-amber-400' : 'text-slate-600'}`}>
+                            {newMessage.length}/1000
+                        </span>
+                    </div>
+
+                    {/* Input principal */}
+                    <form onSubmit={handleSendMessage} className="flex items-center gap-2 p-2">
                         <input
+                            ref={inputRef}
                             type="text"
                             value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
+                            onChange={(e) => setNewMessage(e.target.value.slice(0, 1000))}
                             placeholder="Escribe un mensaje..."
-                            className="flex-1 bg-transparent border-none py-2.5 px-4 focus:ring-0 focus:outline-none text-slate-200 placeholder-slate-500"
+                            className="flex-1 bg-transparent border-none py-2.5 px-3 focus:ring-0 focus:outline-none text-slate-200 placeholder-slate-500"
                             aria-label="Escribir mensaje"
+                            disabled={sending}
                         />
-                        {newMessage.trim() ? (
-                            <button
-                                type="submit"
-                                className="bg-indigo-600 text-white p-2.5 rounded-xl hover:bg-indigo-500 transition-all shadow-md hover:scale-105 active:scale-95"
-                                aria-label="Enviar mensaje"
-                            >
+                        <button
+                            type="submit"
+                            disabled={!newMessage.trim() || sending}
+                            className={`p-2.5 rounded-xl transition-all shadow-md ${
+                                newMessage.trim() && !sending
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500 hover:scale-105 active:scale-95'
+                                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                            }`}
+                            aria-label="Enviar mensaje"
+                        >
+                            {sending ? (
+                                <div className="w-[18px] h-[18px] border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+                            ) : (
                                 <Send size={18} />
-                            </button>
-                        ) : (
-                            <div className="text-slate-600 p-2.5">
-                                <div className="w-[18px] h-[18px]" />
-                            </div>
-                        )}
+                            )}
+                        </button>
                     </form>
+                </div>
+
+                {/* Indicador de estado */}
+                <div className="flex items-center justify-center gap-2 mt-2 text-[10px] text-slate-600">
+                    <MessageSquare size={10} />
+                    {conversation?.assignedTo === 'ai' 
+                        ? 'Sofía está atendiendo esta conversación'
+                        : 'Conversación asignada a agente humano'
+                    }
                 </div>
             </div>
         </div >
