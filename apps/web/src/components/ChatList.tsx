@@ -41,15 +41,22 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
     const prevNeedsHumanCountRef = useRef(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Inicializar audio y solicitar permisos de notificación
+    // Inicializar audio y solicitar permisos de notificación automáticamente
     useEffect(() => {
         // Crear elemento de audio para el sonido de notificación
         audioRef.current = new Audio('/sounds/notification.mp3');
         audioRef.current.volume = 0.5;
 
-        // Verificar si las notificaciones están habilitadas
+        // Solicitar permiso de notificaciones automáticamente
         if ('Notification' in window) {
-            setNotificationsEnabled(Notification.permission === 'granted');
+            if (Notification.permission === 'granted') {
+                setNotificationsEnabled(true);
+            } else if (Notification.permission !== 'denied') {
+                // Solicitar permiso automáticamente
+                Notification.requestPermission().then(permission => {
+                    setNotificationsEnabled(permission === 'granted');
+                });
+            }
         }
     }, []);
 
