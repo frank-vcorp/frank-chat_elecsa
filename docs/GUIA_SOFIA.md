@@ -408,13 +408,35 @@ El agente debe atender primero las conversaciones según esta prioridad:
 | 🟡 **Media** | Cotizaciones, preguntas técnicas | Avatar rojo, sin punto |
 | 🟢 **Baja** | Seguimiento general | Avatar azul (Sofía maneja) |
 
-### Notificaciones (Próximamente)
+### Notificaciones y Sonido
 
-> ⚠️ **Nota**: Actualmente el agente debe revisar el dashboard periódicamente. 
-> En futuras versiones se agregarán:
-> - Notificaciones push en el navegador
-> - Alertas por email
-> - Sonido de nueva conversación
+El dashboard cuenta con alertas para que no pierdas ninguna conversación:
+
+#### 🔔 Notificaciones Push del Navegador
+- Actívalas haciendo click en el ícono de campana 🔔
+- El navegador te pedirá permiso la primera vez
+- Recibirás alertas aunque estés en otra pestaña
+- Muestra: número del cliente + sucursal
+
+#### 🔊 Sonido de Alerta
+- Activado por defecto (ícono de bocina)
+- Suena cuando llega una nueva conversación que necesita humano
+- Puedes silenciarlo si lo prefieres
+
+#### Controles en el Dashboard
+
+```
+┌─────────────────────────────────┐
+│ Alertas:          [🔔] [🔊]    │  ← Botones de control
+├─────────────────────────────────┤
+│ 🔍 Buscar...                    │
+└─────────────────────────────────┘
+
+🔔 = Notificaciones push (azul = activo)
+🔊 = Sonido (azul = activo)
+```
+
+> 💡 **Tip**: Mantén ambos activos durante tu horario laboral para no perder ninguna conversación urgente.
 
 ### Ejemplo Visual
 

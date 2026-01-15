@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Conversation, BranchId } from '@/lib/types';
 import { useAuth } from '@/lib/AuthContext';
-import { Search, User, Clock, Filter, X, MapPin } from 'lucide-react';
+import { Search, User, Clock, Filter, X, MapPin, Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
 
 // Nombres legibles de sucursales
 const BRANCH_NAMES: Record<BranchId, string> = {
@@ -36,6 +36,55 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
     const [filterTags, setFilterTags] = useState<string[]>([]);
     const [filterStatus, setFilterStatus] = useState<'all' | 'human' | 'ai'>('all');
     const [filterBranch, setFilterBranch] = useState<BranchId | 'all'>('all');
+    const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+    const [soundEnabled, setSoundEnabled] = useState(true);
+    const prevNeedsHumanCountRef = useRef(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Inicializar audio y solicitar permisos de notificación
+    useEffect(() => {
+        // Crear elemento de audio para el sonido de notificación
+        audioRef.current = new Audio('/sounds/notification.mp3');
+        audioRef.current.volume = 0.5;
+
+        // Verificar si las notificaciones están habilitadas
+        if ('Notification' in window) {
+            setNotificationsEnabled(Notification.permission === 'granted');
+        }
+    }, []);
+
+    // Solicitar permiso de notificaciones
+    const requestNotificationPermission = async () => {
+        if ('Notification' in window) {
+            const permission = await Notification.requestPermission();
+            setNotificationsEnabled(permission === 'granted');
+            if (permission === 'granted') {
+                new Notification('🔔 Notificaciones activadas', {
+                    body: 'Recibirás alertas cuando lleguen conversaciones que necesiten tu atención.',
+                    icon: '/elecsa-icon.png'
+                });
+            }
+        }
+    };
+
+    // Función para enviar notificación
+    const sendNotification = (title: string, body: string) => {
+        if (notificationsEnabled && document.hidden) {
+            new Notification(title, {
+                body,
+                icon: '/elecsa-icon.png',
+                tag: 'elecsa-chat', // Evita notificaciones duplicadas
+            });
+        }
+    };
+
+    // Función para reproducir sonido
+    const playNotificationSound = () => {
+        if (soundEnabled && audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+        }
+    };
 
     useEffect(() => {
         const q = query(collection(db, 'conversations'), orderBy('lastMessageAt', 'desc'));
@@ -44,11 +93,34 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                 id: doc.id,
                 ...doc.data(),
             })) as Conversation[];
+            
+            // Contar conversaciones que necesitan humano (filtradas por sucursal del agente)
+            const needsHumanConvs = convs.filter(c => {
+                if (!c.needsHuman) return false;
+                // Aplicar filtro de sucursal
+                if (isSupervisor || isAdmin) return true;
+                if (branch) return c.branch === branch || c.branch === 'general' || !c.branch;
+                return true;
+            });
+            
+            const currentCount = needsHumanConvs.length;
+            
+            // Si hay más conversaciones que antes, notificar
+            if (currentCount > prevNeedsHumanCountRef.current && prevNeedsHumanCountRef.current > 0) {
+                const newConv = needsHumanConvs[0]; // La más reciente
+                playNotificationSound();
+                sendNotification(
+                    '🔴 Nueva conversación requiere atención',
+                    `${newConv.contactId} necesita ayuda${newConv.branch ? ` (${BRANCH_NAMES[newConv.branch]})` : ''}`
+                );
+            }
+            
+            prevNeedsHumanCountRef.current = currentCount;
             setConversations(convs);
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [branch, isSupervisor, isAdmin, notificationsEnabled, soundEnabled]);
 
     const filteredConversations = conversations.filter(c => {
         const matchesSearch = c.contactId.toLowerCase().includes(searchTerm.toLowerCase());
@@ -93,6 +165,31 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
     return (
         <div className="flex h-full flex-col bg-slate-950 border-r border-slate-800 w-full font-sans">
             <div className="p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10 space-y-3">
+                {/* Controles de notificaciones */}
+                <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500">Alertas:</span>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => notificationsEnabled ? setNotificationsEnabled(false) : requestNotificationPermission()}
+                            className={`p-1.5 rounded-lg transition-colors ${notificationsEnabled 
+                                ? 'bg-indigo-500/20 text-indigo-400' 
+                                : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}
+                            title={notificationsEnabled ? 'Desactivar notificaciones' : 'Activar notificaciones'}
+                        >
+                            {notificationsEnabled ? <Bell size={14} /> : <BellOff size={14} />}
+                        </button>
+                        <button
+                            onClick={() => setSoundEnabled(!soundEnabled)}
+                            className={`p-1.5 rounded-lg transition-colors ${soundEnabled 
+                                ? 'bg-indigo-500/20 text-indigo-400' 
+                                : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}
+                            title={soundEnabled ? 'Desactivar sonido' : 'Activar sonido'}
+                        >
+                            {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                        </button>
+                    </div>
+                </div>
+
                 <div className="flex gap-2">
                     <div className="relative group flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={16} />
