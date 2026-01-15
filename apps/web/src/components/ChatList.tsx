@@ -38,7 +38,7 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
     const [filterBranch, setFilterBranch] = useState<BranchId | 'all'>('all');
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(true);
-    const prevNeedsHumanCountRef = useRef(0);
+    const prevNeedsHumanCountRef = useRef<number | null>(null); // null = primera carga
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Inicializar audio y solicitar permisos de notificación automáticamente
@@ -113,7 +113,8 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
             const currentCount = needsHumanConvs.length;
             
             // Si hay más conversaciones que antes, notificar
-            if (currentCount > prevNeedsHumanCountRef.current && prevNeedsHumanCountRef.current > 0) {
+            // null = primera carga, no notificar (evita spam al abrir dashboard)
+            if (prevNeedsHumanCountRef.current !== null && currentCount > prevNeedsHumanCountRef.current) {
                 const newConv = needsHumanConvs[0]; // La más reciente
                 playNotificationSound();
                 sendNotification(
