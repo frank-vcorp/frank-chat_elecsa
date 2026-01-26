@@ -15,7 +15,10 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { id, name, email, password, role, type, prompt, branch, whatsapp, active } = await request.json();
+        const { id, name, email, password, role, type, prompt, branch, branches, whatsapp, active } = await request.json();
+
+        // Normalizar branches: usar branches array si existe, sino crear array desde branch
+        const normalizedBranches = branches || (branch ? [branch] : ['general']);
 
         // If creating a human agent, create in Firebase Auth first
         if (type === 'human' && email && password) {
@@ -33,14 +36,15 @@ export async function POST(request: NextRequest) {
                     password, // Contraseña inicial (visible solo para admin/supervisor)
                     role: role || 'agent',
                     type: 'human',
-                    branch: branch || 'general', // Sucursal del agente
+                    branches: normalizedBranches, // Sucursales del agente (array)
+                    branch: normalizedBranches[0] || 'general', // Mantener campo legacy para compatibilidad
                     whatsapp: whatsapp || '', // Número de WhatsApp del agente
                     active: true,
                     mustChangePassword: true, // Obligar cambio de contraseña en primer login
                     createdAt: new Date().toISOString(),
                 });
 
-                return NextResponse.json({ success: true, id: userRecord.uid, branch });
+                return NextResponse.json({ success: true, id: userRecord.uid, branches: normalizedBranches });
             } catch (authError: any) {
                 console.error('Auth error:', authError);
                 return NextResponse.json({
@@ -55,7 +59,13 @@ export async function POST(request: NextRequest) {
             if (prompt !== undefined) updateData.prompt = prompt;
             if (name) updateData.name = name;
             if (role) updateData.role = role;
-            if (branch) updateData.branch = branch;
+            if (branches) {
+                updateData.branches = branches;
+                updateData.branch = branches[0] || 'general'; // Mantener legacy
+            } else if (branch) {
+                updateData.branch = branch;
+                updateData.branches = [branch];
+            }
             if (whatsapp !== undefined) updateData.whatsapp = whatsapp;
             if (active !== undefined) updateData.active = active;
 

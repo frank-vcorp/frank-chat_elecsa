@@ -14,7 +14,8 @@ export interface Agent {
     name: string;
     email: string;
     role: Role;
-    branch?: BranchId;  // Sucursal asignada al agente
+    branch?: BranchId;  // Sucursal principal (compatibilidad)
+    branches?: BranchId[]; // Múltiples sucursales asignadas
     avatarUrl?: string;
     isOnline: boolean;
     active?: boolean;  // Si el agente puede acceder al sistema

@@ -13,6 +13,7 @@ interface AuthContextType {
     isAdmin: boolean;
     isSupervisor: boolean;
     branch: BranchId | null;
+    branches: BranchId[];
     isActive: boolean;
     mustChangePassword: boolean;
     setMustChangePassword: (value: boolean) => void;
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
     isAdmin: false,
     isSupervisor: false,
     branch: null,
+    branches: [],
     isActive: true,
     mustChangePassword: false,
     setMustChangePassword: () => {},
@@ -102,10 +104,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const isAdmin = agent?.role === 'admin';
     const isSupervisor = agent?.role === 'supervisor' || isAdmin;
     const branch = agent?.branch || null;
+    // Soportar múltiples sucursales: usar branches si existe, sino usar branch individual
+    const branches: BranchId[] = agent?.branches || (agent?.branch ? [agent.branch] : []);
     const isActive = agent?.active !== false;
 
     return (
-        <AuthContext.Provider value={{ user, agent, loading, isAdmin, isSupervisor, branch, isActive, mustChangePassword, setMustChangePassword }}>
+        <AuthContext.Provider value={{ user, agent, loading, isAdmin, isSupervisor, branch, branches, isActive, mustChangePassword, setMustChangePassword }}>
             {children}
         </AuthContext.Provider>
     );

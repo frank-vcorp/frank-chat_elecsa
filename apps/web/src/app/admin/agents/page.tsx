@@ -31,6 +31,7 @@ interface Agent {
     prompt?: string;
     active?: boolean;
     branch?: BranchId;
+    branches?: BranchId[];
     whatsapp?: string;
 }
 
@@ -52,13 +53,13 @@ export default function AgentsPage() {
         password: '',
         role: 'agent',
         type: 'human' as 'human' | 'ai',
-        branch: 'general' as BranchId,
+        branches: ['general'] as BranchId[],
         whatsapp: '',
     });
     const [editFormData, setEditFormData] = useState({
         name: '',
         role: 'agent',
-        branch: 'general' as BranchId,
+        branches: ['general'] as BranchId[],
         whatsapp: '',
     });
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -128,7 +129,7 @@ export default function AgentsPage() {
             if (res.ok) {
                 alert('✅ Agente creado correctamente');
                 setShowCreateModal(false);
-                setFormData({ name: '', email: '', password: '', role: 'agent', type: 'human', branch: 'general', whatsapp: '' });
+                setFormData({ name: '', email: '', password: '', role: 'agent', type: 'human', branches: ['general'], whatsapp: '' });
                 fetchAgents();
             } else {
                 alert(`❌ ${data.error || 'Error al crear agente'}`);
@@ -190,7 +191,7 @@ export default function AgentsPage() {
         setEditFormData({
             name: agent.name,
             role: agent.role || 'agent',
-            branch: agent.branch || 'general',
+            branches: agent.branches || (agent.branch ? [agent.branch] : ['general']),
             whatsapp: agent.whatsapp || '',
         });
         setShowEditModal(true);
@@ -246,7 +247,7 @@ export default function AgentsPage() {
                     id: editingAgent.id,
                     name: editFormData.name,
                     role: editFormData.role,
-                    branch: editFormData.branch,
+                    branches: editFormData.branches,
                     whatsapp: editFormData.whatsapp,
                 }),
             });
@@ -362,10 +363,14 @@ export default function AgentsPage() {
                                                     )}
                                                 </div>
                                                 <div className="text-xs text-gray-500 capitalize">{agent.type} - {agent.role}</div>
-                                                {agent.branch && agent.branch !== 'general' && (
-                                                    <div className="text-xs text-teal-600 flex items-center gap-1 mt-0.5">
+                                                {/* Mostrar sucursales múltiples */}
+                                                {((agent.branches && agent.branches.length > 0 && !(agent.branches.length === 1 && agent.branches[0] === 'general')) ||
+                                                  (agent.branch && agent.branch !== 'general' && !agent.branches)) && (
+                                                    <div className="text-xs text-teal-600 flex items-center gap-1 mt-0.5 flex-wrap">
                                                         <MapPin size={10} />
-                                                        {BRANCH_NAMES[agent.branch]}
+                                                        {agent.branches && agent.branches.length > 0
+                                                            ? agent.branches.map(b => BRANCH_NAMES[b]).join(', ')
+                                                            : agent.branch && BRANCH_NAMES[agent.branch]}
                                                     </div>
                                                 )}
                                             </div>
@@ -626,19 +631,30 @@ export default function AgentsPage() {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                                             <MapPin size={14} className="text-teal-600" />
-                                            Sucursal
+                                            Sucursales
                                         </label>
-                                        <select
-                                            className="w-full border rounded p-2"
-                                            value={formData.branch}
-                                            onChange={(e) => setFormData({ ...formData, branch: e.target.value as BranchId })}
-                                        >
+                                        <div className="max-h-48 overflow-y-auto border rounded p-2 bg-white">
                                             {Object.entries(BRANCH_NAMES).map(([id, name]) => (
-                                                <option key={id} value={id}>{name}</option>
+                                                <label key={id} className="flex items-center gap-2 p-1 hover:bg-gray-50 rounded cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.branches.includes(id as BranchId)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setFormData({ ...formData, branches: [...formData.branches, id as BranchId] });
+                                                            } else {
+                                                                const newBranches = formData.branches.filter(b => b !== id);
+                                                                setFormData({ ...formData, branches: newBranches.length > 0 ? newBranches : ['general'] });
+                                                            }
+                                                        }}
+                                                        className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                                    />
+                                                    <span className="text-sm">{name}</span>
+                                                </label>
                                             ))}
-                                        </select>
+                                        </div>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            El agente solo verá conversaciones de esta sucursal
+                                            El agente verá conversaciones de las sucursales seleccionadas
                                         </p>
                                     </div>
                                     <div>
@@ -728,17 +744,28 @@ export default function AgentsPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                                     <MapPin size={14} className="text-teal-600" />
-                                    Sucursal
+                                    Sucursales
                                 </label>
-                                <select
-                                    className="w-full border rounded p-2"
-                                    value={editFormData.branch}
-                                    onChange={(e) => setEditFormData({ ...editFormData, branch: e.target.value as BranchId })}
-                                >
+                                <div className="max-h-48 overflow-y-auto border rounded p-2 bg-white">
                                     {Object.entries(BRANCH_NAMES).map(([id, name]) => (
-                                        <option key={id} value={id}>{name}</option>
+                                        <label key={id} className="flex items-center gap-2 p-1 hover:bg-gray-50 rounded cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={editFormData.branches.includes(id as BranchId)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setEditFormData({ ...editFormData, branches: [...editFormData.branches, id as BranchId] });
+                                                    } else {
+                                                        const newBranches = editFormData.branches.filter(b => b !== id);
+                                                        setEditFormData({ ...editFormData, branches: newBranches.length > 0 ? newBranches : ['general'] });
+                                                    }
+                                                }}
+                                                className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                            />
+                                            <span className="text-sm">{name}</span>
+                                        </label>
                                     ))}
-                                </select>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>

@@ -29,7 +29,7 @@ interface ChatListProps {
 }
 
 export default function ChatList({ onSelectConversation, selectedConversationId }: ChatListProps) {
-    const { branch, isSupervisor, isAdmin } = useAuth();
+    const { branch, branches, isSupervisor, isAdmin } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showFilters, setShowFilters] = useState(false);
@@ -106,6 +106,10 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                 if (!c.needsHuman) return false;
                 // Aplicar filtro de sucursal
                 if (isSupervisor || isAdmin) return true;
+                // Verificar si la conversación pertenece a alguna de las sucursales del agente
+                if (branches.length > 0) {
+                    return branches.includes(c.branch as any) || c.branch === 'general' || !c.branch;
+                }
                 if (branch) return c.branch === branch || c.branch === 'general' || !c.branch;
                 return true;
             });
@@ -128,7 +132,7 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
         });
 
         return () => unsubscribe();
-    }, [branch, isSupervisor, isAdmin, notificationsEnabled, soundEnabled]);
+    }, [branch, branches, isSupervisor, isAdmin, notificationsEnabled, soundEnabled]);
 
     const filteredConversations = conversations.filter(c => {
         const matchesSearch = c.contactId.toLowerCase().includes(searchTerm.toLowerCase());
@@ -141,13 +145,16 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
         
         // Filtro por sucursal:
         // - Admin/Supervisor: ve todas o puede filtrar por sucursal
-        // - Agente normal: solo ve conversaciones de su sucursal + las genéricas
+        // - Agente normal: solo ve conversaciones de sus sucursales + las genéricas
         let matchesBranch = true;
         if (isSupervisor || isAdmin) {
             // Supervisores pueden filtrar manualmente
             matchesBranch = filterBranch === 'all' || c.branch === filterBranch || !c.branch;
+        } else if (branches.length > 0) {
+            // Agentes con múltiples sucursales ven todas las asignadas + general
+            matchesBranch = branches.includes(c.branch as any) || c.branch === 'general' || !c.branch;
         } else if (branch) {
-            // Agentes normales solo ven su sucursal + general (sin sucursal asignada)
+            // Compatibilidad: agentes con una sola sucursal
             matchesBranch = c.branch === branch || c.branch === 'general' || !c.branch;
         }
 
