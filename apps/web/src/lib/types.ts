@@ -17,6 +17,8 @@ export interface Agent {
     branch?: BranchId;  // Sucursal asignada al agente
     avatarUrl?: string;
     isOnline: boolean;
+    active?: boolean;  // Si el agente puede acceder al sistema
+    whatsapp?: string; // Número de WhatsApp del agente
 }
 
 export interface Contact {

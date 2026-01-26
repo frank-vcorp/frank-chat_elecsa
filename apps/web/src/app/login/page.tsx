@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { MessageSquare, Lock, Mail, ArrowRight } from 'lucide-react';
 
@@ -18,7 +19,17 @@ export default function LoginPage() {
         setLoading(true);
         setError('');
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            
+            // Check if agent is active
+            const agentDoc = await getDoc(doc(db, 'agents', userCredential.user.uid));
+            if (agentDoc.exists() && agentDoc.data().active === false) {
+                await auth.signOut();
+                setError('Tu cuenta ha sido desactivada. Contacta al administrador.');
+                setLoading(false);
+                return;
+            }
+            
             router.push('/dashboard');
         } catch (err: any) {
             console.error(err);

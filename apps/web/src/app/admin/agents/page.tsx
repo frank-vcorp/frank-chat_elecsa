@@ -1,7 +1,7 @@
 // src/app/admin/agents/page.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X, MapPin } from 'lucide-react';
+import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X, MapPin, Power, PowerOff } from 'lucide-react';
 import { BranchId } from '@/lib/types';
 
 // Nombres legibles de las sucursales
@@ -29,6 +29,7 @@ interface Agent {
     prompt?: string;
     active?: boolean;
     branch?: BranchId;
+    whatsapp?: string;
 }
 
 export default function AgentsPage() {
@@ -41,12 +42,19 @@ export default function AgentsPage() {
     const [initializing, setInitializing] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
         role: 'agent',
         type: 'human' as 'human' | 'ai',
+        branch: 'general' as BranchId,
+        whatsapp: '',
+    });
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        role: 'agent',
         branch: 'general' as BranchId,
         whatsapp: '',
     });
@@ -141,6 +149,76 @@ export default function AgentsPage() {
         }
     };
 
+    const handleToggleActive = async (agent: Agent) => {
+        const newStatus = agent.active === false ? true : false;
+        const action = newStatus ? 'activar' : 'desactivar';
+        
+        if (!confirm(`¿Estás seguro de ${action} a ${agent.name}?`)) return;
+
+        try {
+            const res = await fetch('/api/agents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: agent.id, active: newStatus }),
+            });
+
+            if (res.ok) {
+                alert(`✅ Agente ${newStatus ? 'activado' : 'desactivado'}`);
+                fetchAgents();
+                if (selectedAgent?.id === agent.id) {
+                    setSelectedAgent({ ...selectedAgent, active: newStatus });
+                }
+            } else {
+                alert('❌ Error al cambiar estado');
+            }
+        } catch (error) {
+            console.error('Toggle error:', error);
+            alert('❌ Error al cambiar estado');
+        }
+    };
+
+    const openEditModal = (agent: Agent) => {
+        setEditingAgent(agent);
+        setEditFormData({
+            name: agent.name,
+            role: agent.role || 'agent',
+            branch: agent.branch || 'general',
+            whatsapp: agent.whatsapp || '',
+        });
+        setShowEditModal(true);
+    };
+
+    const handleEditAgent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingAgent) return;
+
+        try {
+            const res = await fetch('/api/agents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: editingAgent.id,
+                    name: editFormData.name,
+                    role: editFormData.role,
+                    branch: editFormData.branch,
+                    whatsapp: editFormData.whatsapp,
+                }),
+            });
+
+            if (res.ok) {
+                alert('✅ Agente actualizado');
+                setShowEditModal(false);
+                setEditingAgent(null);
+                fetchAgents();
+            } else {
+                alert('❌ Error al actualizar agente');
+            }
+        } catch (error) {
+            console.error('Edit error:', error);
+            alert('❌ Error al actualizar agente');
+        }
+    };
+
     const handleSavePrompt = async () => {
         if (!selectedAgent) return;
         try {
@@ -223,26 +301,56 @@ export default function AgentsPage() {
                             {agents.map(agent => (
                                 <li
                                     key={agent.id}
-                                    className={`p-3 rounded border transition-all ${selectedAgent?.id === agent.id ? 'bg-blue-50 border-blue-500 shadow-sm' : 'hover:bg-gray-50 border-gray-200'}`}
+                                    className={`p-3 rounded border transition-all ${
+                                        agent.active === false ? 'opacity-50 bg-gray-100' : ''
+                                    } ${selectedAgent?.id === agent.id ? 'bg-blue-50 border-blue-500 shadow-sm' : 'hover:bg-gray-50 border-gray-200'}`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2 flex-1 cursor-pointer" onClick={() => handleSelectAgent(agent)}>
                                             <Bot size={16} className={agent.type === 'ai' ? 'text-purple-600' : 'text-blue-600'} />
                                             <div>
-                                                <div className="font-semibold">{agent.name}</div>
-                                                <div className="text-xs text-gray-500 capitalize">{agent.type} - {agent.role}</div>                                                {agent.branch && agent.branch !== 'general' && (
+                                                <div className="font-semibold flex items-center gap-2">
+                                                    {agent.name}
+                                                    {agent.active === false && (
+                                                        <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Inactivo</span>
+                                                    )}
+                                                </div>
+                                                <div className="text-xs text-gray-500 capitalize">{agent.type} - {agent.role}</div>
+                                                {agent.branch && agent.branch !== 'general' && (
                                                     <div className="text-xs text-teal-600 flex items-center gap-1 mt-0.5">
                                                         <MapPin size={10} />
                                                         {BRANCH_NAMES[agent.branch]}
                                                     </div>
-                                                )}                                            </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteAgent(agent.id); }}
-                                            className="text-red-600 hover:text-red-800 p-1"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                            {agent.type === 'human' && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); openEditModal(agent); }}
+                                                        className="text-blue-600 hover:text-blue-800 p-1"
+                                                        title="Editar"
+                                                    >
+                                                        <Edit size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleToggleActive(agent); }}
+                                                        className={`p-1 ${agent.active === false ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'}`}
+                                                        title={agent.active === false ? 'Activar' : 'Desactivar'}
+                                                    >
+                                                        {agent.active === false ? <Power size={14} /> : <PowerOff size={14} />}
+                                                    </button>
+                                                </>
+                                            )}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteAgent(agent.id); }}
+                                                className="text-red-600 hover:text-red-800 p-1"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </li>
                             ))}
@@ -473,6 +581,89 @@ export default function AgentsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateModal(false)}
+                                    className="px-4 py-2 border rounded hover:bg-gray-50"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Agent Modal */}
+            {showEditModal && editingAgent && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">Editar Agente</h3>
+                            <button onClick={() => { setShowEditModal(false); setEditingAgent(null); }} className="text-gray-500 hover:text-gray-700">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleEditAgent} className="space-y-4">
+                            <div className="bg-gray-50 p-3 rounded mb-4">
+                                <p className="text-sm text-gray-600">
+                                    <strong>Email:</strong> {editingAgent.email}
+                                </p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <input
+                                    type="text"
+                                    className="w-full border rounded p-2"
+                                    value={editFormData.name}
+                                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                                <select
+                                    className="w-full border rounded p-2"
+                                    value={editFormData.role}
+                                    onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                                >
+                                    <option value="agent">Agente</option>
+                                    <option value="supervisor">Supervisor</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                                    <MapPin size={14} className="text-teal-600" />
+                                    Sucursal
+                                </label>
+                                <select
+                                    className="w-full border rounded p-2"
+                                    value={editFormData.branch}
+                                    onChange={(e) => setEditFormData({ ...editFormData, branch: e.target.value as BranchId })}
+                                >
+                                    {Object.entries(BRANCH_NAMES).map(([id, name]) => (
+                                        <option key={id} value={id}>{name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
+                                <input
+                                    type="tel"
+                                    className="w-full border rounded p-2"
+                                    value={editFormData.whatsapp}
+                                    onChange={(e) => setEditFormData({ ...editFormData, whatsapp: e.target.value })}
+                                    placeholder="+52 442 123 4567"
+                                />
+                            </div>
+                            <div className="flex gap-2 pt-4">
+                                <button
+                                    type="submit"
+                                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                >
+                                    Guardar Cambios
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowEditModal(false); setEditingAgent(null); }}
                                     className="px-4 py-2 border rounded hover:bg-gray-50"
                                 >
                                     Cancelar

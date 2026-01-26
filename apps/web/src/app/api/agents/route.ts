@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { id, name, email, password, role, type, prompt, branch, whatsapp } = await request.json();
+        const { id, name, email, password, role, type, prompt, branch, whatsapp, active } = await request.json();
 
         // If creating a human agent, create in Firebase Auth first
         if (type === 'human' && email && password) {
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
             if (role) updateData.role = role;
             if (branch) updateData.branch = branch;
             if (whatsapp !== undefined) updateData.whatsapp = whatsapp;
+            if (active !== undefined) updateData.active = active;
 
             await adminDb.collection('agents').doc(id).update(updateData);
             return NextResponse.json({ success: true });

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Agent, BranchId } from '@/lib/types';
@@ -13,6 +13,7 @@ interface AuthContextType {
     isAdmin: boolean;
     isSupervisor: boolean;
     branch: BranchId | null;
+    isActive: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
     isAdmin: false,
     isSupervisor: false,
     branch: null,
+    isActive: true,
 });
 
 export function useAuth() {
@@ -47,7 +49,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     const agentDoc = await getDoc(doc(db, 'agents', firebaseUser.uid));
                     
                     if (agentDoc.exists()) {
-                        setAgent(agentDoc.data() as Agent);
+                        const agentData = agentDoc.data() as Agent;
+                        
+                        // Check if agent is inactive
+                        if (agentData.active === false) {
+                            console.warn('[AuthContext] Agent is inactive, logging out:', firebaseUser.email);
+                            await signOut(auth);
+                            setAgent(null);
+                            setUser(null);
+                            setLoading(false);
+                            return;
+                        }
+                        
+                        setAgent(agentData);
                     } else {
                         // Fallback: buscar por email en la colección
                         const { collection, query, where, getDocs } = await import('firebase/firestore');
@@ -80,9 +94,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const isAdmin = agent?.role === 'admin';
     const isSupervisor = agent?.role === 'supervisor' || isAdmin;
     const branch = agent?.branch || null;
+    const isActive = agent?.active !== false;
 
     return (
-        <AuthContext.Provider value={{ user, agent, loading, isAdmin, isSupervisor, branch }}>
+        <AuthContext.Provider value={{ user, agent, loading, isAdmin, isSupervisor, branch, isActive }}>
             {children}
         </AuthContext.Provider>
     );
