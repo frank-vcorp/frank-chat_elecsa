@@ -398,11 +398,11 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                             </div>
                         )}
 
-                        {/* Botón eliminar - solo admin */}
+                        {/* Botón eliminar - solo admin - siempre visible */}
                         {isAdmin && (
                             <button
                                 onClick={(e) => handleDeleteConversation(conv.id, e)}
-                                className="absolute right-2 bottom-2 p-1.5 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-rose-500/20 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all"
+                                className="absolute right-2 bottom-2 p-1.5 rounded-lg bg-slate-800 text-rose-400 hover:bg-rose-500/30 hover:text-rose-300 transition-all border border-slate-700"
                                 title="Eliminar conversación"
                             >
                                 <Trash2 size={14} />
