@@ -14,6 +14,8 @@ interface AuthContextType {
     isSupervisor: boolean;
     branch: BranchId | null;
     isActive: boolean;
+    mustChangePassword: boolean;
+    setMustChangePassword: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +26,8 @@ const AuthContext = createContext<AuthContextType>({
     isSupervisor: false,
     branch: null,
     isActive: true,
+    mustChangePassword: false,
+    setMustChangePassword: () => {},
 });
 
 export function useAuth() {
@@ -38,6 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [agent, setAgent] = useState<Agent | null>(null);
     const [loading, setLoading] = useState(true);
+    const [mustChangePassword, setMustChangePassword] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -60,6 +65,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             setLoading(false);
                             return;
                         }
+                        
+                        // Verificar si debe cambiar contraseña
+                        setMustChangePassword(agentData.mustChangePassword === true);
                         
                         setAgent(agentData);
                     } else {
@@ -97,7 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const isActive = agent?.active !== false;
 
     return (
-        <AuthContext.Provider value={{ user, agent, loading, isAdmin, isSupervisor, branch, isActive }}>
+        <AuthContext.Provider value={{ user, agent, loading, isAdmin, isSupervisor, branch, isActive, mustChangePassword, setMustChangePassword }}>
             {children}
         </AuthContext.Provider>
     );

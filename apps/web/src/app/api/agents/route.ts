@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
                     branch: branch || 'general', // Sucursal del agente
                     whatsapp: whatsapp || '', // Número de WhatsApp del agente
                     active: true,
+                    mustChangePassword: true, // Obligar cambio de contraseña en primer login
                     createdAt: new Date().toISOString(),
                 });
 

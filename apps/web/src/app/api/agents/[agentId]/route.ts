@@ -76,9 +76,10 @@ export async function PATCH(
         // Actualizar contraseña en Firebase Auth
         await getAuth().updateUser(agentId, { password: newPassword });
 
-        // Actualizar contraseña en Firestore (para que admin/supervisor pueda verla)
+        // Actualizar contraseña en Firestore y marcar que ya no necesita cambiarla
         await adminDb.collection('agents').doc(agentId).update({
             password: newPassword,
+            mustChangePassword: false, // Ya no necesita cambiar contraseña
             passwordUpdatedAt: new Date().toISOString(),
         });
 

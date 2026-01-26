@@ -5,13 +5,15 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { MessageSquare, Settings, Users, Package, LogOut, Menu, X, FileText, Key, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { MessageSquare, Settings, Users, Package, LogOut, Menu, X, FileText, Key, Eye, EyeOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const { mustChangePassword, setMustChangePassword } = useAuth();
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -21,8 +23,20 @@ export default function DashboardLayout({
     const [showCurrentPwd, setShowCurrentPwd] = useState(false);
     const [showNewPwd, setShowNewPwd] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
+    // Modal obligatorio de primer login
+    const [showMandatoryPasswordModal, setShowMandatoryPasswordModal] = useState(false);
+    const [mandatoryNewPassword, setMandatoryNewPassword] = useState('');
+    const [mandatoryConfirmPassword, setMandatoryConfirmPassword] = useState('');
+    const [showMandatoryPwd, setShowMandatoryPwd] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
+
+    // Mostrar modal obligatorio si mustChangePassword es true
+    useEffect(() => {
+        if (mustChangePassword && user) {
+            setShowMandatoryPasswordModal(true);
+        }
+    }, [mustChangePassword, user]);
 
     // Obtener contraseña actual del agente
     const fetchCurrentPassword = async (uid: string) => {
@@ -34,6 +48,42 @@ export default function DashboardLayout({
             }
         } catch (error) {
             console.error('Error fetching password:', error);
+        }
+    };
+
+    // Cambio de contraseña obligatorio (primer login)
+    const handleMandatoryPasswordChange = async () => {
+        if (!user || !mandatoryNewPassword) return;
+        if (mandatoryNewPassword.length < 6) {
+            alert('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+        if (mandatoryNewPassword !== mandatoryConfirmPassword) {
+            alert('Las contraseñas no coinciden');
+            return;
+        }
+        setChangingPassword(true);
+        try {
+            const res = await fetch(`/api/agents/${user.uid}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newPassword: mandatoryNewPassword }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('✅ Contraseña actualizada correctamente. ¡Bienvenido!');
+                setShowMandatoryPasswordModal(false);
+                setMustChangePassword(false);
+                setMandatoryNewPassword('');
+                setMandatoryConfirmPassword('');
+            } else {
+                alert(`❌ ${data.error || 'Error al cambiar contraseña'}`);
+            }
+        } catch (error) {
+            console.error('Mandatory password change error:', error);
+            alert('❌ Error al cambiar contraseña');
+        } finally {
+            setChangingPassword(false);
         }
     };
 
@@ -288,6 +338,87 @@ export default function DashboardLayout({
                                 Cerrar
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal OBLIGATORIO de cambio de contraseña (primer login) */}
+            {showMandatoryPasswordModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100]">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+                        <div className="flex items-center gap-3 mb-4 text-amber-600">
+                            <AlertTriangle size={28} />
+                            <h3 className="text-xl font-bold text-gray-800">
+                                Cambio de Contraseña Requerido
+                            </h3>
+                        </div>
+
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-amber-800">
+                                Por seguridad, debes cambiar tu contraseña genérica antes de continuar.
+                                Esta acción solo se requiere la primera vez que inicias sesión.
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type={showMandatoryPwd ? 'text' : 'password'}
+                                        value={mandatoryNewPassword}
+                                        onChange={(e) => setMandatoryNewPassword(e.target.value)}
+                                        placeholder="Mínimo 6 caracteres"
+                                        className="flex-1 border rounded p-2 text-gray-800"
+                                        minLength={6}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowMandatoryPwd(!showMandatoryPwd)}
+                                        className="p-2 text-gray-500 hover:text-gray-700"
+                                    >
+                                        {showMandatoryPwd ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Confirmar Contraseña</label>
+                                <input
+                                    type={showMandatoryPwd ? 'text' : 'password'}
+                                    value={mandatoryConfirmPassword}
+                                    onChange={(e) => setMandatoryConfirmPassword(e.target.value)}
+                                    placeholder="Repite la contraseña"
+                                    className="w-full border rounded p-2 text-gray-800"
+                                />
+                                {mandatoryConfirmPassword && mandatoryNewPassword !== mandatoryConfirmPassword && (
+                                    <p className="text-xs text-red-500 mt-1">Las contraseñas no coinciden</p>
+                                )}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={handleMandatoryPasswordChange}
+                                disabled={changingPassword || mandatoryNewPassword.length < 6 || mandatoryNewPassword !== mandatoryConfirmPassword}
+                                className="w-full bg-amber-600 text-white px-4 py-3 rounded-lg hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+                            >
+                                {changingPassword ? (
+                                    <>
+                                        <RefreshCw className="animate-spin" size={16} />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Key size={16} />
+                                        Guardar Nueva Contraseña
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-gray-500 mt-4 text-center">
+                            No podrás usar el sistema hasta cambiar tu contraseña.
+                        </p>
                     </div>
                 </div>
             )}

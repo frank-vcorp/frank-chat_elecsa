@@ -19,6 +19,7 @@ export interface Agent {
     isOnline: boolean;
     active?: boolean;  // Si el agente puede acceder al sistema
     whatsapp?: string; // Número de WhatsApp del agente
+    mustChangePassword?: boolean; // Si debe cambiar contraseña en primer login
 }
 
 export interface Contact {
