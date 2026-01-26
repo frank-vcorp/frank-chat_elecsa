@@ -48,6 +48,7 @@ export default function AgentsPage() {
         role: 'agent',
         type: 'human' as 'human' | 'ai',
         branch: 'general' as BranchId,
+        whatsapp: '',
     });
 
     const fetchAgents = () => {
@@ -111,7 +112,7 @@ export default function AgentsPage() {
             if (res.ok) {
                 alert('✅ Agente creado correctamente');
                 setShowCreateModal(false);
-                setFormData({ name: '', email: '', password: '', role: 'agent', type: 'human', branch: 'general' });
+                setFormData({ name: '', email: '', password: '', role: 'agent', type: 'human', branch: 'general', whatsapp: '' });
                 fetchAgents();
             } else {
                 alert(`❌ ${data.error || 'Error al crear agente'}`);
@@ -259,6 +260,49 @@ export default function AgentsPage() {
                                 <span className="text-sm text-gray-500 ml-auto capitalize">({selectedAgent.type})</span>
                             </div>
 
+                            {/* Detalles del agente humano */}
+                            {selectedAgent.type === 'human' && (
+                                <div className="space-y-4 mb-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 p-3 rounded">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                                            <p className="text-sm font-medium">{selectedAgent.email || 'No especificado'}</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-3 rounded">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Rol</label>
+                                            <p className="text-sm font-medium capitalize">
+                                                <span className={`px-2 py-0.5 rounded text-xs ${
+                                                    selectedAgent.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                                                    selectedAgent.role === 'supervisor' ? 'bg-blue-100 text-blue-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                    {selectedAgent.role === 'admin' ? 'Administrador' : 
+                                                     selectedAgent.role === 'supervisor' ? 'Supervisor' : 'Agente'}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <div className="bg-gray-50 p-3 rounded">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Sucursal</label>
+                                            <p className="text-sm font-medium flex items-center gap-1">
+                                                <MapPin size={14} className="text-teal-600" />
+                                                {selectedAgent.branch ? BRANCH_NAMES[selectedAgent.branch] || selectedAgent.branch : 'General'}
+                                            </p>
+                                        </div>
+                                        <div className="bg-gray-50 p-3 rounded">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">WhatsApp</label>
+                                            <p className="text-sm font-medium">{(selectedAgent as any).whatsapp || 'No especificado'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-50 p-3 rounded">
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Estado</label>
+                                        <p className="text-sm font-medium flex items-center gap-2">
+                                            <span className={`w-2 h-2 rounded-full ${selectedAgent.active !== false ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                            {selectedAgent.active !== false ? 'Activo' : 'Inactivo'}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {selectedAgent.type === 'ai' && (
                                 <div className="mb-6">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">System Prompt</label>
@@ -402,6 +446,19 @@ export default function AgentsPage() {
                                         </select>
                                         <p className="text-xs text-gray-500 mt-1">
                                             El agente solo verá conversaciones de esta sucursal
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp (opcional)</label>
+                                        <input
+                                            type="tel"
+                                            className="w-full border rounded p-2"
+                                            value={formData.whatsapp}
+                                            onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                                            placeholder="+52 442 123 4567"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Número de contacto del agente
                                         </p>
                                     </div>
                                 </>
