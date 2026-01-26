@@ -5,7 +5,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Conversation, BranchId } from '@/lib/types';
 import { useAuth } from '@/lib/AuthContext';
-import { Search, User, Clock, Filter, X, MapPin, Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
+import { Search, User, Clock, Filter, X, MapPin, Bell, BellOff, Volume2, VolumeX, Trash2 } from 'lucide-react';
 
 // Nombres legibles de sucursales
 const BRANCH_NAMES: Record<BranchId, string> = {
@@ -168,6 +168,22 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
         if (!timestamp) return '';
         const date = new Date(timestamp.seconds * 1000);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    // Solo admin puede eliminar conversaciones
+    const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm('¿Eliminar esta conversación? Se borrarán todos los mensajes, notas y alertas asociadas. Esta acción no se puede deshacer.')) {
+            return;
+        }
+        try {
+            const res = await fetch(`/api/conversation/${conversationId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Error al eliminar');
+            // La lista se actualizará automáticamente por el listener de Firestore
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+            alert('Error al eliminar la conversación');
+        }
     };
 
     return (
@@ -372,6 +388,7 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                             </div>
                         </div>
 
+                        {/* Indicador de necesita humano */}
                         {conv.needsHuman && (
                             <div className="absolute right-2 top-2">
                                 <span className="relative flex h-2 w-2">
@@ -379,6 +396,17 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                                 </span>
                             </div>
+                        )}
+
+                        {/* Botón eliminar - solo admin */}
+                        {isAdmin && (
+                            <button
+                                onClick={(e) => handleDeleteConversation(conv.id, e)}
+                                className="absolute right-2 bottom-2 p-1.5 rounded-lg bg-slate-800/80 text-slate-500 hover:bg-rose-500/20 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all"
+                                title="Eliminar conversación"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         )}
                     </div>
                 ))}

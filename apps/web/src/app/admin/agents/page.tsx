@@ -1,8 +1,9 @@
 // src/app/admin/agents/page.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X, MapPin, Power, PowerOff } from 'lucide-react';
+import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X, MapPin, Power, PowerOff, Lock } from 'lucide-react';
 import { BranchId } from '@/lib/types';
+import { useAuth } from '@/lib/AuthContext';
 
 // Nombres legibles de las sucursales
 const BRANCH_NAMES: Record<BranchId, string> = {
@@ -33,6 +34,7 @@ interface Agent {
 }
 
 export default function AgentsPage() {
+    const { isAdmin } = useAuth();
     const [agents, setAgents] = useState<Agent[]>([]);
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
     const [prompt, setPrompt] = useState('');
@@ -273,7 +275,7 @@ export default function AgentsPage() {
                         <UserPlus size={16} />
                         Crear Agente
                     </button>
-                    {!sofiaExists && (
+                    {!sofiaExists && isAdmin && (
                         <button
                             onClick={handleInitializeSofia}
                             disabled={initializing}
@@ -327,29 +329,38 @@ export default function AgentsPage() {
                                         <div className="flex items-center gap-1">
                                             {agent.type === 'human' && (
                                                 <>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); openEditModal(agent); }}
-                                                        className="text-blue-600 hover:text-blue-800 p-1"
-                                                        title="Editar"
-                                                    >
-                                                        <Edit size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleToggleActive(agent); }}
-                                                        className={`p-1 ${agent.active === false ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'}`}
-                                                        title={agent.active === false ? 'Activar' : 'Desactivar'}
-                                                    >
-                                                        {agent.active === false ? <Power size={14} /> : <PowerOff size={14} />}
-                                                    </button>
+                                                    {/* Solo mostrar editar si es admin O si el agente no es admin */}
+                                                    {(isAdmin || agent.role !== 'admin') && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); openEditModal(agent); }}
+                                                            className="text-blue-600 hover:text-blue-800 p-1"
+                                                            title="Editar"
+                                                        >
+                                                            <Edit size={14} />
+                                                        </button>
+                                                    )}
+                                                    {/* Solo mostrar activar/desactivar si es admin O si el agente no es admin */}
+                                                    {(isAdmin || agent.role !== 'admin') && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleToggleActive(agent); }}
+                                                            className={`p-1 ${agent.active === false ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'}`}
+                                                            title={agent.active === false ? 'Activar' : 'Desactivar'}
+                                                        >
+                                                            {agent.active === false ? <Power size={14} /> : <PowerOff size={14} />}
+                                                        </button>
+                                                    )}
                                                 </>
                                             )}
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleDeleteAgent(agent.id); }}
-                                                className="text-red-600 hover:text-red-800 p-1"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                            {/* Solo admin puede eliminar */}
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteAgent(agent.id); }}
+                                                    className="text-red-600 hover:text-red-800 p-1"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </li>
@@ -414,19 +425,33 @@ export default function AgentsPage() {
                             {selectedAgent.type === 'ai' && (
                                 <div className="mb-6">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">System Prompt</label>
-                                    <textarea
-                                        className="w-full h-64 p-3 border rounded font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        value={prompt}
-                                        onChange={(e) => setPrompt(e.target.value)}
-                                        placeholder="Escribe el prompt del sistema aquí..."
-                                    />
-                                    <button
-                                        onClick={handleSavePrompt}
-                                        className="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2"
-                                    >
-                                        <RefreshCw size={16} />
-                                        Guardar Prompt
-                                    </button>
+                                    {isAdmin ? (
+                                        <>
+                                            <textarea
+                                                className="w-full h-64 p-3 border rounded font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                value={prompt}
+                                                onChange={(e) => setPrompt(e.target.value)}
+                                                placeholder="Escribe el prompt del sistema aquí..."
+                                            />
+                                            <button
+                                                onClick={handleSavePrompt}
+                                                className="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2"
+                                            >
+                                                <RefreshCw size={16} />
+                                                Guardar Prompt
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="bg-gray-50 border rounded p-4">
+                                            <div className="flex items-center gap-2 text-amber-600 mb-3">
+                                                <Lock size={16} />
+                                                <span className="text-sm font-medium">Solo lectura - Solo administradores pueden editar</span>
+                                            </div>
+                                            <pre className="text-xs text-gray-600 whitespace-pre-wrap max-h-64 overflow-auto font-mono">
+                                                {prompt || 'Sin prompt configurado'}
+                                            </pre>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -535,8 +560,14 @@ export default function AgentsPage() {
                                         >
                                             <option value="agent">Agente</option>
                                             <option value="supervisor">Supervisor</option>
-                                            <option value="admin">Administrador</option>
+                                            {isAdmin && <option value="admin">Administrador</option>}
                                         </select>
+                                        {!isAdmin && (
+                                            <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                                <Lock size={10} />
+                                                Solo administradores pueden crear otros administradores
+                                            </p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
@@ -619,15 +650,26 @@ export default function AgentsPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-                                <select
-                                    className="w-full border rounded p-2"
-                                    value={editFormData.role}
-                                    onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                                >
-                                    <option value="agent">Agente</option>
-                                    <option value="supervisor">Supervisor</option>
-                                    <option value="admin">Administrador</option>
-                                </select>
+                                {/* Si el agente es admin y el usuario no es admin, no puede cambiar el rol */}
+                                {editingAgent?.role === 'admin' && !isAdmin ? (
+                                    <div className="w-full border rounded p-2 bg-gray-100 text-gray-500">
+                                        Administrador
+                                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                            <Lock size={10} />
+                                            No puedes modificar administradores
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <select
+                                        className="w-full border rounded p-2"
+                                        value={editFormData.role}
+                                        onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                                    >
+                                        <option value="agent">Agente</option>
+                                        <option value="supervisor">Supervisor</option>
+                                        {isAdmin && <option value="admin">Administrador</option>}
+                                    </select>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
