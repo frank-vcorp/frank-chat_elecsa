@@ -1,7 +1,7 @@
 // src/app/admin/agents/page.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X, MapPin, Power, PowerOff, Lock } from 'lucide-react';
+import { Bot, RefreshCw, Send, UserPlus, Edit, Trash2, X, MapPin, Power, PowerOff, Lock, Eye, EyeOff, Key } from 'lucide-react';
 import { BranchId } from '@/lib/types';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -25,6 +25,7 @@ interface Agent {
     id: string;
     name: string;
     email?: string;
+    password?: string;
     role: string;
     type: 'human' | 'ai';
     prompt?: string;
@@ -60,6 +61,11 @@ export default function AgentsPage() {
         branch: 'general' as BranchId,
         whatsapp: '',
     });
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordAgent, setPasswordAgent] = useState<Agent | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [changingPassword, setChangingPassword] = useState(false);
 
     const fetchAgents = () => {
         fetch('/api/agents')
@@ -188,6 +194,44 @@ export default function AgentsPage() {
             whatsapp: agent.whatsapp || '',
         });
         setShowEditModal(true);
+    };
+
+    const openPasswordModal = (agent: Agent) => {
+        setPasswordAgent(agent);
+        setShowPassword(false);
+        setNewPassword('');
+        setShowPasswordModal(true);
+    };
+
+    const handleChangePassword = async () => {
+        if (!passwordAgent || !newPassword) return;
+        if (newPassword.length < 6) {
+            alert('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+        setChangingPassword(true);
+        try {
+            const res = await fetch(`/api/agents/${passwordAgent.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newPassword }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('✅ Contraseña actualizada correctamente');
+                setShowPasswordModal(false);
+                setPasswordAgent(null);
+                setNewPassword('');
+                fetchAgents(); // Recargar para ver la nueva contraseña
+            } else {
+                alert(`❌ ${data.error || 'Error al cambiar contraseña'}`);
+            }
+        } catch (error) {
+            console.error('Change password error:', error);
+            alert('❌ Error al cambiar contraseña');
+        } finally {
+            setChangingPassword(false);
+        }
     };
 
     const handleEditAgent = async (e: React.FormEvent) => {
@@ -329,6 +373,16 @@ export default function AgentsPage() {
                                         <div className="flex items-center gap-1">
                                             {agent.type === 'human' && (
                                                 <>
+                                                    {/* Ver/Cambiar contraseña - solo admin/supervisor */}
+                                                    {(isAdmin || agent.role !== 'admin') && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); openPasswordModal(agent); }}
+                                                            className="text-amber-600 hover:text-amber-800 p-1"
+                                                            title="Ver/Cambiar contraseña"
+                                                        >
+                                                            <Key size={14} />
+                                                        </button>
+                                                    )}
                                                     {/* Solo mostrar editar si es admin O si el agente no es admin */}
                                                     {(isAdmin || agent.role !== 'admin') && (
                                                         <button
@@ -712,6 +766,100 @@ export default function AgentsPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Password Modal */}
+            {showPasswordModal && passwordAgent && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Key className="text-amber-600" size={20} />
+                                Contraseña de {passwordAgent.name}
+                            </h3>
+                            <button 
+                                onClick={() => { setShowPasswordModal(false); setPasswordAgent(null); setNewPassword(''); }} 
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Mostrar contraseña actual */}
+                        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña Actual</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={passwordAgent.password || '(no disponible)'}
+                                    readOnly
+                                    className="flex-1 border rounded p-2 bg-white font-mono"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="p-2 text-gray-500 hover:text-gray-700"
+                                    title={showPassword ? 'Ocultar' : 'Mostrar'}
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
+                            {passwordAgent.password && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(passwordAgent.password || '');
+                                        alert('Contraseña copiada al portapapeles');
+                                    }}
+                                    className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                                >
+                                    📋 Copiar al portapapeles
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Cambiar contraseña */}
+                        <div className="border-t pt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña</label>
+                            <input
+                                type="text"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Mínimo 6 caracteres"
+                                className="w-full border rounded p-2 mb-2"
+                                minLength={6}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleChangePassword}
+                                disabled={changingPassword || newPassword.length < 6}
+                                className="w-full bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {changingPassword ? (
+                                    <>
+                                        <RefreshCw className="animate-spin" size={16} />
+                                        Cambiando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Key size={16} />
+                                        Cambiar Contraseña
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                        <div className="flex gap-2 pt-4 border-t mt-4">
+                            <button
+                                type="button"
+                                onClick={() => { setShowPasswordModal(false); setPasswordAgent(null); setNewPassword(''); }}
+                                className="flex-1 px-4 py-2 border rounded hover:bg-gray-50"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

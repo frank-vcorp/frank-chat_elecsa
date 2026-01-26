@@ -26,10 +26,11 @@ export async function POST(request: NextRequest) {
                     displayName: name,
                 });
 
-                // Create agent document in Firestore
+                // Create agent document in Firestore (incluye contraseña inicial para admin/supervisor)
                 await adminDb.collection('agents').doc(userRecord.uid).set({
                     name: name || email,
                     email,
+                    password, // Contraseña inicial (visible solo para admin/supervisor)
                     role: role || 'agent',
                     type: 'human',
                     branch: branch || 'general', // Sucursal del agente

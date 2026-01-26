@@ -60,6 +60,35 @@ export async function PUT(
     }
 }
 
+// PATCH /api/agents/[agentId] - Cambiar contraseña del agente
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ agentId: string }> }
+) {
+    try {
+        const { agentId } = await params;
+        const { newPassword } = await request.json();
+
+        if (!newPassword || newPassword.length < 6) {
+            return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 });
+        }
+
+        // Actualizar contraseña en Firebase Auth
+        await getAuth().updateUser(agentId, { password: newPassword });
+
+        // Actualizar contraseña en Firestore (para que admin/supervisor pueda verla)
+        await adminDb.collection('agents').doc(agentId).update({
+            password: newPassword,
+            passwordUpdatedAt: new Date().toISOString(),
+        });
+
+        return NextResponse.json({ success: true, message: 'Contraseña actualizada correctamente' });
+    } catch (error: any) {
+        console.error('Change password error:', error);
+        return NextResponse.json({ error: error.message || 'Error al cambiar contraseña' }, { status: 500 });
+    }
+}
+
 // DELETE /api/agents/[agentId] - Delete agent
 export async function DELETE(
     _request: NextRequest,
