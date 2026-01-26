@@ -13,7 +13,7 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ conversationId }: ChatWindowProps) {
-    const { isAdmin } = useAuth();
+    const { isAdmin, user, agent } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
@@ -223,12 +223,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     };
 
     const handleTakeConversation = async () => {
-        if (!conversationId) return;
+        if (!conversationId || !user) return;
         try {
             await fetch('/api/conversation/assign', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ conversationId, agentId: 'human' }),
+                body: JSON.stringify({ 
+                    conversationId, 
+                    agentId: user.uid,
+                    agentName: agent?.name || user.email || 'Agente'
+                }),
             });
         } catch (error) {
             console.error('Failed to take conversation', error);
@@ -393,7 +397,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-1 text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                    <User size={12} /> Agente Humano
+                                    <User size={12} /> {(conversation as any).assignedToName || 'Agente Humano'}
                                 </span>
                             )}
                         </div>

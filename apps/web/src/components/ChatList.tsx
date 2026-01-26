@@ -392,6 +392,16 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                                         </span>
                                     </div>
                                 )}
+
+                                {/* Assigned Agent Badge */}
+                                {conv.assignedTo && conv.assignedTo !== 'ai' && (
+                                    <div className="mt-1.5">
+                                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1 w-fit">
+                                            <User size={10} />
+                                            {(conv as any).assignedToName || 'Agente'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
