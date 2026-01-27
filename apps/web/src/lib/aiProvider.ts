@@ -192,19 +192,71 @@ Formato: Texto plano, directo y profesional.`;
 }
 
 // Configuración de sucursales y mapeo de ciudades
-const BRANCHES_CONFIG: Record<string, { cities: string[] }> = {
-    guadalajara: { cities: ['guadalajara', 'gdl', 'zapopan', 'tlaquepaque', 'tonala', 'tlajomulco', 'jalisco'] },
-    coahuila: { cities: ['saltillo', 'torreon', 'monclova', 'piedras negras', 'coahuila', 'acuña', 'sabinas'] },
-    leon: { cities: ['leon', 'guanajuato', 'irapuato', 'celaya', 'salamanca', 'silao'] },
-    queretaro: { cities: ['queretaro', 'qro', 'san juan del rio', 'corregidora', 'el marques'] },
-    toluca: { cities: ['toluca', 'metepec', 'zinacantepec', 'estado de mexico', 'edomex', 'lerma'] },
-    monterrey: { cities: ['monterrey', 'mty', 'san pedro', 'apodaca', 'guadalupe', 'san nicolas', 'santa catarina', 'nuevo leon'] },
-    centro: { cities: ['cdmx centro', 'centro historico', 'cuauhtemoc', 'venustiano carranza', 'benito juarez'] },
-    armas: { cities: ['cdmx', 'ciudad de mexico', 'mexico df', 'df', 'azcapotzalco', 'miguel hidalgo', 'gustavo a madero'] },
-    veracruz: { cities: ['veracruz', 'xalapa', 'boca del rio', 'coatzacoalcos', 'poza rica', 'cordoba', 'orizaba'] },
-    slp: { cities: ['san luis potosi', 'slp', 'soledad', 'matehuala', 'ciudad valles'] },
-    puebla: { cities: ['puebla', 'cholula', 'atlixco', 'tehuacan', 'san andres cholula'] }
+const BRANCHES_CONFIG: Record<string, { cities: string[], displayName: string }> = {
+    guadalajara: { cities: ['guadalajara', 'gdl', 'zapopan', 'tlaquepaque', 'tonala', 'tlajomulco', 'jalisco', 'nayarit', 'tepic', 'colima', 'manzanillo'], displayName: 'Guadalajara' },
+    coahuila: { cities: ['saltillo', 'torreon', 'monclova', 'piedras negras', 'coahuila', 'acuña', 'sabinas', 'durango', 'chihuahua', 'ciudad juarez', 'delicias'], displayName: 'Coahuila (Torreón/Saltillo)' },
+    leon: { cities: ['leon', 'guanajuato', 'irapuato', 'celaya', 'salamanca', 'silao', 'aguascalientes', 'zacatecas'], displayName: 'León' },
+    queretaro: { cities: ['queretaro', 'qro', 'san juan del rio', 'corregidora', 'el marques'], displayName: 'Querétaro' },
+    toluca: { cities: ['toluca', 'metepec', 'zinacantepec', 'estado de mexico', 'edomex', 'lerma', 'michoacan', 'morelia', 'uruapan'], displayName: 'Toluca' },
+    monterrey: { cities: ['monterrey', 'mty', 'san pedro', 'apodaca', 'guadalupe', 'san nicolas', 'santa catarina', 'nuevo leon', 'tamaulipas', 'reynosa', 'matamoros', 'nuevo laredo', 'tampico', 'ciudad victoria'], displayName: 'Monterrey' },
+    centro: { cities: ['cdmx centro', 'centro historico', 'cuauhtemoc', 'venustiano carranza', 'benito juarez'], displayName: 'CDMX Centro' },
+    armas: { cities: ['cdmx', 'ciudad de mexico', 'mexico df', 'df', 'azcapotzalco', 'miguel hidalgo', 'gustavo a madero', 'morelos', 'cuernavaca', 'hidalgo', 'pachuca', 'tlaxcala', 'guerrero', 'acapulco', 'chilpancingo'], displayName: 'CDMX Armas' },
+    veracruz: { cities: ['veracruz', 'xalapa', 'boca del rio', 'coatzacoalcos', 'poza rica', 'cordoba', 'orizaba', 'oaxaca', 'tabasco', 'villahermosa', 'chiapas', 'tuxtla', 'yucatan', 'merida', 'cancun', 'quintana roo', 'campeche'], displayName: 'Veracruz' },
+    slp: { cities: ['san luis potosi', 'slp', 'soledad', 'matehuala', 'ciudad valles'], displayName: 'San Luis Potosí' },
+    puebla: { cities: ['puebla', 'cholula', 'atlixco', 'tehuacan', 'san andres cholula'], displayName: 'Puebla' }
 };
+
+// Estados sin sucursal directa - para mostrar mensaje especial
+const ESTADOS_SIN_SUCURSAL: Record<string, string> = {
+    // Norte
+    'baja california': 'No tenemos sucursal en Baja California',
+    'baja california sur': 'No tenemos sucursal en Baja California Sur',
+    'sonora': 'No tenemos sucursal en Sonora',
+    'sinaloa': 'No tenemos sucursal en Sinaloa',
+    // Sureste
+    'yucatan': 'No tenemos sucursal en Yucatán',
+    'quintana roo': 'No tenemos sucursal en Quintana Roo',
+    'campeche': 'No tenemos sucursal en Campeche',
+    'chiapas': 'No tenemos sucursal en Chiapas',
+    'oaxaca': 'No tenemos sucursal en Oaxaca',
+    'tabasco': 'No tenemos sucursal en Tabasco',
+    // Otros
+    'nayarit': 'No tenemos sucursal en Nayarit',
+    'colima': 'No tenemos sucursal en Colima',
+    'durango': 'No tenemos sucursal en Durango',
+    'chihuahua': 'No tenemos sucursal en Chihuahua',
+    'guerrero': 'No tenemos sucursal en Guerrero',
+    'morelos': 'No tenemos sucursal en Morelos',
+};
+
+/** Obtener lista de sucursales disponibles formateada */
+export function getBranchesListText(): string {
+    const branches = [
+        '📍 Guadalajara (Jalisco)',
+        '📍 Monterrey (Nuevo León)',
+        '📍 León (Guanajuato)',
+        '📍 Querétaro',
+        '📍 San Luis Potosí',
+        '📍 Toluca (Estado de México)',
+        '📍 Puebla',
+        '📍 Veracruz',
+        '📍 Coahuila (Torreón/Saltillo)',
+        '📍 CDMX Centro',
+        '📍 CDMX Armas',
+    ];
+    return branches.join('\n');
+}
+
+/** Detecta si es un estado sin sucursal propia */
+export function detectEstadoSinSucursal(text: string): string | null {
+    const normalized = normalizeText(text);
+    for (const [estado, mensaje] of Object.entries(ESTADOS_SIN_SUCURSAL)) {
+        if (normalized.includes(normalizeText(estado))) {
+            return mensaje;
+        }
+    }
+    return null;
+}
 
 /** Normaliza texto removiendo acentos para mejor matching */
 function normalizeText(text: string): string {

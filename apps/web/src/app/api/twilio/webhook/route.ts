@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Message, Conversation, Contact } from '@/lib/types';
-import { getSofiaResponse, handOffToHuman, detectBranchByCity } from '@/lib/aiProvider';
+import { getSofiaResponse, handOffToHuman, detectBranchByCity, detectEstadoSinSucursal, getBranchesListText } from '@/lib/aiProvider';
 import { sendWhatsAppMessage } from '@/lib/twilio';
 
 /** Detecta si Sofia indica escalación a humano (semáforo rojo) */
@@ -203,11 +203,42 @@ export async function POST(request: NextRequest) {
                     
                     console.log(`[Webhook] Detected city: ${detectedCity}, Branch: ${branch}`);
                     
-                    await handOffToHuman(
-                        conversationId,
-                        `Sofia escaló la conversación. Ciudad detectada: ${detectedCity || 'no detectada'}`,
-                        detectedCity || undefined
-                    );
+                    // Si detectamos un estado sin sucursal propia, enviar mensaje con opciones
+                    const estadoSinSucursal = detectEstadoSinSucursal(body);
+                    if (estadoSinSucursal && !branch) {
+                        console.log(`[Webhook] Estado sin sucursal detectado: ${estadoSinSucursal}`);
+                        const mensajeSucursales = `${estadoSinSucursal}, pero podemos atenderte desde cualquiera de nuestras sucursales con envío a tu ubicación 📦\n\nNuestras sucursales:\n${getBranchesListText()}\n\n¿Cuál te queda más cerca o cuál prefieres?`;
+                        
+                        // Enviar mensaje con opciones
+                        await sendWhatsAppMessage(phoneNumber, mensajeSucursales, to);
+                        
+                        // Guardar mensaje en Firestore
+                        const optionsMsgRef = messagesRef.doc();
+                        await optionsMsgRef.set({
+                            id: optionsMsgRef.id,
+                            conversationId,
+                            senderId: 'sofia',
+                            senderType: 'agent',
+                            content: mensajeSucursales,
+                            contentType: 'text',
+                            createdAt: FieldValue.serverTimestamp() as any,
+                            status: 'sent',
+                        } as Message);
+                        
+                        // Marcar que necesita humano pero no asignar sucursal aún
+                        await handOffToHuman(
+                            conversationId,
+                            `Sofia detectó estado sin sucursal (${body}). Esperando que cliente elija sucursal.`,
+                            undefined // Sin ciudad para que quede en general
+                        );
+                    } else {
+                        // Flujo normal: asignar a sucursal detectada o general
+                        await handOffToHuman(
+                            conversationId,
+                            `Sofia escaló la conversación. Ciudad detectada: ${detectedCity || 'no detectada'}`,
+                            detectedCity || undefined
+                        );
+                    }
                 }
             } else {
                 console.log('[Webhook] AI did not generate a reply.');
