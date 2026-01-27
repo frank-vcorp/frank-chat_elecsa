@@ -206,13 +206,23 @@ const BRANCHES_CONFIG: Record<string, { cities: string[] }> = {
     puebla: { cities: ['puebla', 'cholula', 'atlixco', 'tehuacan', 'san andres cholula'] }
 };
 
+/** Normaliza texto removiendo acentos para mejor matching */
+function normalizeText(text: string): string {
+    return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+        .trim();
+}
+
 /** Detecta la sucursal basándose en una ciudad mencionada */
 export function detectBranchByCity(cityText: string): string | null {
-    const normalized = cityText.toLowerCase().trim();
+    const normalized = normalizeText(cityText);
     
     for (const [branchId, config] of Object.entries(BRANCHES_CONFIG)) {
         for (const city of config.cities) {
-            if (normalized.includes(city) || city.includes(normalized)) {
+            const normalizedCity = normalizeText(city);
+            if (normalized.includes(normalizedCity) || normalizedCity.includes(normalized)) {
                 return branchId;
             }
         }
