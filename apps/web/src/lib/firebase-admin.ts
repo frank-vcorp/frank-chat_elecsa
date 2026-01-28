@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 // Only initialize if we have the required credentials
 const hasCredentials =
@@ -27,3 +28,4 @@ if (!getApps().length) {
 
 const adminApp = getApp();
 export const adminDb = getFirestore(adminApp);
+export const adminAuth = getAuth(adminApp);

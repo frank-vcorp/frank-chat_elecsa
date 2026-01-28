@@ -1,15 +1,61 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
+import { cookies } from 'next/headers';
 
 /**
  * Endpoint para corregir agentes que no tienen branches configurado correctamente
  * GET: Lista agentes con problemas de configuración
  * POST: Corrige automáticamente los agentes (copia branch a branches si falta)
  * 
+ * ⚠️ SEGURIDAD: Requiere autenticación de administrador
+ * 
  * FIX REFERENCE: FIX-20250128-02
  * @author IMPL-20250128-02
  */
+
+// Función auxiliar para verificar rol admin
+async function verifyAdminRole(): Promise<{ valid: boolean; error?: string; userId?: string }> {
+    try {
+        const cookieStore = await cookies();
+        const sessionCookie = cookieStore.get('session')?.value;
+        
+        if (!sessionCookie) {
+            return { valid: false, error: 'No autenticado - sesión no encontrada' };
+        }
+
+        // Verificar el token de sesión
+        const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
+        const userId = decodedClaims.uid;
+
+        // Buscar el agente en Firestore y verificar rol
+        const agentDoc = await adminDb.collection('agents').doc(userId).get();
+        
+        if (!agentDoc.exists) {
+            return { valid: false, error: 'Usuario no registrado como agente' };
+        }
+
+        const agentData = agentDoc.data();
+        if (agentData?.role !== 'admin') {
+            return { valid: false, error: 'Acceso denegado - se requiere rol de administrador' };
+        }
+
+        return { valid: true, userId };
+    } catch (error: any) {
+        console.error('[/api/agents/fix] Error verificando admin:', error);
+        return { valid: false, error: 'Error de autenticación: ' + error.message };
+    }
+}
+
 export async function GET() {
+    // 🔒 Verificar autenticación de admin
+    const authResult = await verifyAdminRole();
+    if (!authResult.valid) {
+        return NextResponse.json(
+            { error: authResult.error },
+            { status: 401 }
+        );
+    }
+    console.log(`[/api/agents/fix] GET ejecutado por admin: ${authResult.userId}`);
     try {
         const snapshot = await adminDb.collection('agents').get();
         const agentsWithIssues: any[] = [];
@@ -57,6 +103,16 @@ export async function GET() {
 }
 
 export async function POST() {
+    // 🔒 Verificar autenticación de admin
+    const authResult = await verifyAdminRole();
+    if (!authResult.valid) {
+        return NextResponse.json(
+            { error: authResult.error },
+            { status: 401 }
+        );
+    }
+    console.log(`[/api/agents/fix] POST ejecutado por admin: ${authResult.userId}`);
+
     try {
         const snapshot = await adminDb.collection('agents').get();
         const fixes: any[] = [];

@@ -93,7 +93,21 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
         }
     };
 
+    /**
+     * TODO: IMPORTANTE - DEUDA TÉCNICA DE SEGURIDAD (v2.1)
+     * ⚠️ Actualmente se descargan TODAS las conversaciones y se filtran en cliente.
+     * Esto expone datos de otras sucursales en el tráfico de red aunque no se muestren.
+     * 
+     * MIGRACIÓN REQUERIDA:
+     * 1. Implementar Firestore Security Rules que filtren por branch del usuario
+     * 2. O usar queries filtradas en servidor: where('branch', 'in', userBranches)
+     * 3. Crear índice compuesto: branch + lastMessageAt
+     * 
+     * Referencia: QA-20260128-01 - Hallazgo crítico #2
+     * @see context/SPEC-SEGURIDAD.md
+     */
     useEffect(() => {
+        // TODO v2.1: Filtrar en servidor con where('branch', 'in', allowedBranches)
         const q = query(collection(db, 'conversations'), orderBy('lastMessageAt', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const convs = snapshot.docs.map((doc) => ({
@@ -118,9 +132,11 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
             
             // Si hay más conversaciones que antes, notificar
             // null = primera carga, no notificar (evita spam al abrir dashboard)
+            // NOTA: El sonido se maneja centralizadamente en StatusBar para evitar eco
+            // Aquí solo enviamos notificación del navegador (visual, no sonora)
             if (prevNeedsHumanCountRef.current !== null && currentCount > prevNeedsHumanCountRef.current) {
                 const newConv = needsHumanConvs[0]; // La más reciente
-                playNotificationSound();
+                // playNotificationSound(); // ❌ Removido - centralizado en StatusBar (QA-20260128-01)
                 sendNotification(
                     '🔴 Nueva conversación requiere atención',
                     `${newConv.contactId} necesita ayuda${newConv.branch ? ` (${BRANCH_NAMES[newConv.branch]})` : ''}`
