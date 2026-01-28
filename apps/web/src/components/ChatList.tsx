@@ -146,6 +146,8 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
         // Filtro por sucursal:
         // - Admin/Supervisor: ve todas o puede filtrar por sucursal
         // - Agente normal: solo ve conversaciones de sus sucursales + las genéricas
+        // - Agente sin sucursal asignada: solo ve conversaciones genéricas (error de config)
+        // FIX REFERENCE: FIX-20250128-01
         let matchesBranch = true;
         if (isSupervisor || isAdmin) {
             // Supervisores pueden filtrar manualmente
@@ -156,6 +158,11 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
         } else if (branch) {
             // Compatibilidad: agentes con una sola sucursal
             matchesBranch = c.branch === branch || c.branch === 'general' || !c.branch;
+        } else {
+            // ⚠️ Agente sin sucursal asignada: solo ve genéricas para evitar ver todo
+            // Esto indica error de configuración del agente en Firestore
+            matchesBranch = c.branch === 'general' || !c.branch;
+            console.warn('[ChatList] Agent has no branch assigned - showing only general conversations');
         }
 
         return matchesSearch && matchesTags && matchesStatus && matchesBranch;

@@ -5,13 +5,19 @@ import { Message, Conversation, Contact } from '@/lib/types';
 import { getSofiaResponse, handOffToHuman, detectBranchByCity, detectEstadoSinSucursal, getBranchesListText } from '@/lib/aiProvider';
 import { sendWhatsAppMessage } from '@/lib/twilio';
 
-/** Detecta si Sofia indica escalación a humano (semáforo rojo) */
+/** Detecta si Sofia indica escalación a humano (semáforo rojo)
+ * FIX REFERENCE: FIX-20250128-01
+ */
 function detectEscalation(response: string): boolean {
     const escalationPatterns = [
         /\[SEMÁFORO:\s*ROJO\]/i,
-        /transferir.*asesor/i,
-        /comunic.*humano/i,
+        /transferir|transfiero/i,                    // Cualquier variante de transferir
+        /realizo la transferencia/i,                  // Frase exacta que usa Sofía
+        /te comunico con|te paso con/i,               // Frases de handoff
+        /comunic.*humano|conectar.*asesor/i,
         /escalando.*conversación/i,
+        /un asesor.*te (ayude|contactar|atender)/i,   // "un asesor te ayude"
+        /en breve te contactarán/i,                   // Frase de cierre de escalación
     ];
     return escalationPatterns.some(pattern => pattern.test(response));
 }
