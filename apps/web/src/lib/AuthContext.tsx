@@ -52,11 +52,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
             
             if (firebaseUser?.email) {
                 try {
-                    // Buscar el documento del agente por email
+                    // Buscar el documento del agente por UID
                     const agentDoc = await getDoc(doc(db, 'agents', firebaseUser.uid));
                     
                     if (agentDoc.exists()) {
-                        const agentData = agentDoc.data() as Agent;
+                        // IMPORTANTE: incluir el id del documento en los datos
+                        // FIX REFERENCE: FIX-20250128-02
+                        const agentData = { id: agentDoc.id, ...agentDoc.data() } as Agent;
+                        
+                        console.log('[AuthContext] Agent loaded:', {
+                            id: agentData.id,
+                            email: agentData.email,
+                            role: agentData.role,
+                            branch: agentData.branch,
+                            branches: agentData.branches,
+                        });
                         
                         // Check if agent is inactive
                         if (agentData.active === false) {
@@ -81,7 +91,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         );
                         const snap = await getDocs(q);
                         if (!snap.empty) {
-                            setAgent(snap.docs[0].data() as Agent);
+                            // IMPORTANTE: incluir el id también en el fallback
+                            const docData = snap.docs[0];
+                            setAgent({ id: docData.id, ...docData.data() } as Agent);
                         } else {
                             console.warn('[AuthContext] No agent profile found for user:', firebaseUser.email);
                             setAgent(null);

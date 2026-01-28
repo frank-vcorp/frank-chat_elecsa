@@ -297,6 +297,59 @@ Esperado: Sofía responde con dirección, teléfono y horarios SIN escalar
 
 ---
 
+## F. CORRECCIÓN ADICIONAL: Campo `branches` no se guardaba (2026-01-28)
+
+### Síntoma Reportado
+Al crear agentes desde `/admin/agents`, los campos `branch`, `branches` y `role` NO se guardaban correctamente en Firestore.
+
+### Hallazgo Forense
+
+**El código de la API (`/api/agents/route.ts`) estaba CORRECTO.** El problema era de **datos históricos**:
+
+| Campo | Código API | Firestore Real |
+|-------|------------|----------------|
+| `role` | ✅ Se guarda | ✅ Todos los agentes humanos lo tenían |
+| `branch` | ✅ Se guarda | ✅ Todos los agentes humanos lo tenían |
+| `branches` | ✅ Se guarda | ⚠️ Solo 1 de 13 agentes lo tenía |
+
+**Causa raíz:** Los agentes fueron creados ANTES de implementar el soporte multi-sucursal (`branches`). El código nuevo sí guarda `branches`, pero los agentes antiguos solo tenían el campo legacy `branch`.
+
+### Solución Aplicada
+
+Se ejecutó migración automática via script:
+```bash
+node scripts/migrate-agents-branches.js
+```
+
+**Resultado de la migración (2026-01-28):**
+```
+✅ Migrados: 12
+⏭️  Saltados (ya tenían branches): 1
+❌ Errores: 0
+📋 Total procesados: 13
+```
+
+**Verificación post-migración:** Todos los 13 agentes ahora tienen:
+- ✅ `role` correctamente asignado
+- ✅ `branch` correctamente asignado
+- ✅ `branches` array correctamente asignado
+
+### Script de Migración Creado
+
+**Ubicación:** `scripts/migrate-agents-branches.js`
+
+Uso:
+```bash
+# Ver qué se migrará (sin cambios)
+node scripts/migrate-agents-branches.js --dry-run
+
+# Ejecutar migración
+node scripts/migrate-agents-branches.js
+```
+
+---
+
 **Firmado:** DEBY - Lead Debugger  
 **ID de intervención:** FIX-20250128-01  
-**Próximo paso:** SOFIA aplicar correcciones de código según sección C
+**Actualizado:** 2026-01-28  
+**Estado:** ✅ VALIDADO Y APLICADO
