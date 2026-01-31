@@ -149,14 +149,14 @@ export default function DashboardLayout({
     ];
 
     return (
-        <div className="flex h-screen bg-gray-50">
+        <div className="flex h-screen bg-slate-950">
             {/* Sidebar */}
             <aside
                 className={`${sidebarOpen ? 'w-64' : 'w-20'
-                    } bg-gradient-to-b from-gray-900 to-gray-800 text-white transition-all duration-300 flex flex-col shadow-xl`}
+                    } bg-slate-900/95 backdrop-blur-xl border-r border-slate-800/50 text-white transition-all duration-300 flex flex-col shadow-2xl`}
             >
                 {/* Logo & Toggle */}
-                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
                     {sidebarOpen ? (
                         <>
                             <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export default function DashboardLayout({
                             </div>
                             <button
                                 onClick={() => setSidebarOpen(false)}
-                                className="p-1 hover:bg-gray-700 rounded"
+                                className="p-1 hover:bg-slate-800 rounded"
                             >
                                 <X size={20} />
                             </button>
@@ -176,7 +176,7 @@ export default function DashboardLayout({
                     ) : (
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="p-1 hover:bg-gray-700 rounded mx-auto"
+                            className="p-1 hover:bg-slate-800 rounded mx-auto"
                         >
                             <Menu size={20} />
                         </button>
@@ -194,7 +194,7 @@ export default function DashboardLayout({
                                 href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
                                     ? 'bg-blue-600 text-white shadow-lg'
-                                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                    : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                                     } ${!sidebarOpen && 'justify-center'}`}
                             >
                                 <Icon size={20} />
@@ -205,7 +205,7 @@ export default function DashboardLayout({
                 </nav>
 
                 {/* User Profile */}
-                <div className="p-4 border-t border-gray-700">
+                <div className="p-4 border-t border-slate-800">
                     {sidebarOpen ? (
                         <div className="flex items-center gap-3 mb-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center font-bold">
@@ -213,7 +213,7 @@ export default function DashboardLayout({
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{user?.displayName || 'Usuario'}</p>
-                                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                                <p className="text-xs text-slate-400 truncate">{user?.email}</p>
                             </div>
                         </div>
                     ) : (
@@ -238,7 +238,7 @@ export default function DashboardLayout({
                         {sidebarOpen && <span className="text-sm font-medium">Mi Contraseña</span>}
                     </button>
                     {sidebarOpen && (
-                        <div className="mt-4 text-center text-[10px] text-gray-500">
+                        <div className="mt-4 text-center text-[10px] text-slate-500">
                             by Frank Saavedra
                         </div>
                     )}
@@ -259,9 +259,9 @@ export default function DashboardLayout({
                                 <Key className="text-amber-600" size={20} />
                                 Mi Contraseña
                             </h3>
-                            <button 
-                                onClick={() => { setShowPasswordModal(false); setNewPassword(''); }} 
-                                className="text-gray-500 hover:text-gray-700"
+                            <button
+                                onClick={() => { setShowPasswordModal(false); setNewPassword(''); }}
+                                className="text-slate-500 hover:text-gray-700"
                             >
                                 <X size={20} />
                             </button>
@@ -280,7 +280,7 @@ export default function DashboardLayout({
                                 <button
                                     type="button"
                                     onClick={() => setShowCurrentPwd(!showCurrentPwd)}
-                                    className="p-2 text-gray-500 hover:text-gray-700"
+                                    className="p-2 text-slate-500 hover:text-gray-700"
                                     title={showCurrentPwd ? 'Ocultar' : 'Mostrar'}
                                 >
                                     {showCurrentPwd ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -303,7 +303,7 @@ export default function DashboardLayout({
                                 <button
                                     type="button"
                                     onClick={() => setShowNewPwd(!showNewPwd)}
-                                    className="p-2 text-gray-500 hover:text-gray-700"
+                                    className="p-2 text-slate-500 hover:text-gray-700"
                                     title={showNewPwd ? 'Ocultar' : 'Mostrar'}
                                 >
                                     {showNewPwd ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -375,7 +375,7 @@ export default function DashboardLayout({
                                     <button
                                         type="button"
                                         onClick={() => setShowMandatoryPwd(!showMandatoryPwd)}
-                                        className="p-2 text-gray-500 hover:text-gray-700"
+                                        className="p-2 text-slate-500 hover:text-gray-700"
                                     >
                                         {showMandatoryPwd ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
@@ -416,7 +416,7 @@ export default function DashboardLayout({
                             </button>
                         </div>
 
-                        <p className="text-xs text-gray-500 mt-4 text-center">
+                        <p className="text-xs text-slate-500 mt-4 text-center">
                             No podrás usar el sistema hasta cambiar tu contraseña.
                         </p>
                     </div>
