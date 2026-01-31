@@ -70,14 +70,14 @@ export default function DashboardPage() {
             <div ref={containerRef} className="flex flex-1 overflow-hidden">
                 {/* Chat List - Se expande cuando no hay conversación seleccionada */}
                 <div 
-                    className="flex flex-col bg-gray-50 border-r border-gray-700 transition-all duration-200"
+                    className="flex flex-col bg-slate-950 border-r border-gray-700 transition-all duration-200"
                     style={{ 
                         width: selectedConversationId ? listWidth : '100%',
                         minWidth: selectedConversationId ? MIN_LIST_WIDTH : '100%'
                     }}
                 >
-                    <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <div className="p-4 border-b border-slate-800/50 bg-slate-900/95 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                             <MessageSquareText size={20} className="text-blue-600" />
                             Conversaciones
                         </h2>

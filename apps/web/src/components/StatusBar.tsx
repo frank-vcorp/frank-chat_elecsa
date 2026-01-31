@@ -104,7 +104,7 @@ export default function StatusBar() {
                 {stats.needsHuman > 0 && (
                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded font-medium ${
                         isFlashing 
-                            ? 'bg-white text-red-600 animate-bounce' 
+                            ? 'bg-slate-900/95 text-red-600 animate-bounce' 
                             : 'bg-red-500/80 text-white'
                     }`}>
                         <Bell size={12} className={isFlashing ? 'animate-ping' : ''} />
@@ -114,14 +114,14 @@ export default function StatusBar() {
                 )}
                 
                 {/* Total conversaciones */}
-                <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+                <div className="flex items-center gap-1.5 hover:bg-slate-900/95/10 px-2 py-0.5 rounded cursor-default">
                     <MessageSquare size={12} />
                     <span>{stats.total} activas</span>
                 </div>
 
                 {/* Mensajes sin leer */}
                 {stats.unreadTotal > 0 && (
-                    <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+                    <div className="flex items-center gap-1.5 hover:bg-slate-900/95/10 px-2 py-0.5 rounded cursor-default">
                         <Mail size={12} />
                         <span>{stats.unreadTotal} sin leer</span>
                     </div>
@@ -131,13 +131,13 @@ export default function StatusBar() {
             {/* Lado derecho */}
             <div className="flex items-center gap-4">
                 {/* IA */}
-                <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+                <div className="flex items-center gap-1.5 hover:bg-slate-900/95/10 px-2 py-0.5 rounded cursor-default">
                     <Bot size={12} />
                     <span>{stats.assignedToAi} IA</span>
                 </div>
 
                 {/* Humanos */}
-                <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+                <div className="flex items-center gap-1.5 hover:bg-slate-900/95/10 px-2 py-0.5 rounded cursor-default">
                     <Users size={12} />
                     <span>{stats.assignedToHuman} humanos</span>
                 </div>
