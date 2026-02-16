@@ -207,7 +207,7 @@ async function callClaude(
 ): Promise<string> {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await anthropic.messages.create({
-        model: 'claude-3-5-haiku-latest',
+        model: 'claude-3-5-haiku-20241022',
         max_tokens: 300,
         system: [
             {
