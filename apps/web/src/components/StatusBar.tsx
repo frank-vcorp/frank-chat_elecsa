@@ -30,24 +30,24 @@ export default function StatusBar() {
                 audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             }
             const ctx = audioContextRef.current;
-            
+
             // Crear oscilador para un "ding" sutil
             const oscillator = ctx.createOscillator();
             const gainNode = ctx.createGain();
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(ctx.destination);
-            
+
             // Frecuencias para un sonido agradable tipo "ding"
             oscillator.frequency.setValueAtTime(880, ctx.currentTime); // Nota A5
             oscillator.frequency.setValueAtTime(1320, ctx.currentTime + 0.1); // Nota E6
-            
+
             oscillator.type = 'sine';
-            
+
             // Volumen bajo y fade out
             gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-            
+
             oscillator.start(ctx.currentTime);
             oscillator.stop(ctx.currentTime + 0.3);
         } catch (e) {
@@ -82,7 +82,7 @@ export default function StatusBar() {
                 // Flash más intenso por 3 segundos
                 setTimeout(() => setIsFlashing(false), 3000);
             }
-            
+
             prevNeedsHumanRef.current = newStats.needsHuman;
             setStats(newStats);
         });
@@ -90,29 +90,44 @@ export default function StatusBar() {
         return () => unsubscribe();
     }, [playNotificationSound]);
 
+    // Efecto para repetir la alerta cada 30 segundos si hay chats pendientes (Persistencia)
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (stats.needsHuman > 0) {
+            interval = setInterval(() => {
+                playNotificationSound();
+                setIsFlashing(true);
+                setTimeout(() => setIsFlashing(false), 3000);
+            }, 30000); // Cada 30 segundos
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [stats.needsHuman, playNotificationSound]);
+
     return (
-        <div className={`h-7 flex items-center justify-between px-3 text-white text-xs select-none transition-colors duration-300 ${
-            stats.needsHuman > 0 && isFlashing 
-                ? 'bg-red-600 animate-pulse' 
-                : stats.needsHuman > 0 
-                    ? 'bg-orange-600' 
+        <div className={`h-7 flex items-center justify-between px-3 text-white text-xs select-none transition-colors duration-300 ${stats.needsHuman > 0 && isFlashing
+                ? 'bg-red-600 animate-pulse'
+                : stats.needsHuman > 0
+                    ? 'bg-orange-600'
                     : 'bg-blue-600'
-        }`}>
+            }`}>
             {/* Lado izquierdo */}
             <div className="flex items-center gap-4">
                 {/* Alerta - Necesitan humano */}
                 {stats.needsHuman > 0 && (
-                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded font-medium ${
-                        isFlashing 
-                            ? 'bg-white text-red-600 animate-bounce' 
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded font-medium ${isFlashing
+                            ? 'bg-white text-red-600 animate-bounce'
                             : 'bg-red-500/80 text-white'
-                    }`}>
+                        }`}>
                         <Bell size={12} className={isFlashing ? 'animate-ping' : ''} />
                         <AlertCircle size={12} />
                         <span>¡{stats.needsHuman} necesita{stats.needsHuman > 1 ? 'n' : ''} atención!</span>
                     </div>
                 )}
-                
+
                 {/* Total conversaciones */}
                 <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
                     <MessageSquare size={12} />
