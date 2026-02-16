@@ -39,7 +39,13 @@ export async function sendWhatsAppMessage(
             };
         }
 
-        const from = fromNumber ? (fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`) : `whatsapp:${whatsappNumber}`;
+        // Sanitize fromNumber to avoid double "whatsapp:" prefix if env var includes it
+        const envFrom = whatsappNumber.startsWith('whatsapp:') ? whatsappNumber : `whatsapp:${whatsappNumber}`;
+        const from = fromNumber
+            ? (fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`)
+            : envFrom;
+
+        console.log(`[Twilio] Sending from: ${from} to: ${to}`);
 
         const messageOptions: {
             from: string;

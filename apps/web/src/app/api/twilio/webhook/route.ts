@@ -183,8 +183,13 @@ export async function POST(request: NextRequest) {
                     // await humanDelay(chunks[i].length); 
                     await new Promise(r => setTimeout(r, 1000));
 
-                    console.log(`[Webhook] Sending AI chunk ${i + 1}/${chunks.length} via Twilio`);
-                    await sendWhatsAppMessage(phoneNumber, chunks[i], to);
+                    try {
+                        console.log(`[Webhook] Sending AI chunk ${i + 1}/${chunks.length} via Twilio`);
+                        await sendWhatsAppMessage(phoneNumber, chunks[i], to);
+                    } catch (twilioError) {
+                        const err = (twilioError as any).message || 'unknown';
+                        await sendWhatsAppMessage(phoneNumber, `⚠️ Error enviando parte ${i + 1}: ${err}`, to);
+                    }
                 }
 
                 // Guardar respuesta completa en Firestore (no fragmentada)
@@ -261,9 +266,14 @@ export async function POST(request: NextRequest) {
             }
         } catch (aiError) {
             console.error('[Webhook] AI/Twilio error:', aiError);
+
+            // Send error to user for debugging (Only in dev/test)
+            const errorMsg = (aiError as any).message || 'unknown error';
+            await sendWhatsAppMessage(phoneNumber, `⚠️ Error técnico: ${errorMsg}`, to);
+
             await adminDb.collection('system_logs').add({
                 type: 'webhook_ai_error',
-                error: (aiError as any).message || 'unknown',
+                error: errorMsg,
                 timestamp: FieldValue.serverTimestamp(),
             });
         }
