@@ -40,7 +40,8 @@ export async function sendWhatsAppMessage(
         }
 
         // Sanitize fromNumber to avoid double "whatsapp:" prefix if env var includes it
-        const envFrom = whatsappNumber.startsWith('whatsapp:') ? whatsappNumber : `whatsapp:${whatsappNumber}`;
+        const num = whatsappNumber || '';
+        const envFrom = num.startsWith('whatsapp:') ? num : `whatsapp:${num}`;
         const from = fromNumber
             ? (fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`)
             : envFrom;
