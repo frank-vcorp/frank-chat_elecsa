@@ -3,7 +3,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Message, Conversation, Contact } from '@/lib/types';
 import { getSofiaResponse, handOffToHuman, detectBranchByCity, detectEstadoSinSucursal, getBranchesListText } from '@/lib/aiProvider';
-import { sendWhatsAppMessage } from '@/lib/twilio';
+import { sendWhatsAppMessage, humanDelay, splitForWhatsApp } from '@/lib/twilio';
 
 /** Detecta si Sofia indica escalación a humano (semáforo rojo)
  * FIX REFERENCE: FIX-20250128-01
@@ -31,7 +31,7 @@ function extractCityMention(text: string): string | null {
         'veracruz', 'leon', 'saltillo', 'torreon', 'coahuila',
         'jalisco', 'nuevo leon', 'guanajuato', 'slp'
     ];
-    
+
     const normalized = text.toLowerCase();
     for (const city of cityPatterns) {
         if (normalized.includes(city)) {
@@ -174,17 +174,26 @@ export async function POST(request: NextRequest) {
         try {
             const sofiaReply = await getSofiaResponse(body, conversationId, phoneNumber);
             if (sofiaReply) {
-                console.log('[Webhook] Sending AI reply via Twilio');
-                // Use the original "To" number as the sender to match sandbox/production
-                await sendWhatsAppMessage(phoneNumber, sofiaReply, to);
+                // --- Social Robotics: delay humano + split de mensajes ---
+                const chunks = splitForWhatsApp(sofiaReply);
+                const fullReply = sofiaReply; // Guardar respuesta completa para Firestore
 
+                for (let i = 0; i < chunks.length; i++) {
+                    // Delay humano antes de cada mensaje (simula que "está escribiendo")
+                    await humanDelay(chunks[i].length);
+
+                    console.log(`[Webhook] Sending AI chunk ${i + 1}/${chunks.length} via Twilio`);
+                    await sendWhatsAppMessage(phoneNumber, chunks[i], to);
+                }
+
+                // Guardar respuesta completa en Firestore (no fragmentada)
                 const sofiaMsgRef = messagesRef.doc();
                 await sofiaMsgRef.set({
                     id: sofiaMsgRef.id,
                     conversationId,
                     senderId: 'sofia',
                     senderType: 'agent',
-                    content: sofiaReply,
+                    content: fullReply,
                     contentType: 'text',
                     createdAt: FieldValue.serverTimestamp() as any,
                     status: 'sent',
@@ -193,7 +202,7 @@ export async function POST(request: NextRequest) {
                 // Update the conversation's last message with Sofia's reply
                 const convSnap = await adminDb.collection('conversations').doc(conversationId).get();
                 await convSnap.ref.update({
-                    lastMessage: sofiaReply,
+                    lastMessage: chunks[chunks.length - 1], // Último chunk como preview
                     lastMessageAt: FieldValue.serverTimestamp(),
                 });
 
@@ -202,22 +211,22 @@ export async function POST(request: NextRequest) {
                 // --------------------------------------------------------------
                 if (detectEscalation(sofiaReply)) {
                     console.log('[Webhook] Escalation detected, routing to human agent');
-                    
+
                     // Try to detect city from user's message or sofia's reply
                     const detectedCity = extractCityMention(body) || extractCityMention(sofiaReply);
                     const branch = detectedCity ? detectBranchByCity(detectedCity) : null;
-                    
+
                     console.log(`[Webhook] Detected city: ${detectedCity}, Branch: ${branch}`);
-                    
+
                     // Si detectamos un estado sin sucursal propia, enviar mensaje con opciones
                     const estadoSinSucursal = detectEstadoSinSucursal(body);
                     if (estadoSinSucursal && !branch) {
                         console.log(`[Webhook] Estado sin sucursal detectado: ${estadoSinSucursal}`);
                         const mensajeSucursales = `${estadoSinSucursal}, pero podemos atenderte desde cualquiera de nuestras sucursales con envío a tu ubicación 📦\n\nNuestras sucursales:\n${getBranchesListText()}\n\n¿Cuál te queda más cerca o cuál prefieres?`;
-                        
+
                         // Enviar mensaje con opciones
                         await sendWhatsAppMessage(phoneNumber, mensajeSucursales, to);
-                        
+
                         // Guardar mensaje en Firestore
                         const optionsMsgRef = messagesRef.doc();
                         await optionsMsgRef.set({
@@ -230,7 +239,7 @@ export async function POST(request: NextRequest) {
                             createdAt: FieldValue.serverTimestamp() as any,
                             status: 'sent',
                         } as Message);
-                        
+
                         // Marcar que necesita humano pero no asignar sucursal aún
                         await handOffToHuman(
                             conversationId,

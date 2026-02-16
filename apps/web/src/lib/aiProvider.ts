@@ -165,7 +165,7 @@ export async function getSofiaResponse(
     // Agregar el mensaje actual al final
     history.push({ role: 'user', content: message });
 
-    // 3. Construir prompt final: base + catálogo + contexto
+    // 3. Construir prompt final: base + catálogo + contexto + hora
     let finalPrompt = basePrompt;
     if (productsText) {
         finalPrompt += productsText;
@@ -173,6 +173,10 @@ export async function getSofiaResponse(
     if (contextText) {
         finalPrompt += contextText;
     }
+
+    // Social Robotics: inyectar hora actual para saludos contextuales
+    const now = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+    finalPrompt += `\n\n[CONTEXTO TEMPORAL: Hora actual en México: ${now}. Adapta tu saludo: antes de 12pm="Buenos días", 12-7pm="Buenas tardes", después="Buenas noches".]`;
 
     return callClaude(finalPrompt, history);
 }
