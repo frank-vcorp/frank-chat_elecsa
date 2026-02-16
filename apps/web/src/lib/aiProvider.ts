@@ -196,7 +196,7 @@ export async function testAgentWithContext(agentId: string, message: string): Pr
     return callClaude(finalPrompt, [{ role: 'user', content: message }]);
 }
 
-/** Claude 3.5 Haiku — Motor principal de Sofía */
+/** Claude 3.5 Haiku — Motor principal de Sofía (con prompt caching) */
 async function callClaude(
     systemPrompt: string,
     conversationHistory: Array<{ role: 'user' | 'assistant', content: string }>
@@ -205,7 +205,13 @@ async function callClaude(
     const response = await anthropic.messages.create({
         model: 'claude-3-5-haiku-latest',
         max_tokens: 300,
-        system: systemPrompt,
+        system: [
+            {
+                type: 'text',
+                text: systemPrompt,
+                cache_control: { type: 'ephemeral' }, // Cache por 5 min — ahorra ~90% en prompt repetido
+            },
+        ],
         messages: conversationHistory,
     });
     const block = response.content[0];
