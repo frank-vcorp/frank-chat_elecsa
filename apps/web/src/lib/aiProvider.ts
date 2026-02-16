@@ -1,7 +1,8 @@
 // src/lib/aiProvider.ts
 import '@/lib/firebase-admin'; // Ensure Firebase Admin is initialized before getFirestore()
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai'; // Se mantiene para funciones secundarias (resúmenes)
 
 const db = getFirestore();
 
@@ -116,6 +117,13 @@ export async function getProduct(sku: string) {
     return snap.exists ? (snap.data() as any) : null;
 }
 
+// Palabras de control para testing de semáforos
+const TEST_KEYWORDS: Record<string, string> = {
+    'ELECSA_TEST_ROJO': '[SEMÁFORO: ROJO] Transfiero tu consulta con un asesor especializado para darte seguimiento puntual.',
+    'ELECSA_TEST_AMARILLO': 'Te paso info aproximada 🟡 Un asesor te confirmará los detalles en breve.',
+    'ELECSA_TEST_VERDE': '¡Hola! Todo bien por aquí 🟢 ¿En qué te puedo ayudar?',
+};
+
 /** Core function used by the Twilio webhook for the "Sofía" agent */
 export async function getSofiaResponse(
     message: string,
@@ -124,14 +132,40 @@ export async function getSofiaResponse(
 ): Promise<string> {
     console.log(`[getSofiaResponse] Processing message: "${message}"`);
 
-    // Cargar en paralelo para mejor performance
-    const [basePrompt, contextText, productsText] = await Promise.all([
+    // 0. Detectar palabras de control para testing
+    const trimmed = message.trim();
+    if (TEST_KEYWORDS[trimmed]) {
+        console.log(`[getSofiaResponse] Test keyword detected: ${trimmed}`);
+        return TEST_KEYWORDS[trimmed];
+    }
+
+    // 1. Cargar en paralelo: prompt, contexto, productos e historial
+    const [basePrompt, contextText, productsText, historySnap] = await Promise.all([
         getAgentPrompt('sofia'),
         getContextDocumentsText(),
         getProductsCatalogText(),
+        db.collection('messages')
+            .where('conversationId', '==', conversationId)
+            .orderBy('createdAt', 'desc')
+            .limit(10)
+            .get(),
     ]);
 
-    // Construir prompt final: base + catálogo de productos + documentos de contexto
+    // 2. Construir historial conversacional
+    const history: Array<{ role: 'user' | 'assistant', content: string }> = historySnap.docs
+        .reverse()
+        .map(doc => {
+            const data = doc.data();
+            return {
+                role: (data.senderType === 'contact' ? 'user' : 'assistant') as 'user' | 'assistant',
+                content: data.content as string,
+            };
+        });
+
+    // Agregar el mensaje actual al final
+    history.push({ role: 'user', content: message });
+
+    // 3. Construir prompt final: base + catálogo + contexto
     let finalPrompt = basePrompt;
     if (productsText) {
         finalPrompt += productsText;
@@ -140,7 +174,7 @@ export async function getSofiaResponse(
         finalPrompt += contextText;
     }
 
-    return callOpenAI(finalPrompt, message);
+    return callClaude(finalPrompt, history);
 }
 
 /** Helper to test any agent with the current context documents AND products catalog */
@@ -159,10 +193,26 @@ export async function testAgentWithContext(agentId: string, message: string): Pr
         finalPrompt += contextText;
     }
 
-    return callOpenAI(finalPrompt, message);
+    return callClaude(finalPrompt, [{ role: 'user', content: message }]);
 }
 
-/** Generic wrapper around OpenAI's chat completion */
+/** Claude 3.5 Haiku — Motor principal de Sofía */
+async function callClaude(
+    systemPrompt: string,
+    conversationHistory: Array<{ role: 'user' | 'assistant', content: string }>
+): Promise<string> {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-haiku-latest',
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: conversationHistory,
+    });
+    const block = response.content[0];
+    return block.type === 'text' ? block.text : '';
+}
+
+/** OpenAI GPT-4o-mini — Usado para funciones secundarias (resúmenes) */
 async function callOpenAI(systemPrompt: string, userMsg: string): Promise<string> {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
