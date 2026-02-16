@@ -1,4 +1,5 @@
 // src/lib/aiProvider.ts
+import '@/lib/firebase-admin'; // Ensure Firebase Admin is initialized before getFirestore()
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import OpenAI from 'openai';
 
@@ -122,7 +123,7 @@ export async function getSofiaResponse(
     phoneNumber: string
 ): Promise<string> {
     console.log(`[getSofiaResponse] Processing message: "${message}"`);
-    
+
     // Cargar en paralelo para mejor performance
     const [basePrompt, contextText, productsText] = await Promise.all([
         getAgentPrompt('sofia'),
@@ -270,7 +271,7 @@ function normalizeText(text: string): string {
 /** Detecta la sucursal basándose en una ciudad mencionada */
 export function detectBranchByCity(cityText: string): string | null {
     const normalized = normalizeText(cityText);
-    
+
     for (const [branchId, config] of Object.entries(BRANCHES_CONFIG)) {
         for (const city of config.cities) {
             const normalizedCity = normalizeText(city);
@@ -279,18 +280,18 @@ export function detectBranchByCity(cityText: string): string | null {
             }
         }
     }
-    
+
     return null;
 }
 
 /** Create a hand‑off alert and assign the conversation to a human/branch */
 export async function handOffToHuman(conversationId: string, reason: string, detectedCity?: string) {
     const convRef = db.doc(`conversations/${conversationId}`);
-    
+
     // Detectar sucursal por ciudad si se proporciona
     const branch = detectedCity ? detectBranchByCity(detectedCity) : null;
-    
-    await convRef.update({ 
+
+    await convRef.update({
         assignedTo: branch || 'human',  // Sucursal específica o "human" genérico
         needsHuman: true,
         branch: branch || 'general',    // Para filtrar en el dashboard
@@ -303,7 +304,7 @@ export async function handOffToHuman(conversationId: string, reason: string, det
         branch: branch || 'general',
         createdAt: FieldValue.serverTimestamp(),
     });
-    
+
     console.log(`[handOffToHuman] Conversation ${conversationId} assigned to branch: ${branch || 'general'}`);
 }
 
