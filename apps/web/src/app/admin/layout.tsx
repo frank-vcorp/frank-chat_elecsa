@@ -76,8 +76,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ))}
                 </nav>
                 <div className="p-4 border-t text-xs text-gray-500">
-                    <p>Frank Chat v1.0</p>
-                    <p className="mt-1">Powered by Elecsa</p>
+                    <p>Sistema v2.1</p>
+                    <p className="mt-1">Powered by vCorp</p>
                     <div className="mt-2 flex items-center gap-1">
                         <ShieldAlert size={12} className={isAdmin ? 'text-purple-600' : 'text-blue-600'} />
                         <span className={isAdmin ? 'text-purple-600' : 'text-blue-600'}>

@@ -109,18 +109,18 @@ export default function StatusBar() {
 
     return (
         <div className={`h-7 flex items-center justify-between px-3 text-white text-xs select-none transition-colors duration-300 ${stats.needsHuman > 0 && isFlashing
-                ? 'bg-red-600 animate-pulse'
-                : stats.needsHuman > 0
-                    ? 'bg-orange-600'
-                    : 'bg-blue-600'
+            ? 'bg-red-600 animate-pulse'
+            : stats.needsHuman > 0
+                ? 'bg-orange-600'
+                : 'bg-blue-600'
             }`}>
             {/* Lado izquierdo */}
             <div className="flex items-center gap-4">
                 {/* Alerta - Necesitan humano */}
                 {stats.needsHuman > 0 && (
                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded font-medium ${isFlashing
-                            ? 'bg-white text-red-600 animate-bounce'
-                            : 'bg-red-500/80 text-white'
+                        ? 'bg-white text-red-600 animate-bounce'
+                        : 'bg-red-500/80 text-white'
                         }`}>
                         <Bell size={12} className={isFlashing ? 'animate-ping' : ''} />
                         <AlertCircle size={12} />
@@ -159,7 +159,7 @@ export default function StatusBar() {
 
                 {/* Versión */}
                 <div className="text-white/70 border-l border-white/30 pl-3 ml-2">
-                    Frank Chat v2.0
+                    Hecho con ❤️ por vCorp
                 </div>
             </div>
         </div>

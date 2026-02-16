@@ -100,7 +100,7 @@ export default function SettingsPage() {
                             </div>
                         </div>
                         <p className="mt-6 text-xs text-gray-400">
-                            * Para modificar estos datos, contacta al administrador del sistema (Frank Saavedra).
+                            * Para modificar estos datos, contacta a soporte de vCorp.
                         </p>
                     </div>
                 </div>

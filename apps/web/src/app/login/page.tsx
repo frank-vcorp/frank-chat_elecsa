@@ -20,7 +20,7 @@ export default function LoginPage() {
         setError('');
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            
+
             // Check if agent is active
             const agentDoc = await getDoc(doc(db, 'agents', userCredential.user.uid));
             if (agentDoc.exists() && agentDoc.data().active === false) {
@@ -29,7 +29,7 @@ export default function LoginPage() {
                 setLoading(false);
                 return;
             }
-            
+
             router.push('/dashboard');
         } catch (err: any) {
             console.error(err);
@@ -101,7 +101,7 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-8 text-center text-xs text-gray-400">
-                    &copy; 2025 Elecsa Chat. by Frank Saavedra.
+                    &copy; 2025 Portal de Agentes. Hecho con ❤️ por vCorp.
                 </div>
             </div>
         </div>

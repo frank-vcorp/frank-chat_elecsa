@@ -16,6 +16,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Elecsa - Portal de Agentes",
   description: "Sistema de atención al cliente WhatsApp para Elecsa",
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#2563eb",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

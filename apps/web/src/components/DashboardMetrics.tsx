@@ -125,7 +125,7 @@ export default function DashboardMetrics() {
                         <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mb-4 text-indigo-400">
                             <Bot size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Frank Chat v2.0</h3>
+                        <h3 className="text-xl font-bold text-white mb-2">Sistema v2.1</h3>
                         <p className="text-slate-400 text-sm max-w-xs">
                             Sistema operativo con normalidad. Los agentes de IA están monitoreando las conversaciones activas.
                         </p>
