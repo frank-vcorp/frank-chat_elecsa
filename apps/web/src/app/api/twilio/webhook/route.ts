@@ -145,8 +145,8 @@ export async function POST(request: NextRequest) {
                 lastMessage: body,
                 lastMessageAt: FieldValue.serverTimestamp(),
                 unreadCount: FieldValue.increment(1),
-                // Ensure the conversation stays assigned to AI unless explicitly set to human
-                assignedTo: convDoc.data().assignedTo === 'human' ? 'human' : 'ai',
+                // Ensure the conversation stays assigned to whoever it was assigned to (AI, human, or branch)
+                assignedTo: convDoc.data().assignedTo || 'ai',
             });
         }
 
@@ -168,8 +168,17 @@ export async function POST(request: NextRequest) {
         await newMessageRef.set(newMessage);
 
         // ----------------------------------------------------------------------
-        // 5. AI Auto‑Response
+        // 5. AI Auto‑Response (ONLY IF ASSIGNED TO AI)
         // ----------------------------------------------------------------------
+        // Get current assignment status
+        const currentConv = (await adminDb.collection('conversations').doc(conversationId).get()).data();
+        const isAssignedToAi = currentConv?.assignedTo === 'ai';
+
+        if (!isAssignedToAi) {
+            console.log(`[Webhook] Conversation assigned to ${currentConv?.assignedTo}, skipping AI response.`);
+            return NextResponse.json({ status: 'success', message: 'Message saved, AI skipped' });
+        }
+
         console.log('[Webhook] Triggering AI response');
         try {
             const sofiaReply = await getSofiaResponse(body, conversationId, phoneNumber);
