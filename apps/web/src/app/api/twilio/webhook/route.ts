@@ -179,8 +179,9 @@ export async function POST(request: NextRequest) {
                 const fullReply = sofiaReply; // Guardar respuesta completa para Firestore
 
                 for (let i = 0; i < chunks.length; i++) {
-                    // Delay humano antes de cada mensaje (simula que "está escribiendo")
-                    await humanDelay(chunks[i].length);
+                    // Delay humano REDUCIDO para evitar timeout en Vercel (Max 1s)
+                    // await humanDelay(chunks[i].length); 
+                    await new Promise(r => setTimeout(r, 1000));
 
                     console.log(`[Webhook] Sending AI chunk ${i + 1}/${chunks.length} via Twilio`);
                     await sendWhatsAppMessage(phoneNumber, chunks[i], to);
