@@ -245,10 +245,10 @@ export async function POST(request: NextRequest) {
                     const estadoSinSucursal = detectEstadoSinSucursal(body);
                     if (estadoSinSucursal && !branch) {
                         console.log(`[Webhook] Estado sin sucursal detectado: ${estadoSinSucursal}`);
-                        const mensajeSucursales = `${estadoSinSucursal}, pero podemos atenderte desde cualquiera de nuestras sucursales con envío a tu ubicación 📦\n\nNuestras sucursales:\n${getBranchesListText()}\n\n¿Cuál te queda más cerca o cuál prefieres?`;
+                        console.log(`[Webhook] Estado sin sucursal detectado: ${estadoSinSucursal}`);
 
-                        // Enviar mensaje con opciones
-                        await sendWhatsAppMessage(phoneNumber, mensajeSucursales, to);
+                        // Enviar mensaje con opciones (directo de aiProvider)
+                        await sendWhatsAppMessage(phoneNumber, estadoSinSucursal, to);
 
                         // Guardar mensaje en Firestore
                         const optionsMsgRef = messagesRef.doc();
@@ -257,18 +257,17 @@ export async function POST(request: NextRequest) {
                             conversationId,
                             senderId: 'sofia',
                             senderType: 'agent',
-                            content: mensajeSucursales,
+                            content: estadoSinSucursal,
                             contentType: 'text',
                             createdAt: FieldValue.serverTimestamp() as any,
                             status: 'sent',
                         } as Message);
 
-                        // Marcar que necesita humano pero no asignar sucursal aún
-                        await handOffToHuman(
-                            conversationId,
-                            `Sofia detectó estado sin sucursal (${body}). Esperando que cliente elija sucursal.`,
-                            undefined // Sin ciudad para que quede en general
-                        );
+                        // IMPORTANTE: NO asignamos a humano todavía.
+                        // Mantenemos la conversación en AI para que Sofía procese la elección del cliente.
+                        // El cliente responderá con una ciudad (ej. "Puebla") y en el siguiente turno
+                        // detectBranchByCity lo atrapará y ejecutará el handoff correcto.
+                        console.log('[Webhook] Waiting for user branch selection (AI remains active)');
                     } else {
                         // Flujo normal: asignar a sucursal detectada o general
                         await handOffToHuman(

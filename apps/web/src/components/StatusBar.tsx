@@ -55,13 +55,32 @@ export default function StatusBar() {
         }
     }, []);
 
+    const { agent, branch, isAdmin, isSupervisor } = useAuth();
+
+    // ... (rest of the component)
+
     useEffect(() => {
         const q = query(collection(db, 'conversations'), where('status', '!=', 'closed'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const docs = snapshot.docs.map(d => d.data());
+            const allDocs = snapshot.docs.map(d => d.data());
 
-            const newStats = docs.reduce<typeof stats>((acc, curr: any) => ({
+            // Filtrar conversaciones relevantes para el usuario actual
+            // FIX: Evitar que agentes de una sucursal escuchen alarmas de otras
+            const relevantDocs = allDocs.filter(doc => {
+                // 1. Si soy Admin o Supervisor, veo todo
+                if (isAdmin || isSupervisor) return true;
+
+                // 2. Si está asignado específicamente a mí
+                if (agent?.id && doc.assignedTo === agent.id) return true;
+
+                // 3. Si coincide con mi sucursal
+                if (branch && doc.branch === branch) return true;
+
+                return false;
+            });
+
+            const newStats = relevantDocs.reduce<typeof stats>((acc, curr: any) => ({
                 total: acc.total + 1,
                 needsHuman: acc.needsHuman + (curr.needsHuman ? 1 : 0),
                 assignedToAi: acc.assignedToAi + (curr.assignedTo === 'ai' ? 1 : 0),

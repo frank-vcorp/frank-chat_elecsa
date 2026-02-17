@@ -252,42 +252,78 @@ Formato: Texto plano, directo y profesional.`;
     return callOpenAI(systemPrompt, conversationText);
 }
 
-// Configuración de sucursales y mapeo de ciudades
+// Configuración de sucursales y mapeo de ciudades (Robusta: acentos, abreviaturas, variaciones)
 const BRANCHES_CONFIG: Record<string, { cities: string[], displayName: string }> = {
-    guadalajara: { cities: ['guadalajara', 'gdl', 'zapopan', 'tlaquepaque', 'tonala', 'tlajomulco', 'jalisco', 'nayarit', 'tepic', 'colima', 'manzanillo'], displayName: 'Guadalajara' },
-    coahuila: { cities: ['saltillo', 'torreon', 'monclova', 'piedras negras', 'coahuila', 'acuña', 'sabinas', 'durango', 'chihuahua', 'ciudad juarez', 'delicias'], displayName: 'Coahuila (Torreón/Saltillo)' },
-    leon: { cities: ['leon', 'guanajuato', 'irapuato', 'celaya', 'salamanca', 'silao', 'aguascalientes', 'zacatecas'], displayName: 'León' },
-    queretaro: { cities: ['queretaro', 'qro', 'san juan del rio', 'corregidora', 'el marques'], displayName: 'Querétaro' },
-    toluca: { cities: ['toluca', 'metepec', 'zinacantepec', 'estado de mexico', 'edomex', 'lerma', 'michoacan', 'morelia', 'uruapan'], displayName: 'Toluca' },
-    monterrey: { cities: ['monterrey', 'mty', 'san pedro', 'apodaca', 'guadalupe', 'san nicolas', 'santa catarina', 'nuevo leon', 'tamaulipas', 'reynosa', 'matamoros', 'nuevo laredo', 'tampico', 'ciudad victoria'], displayName: 'Monterrey' },
-    centro: { cities: ['cdmx centro', 'centro historico', 'cuauhtemoc', 'venustiano carranza', 'benito juarez'], displayName: 'CDMX Centro' },
-    armas: { cities: ['cdmx', 'ciudad de mexico', 'mexico df', 'df', 'azcapotzalco', 'miguel hidalgo', 'gustavo a madero', 'morelos', 'cuernavaca', 'hidalgo', 'pachuca', 'tlaxcala', 'guerrero', 'acapulco', 'chilpancingo'], displayName: 'CDMX Armas' },
-    veracruz: { cities: ['veracruz', 'xalapa', 'boca del rio', 'coatzacoalcos', 'poza rica', 'cordoba', 'orizaba', 'oaxaca', 'tabasco', 'villahermosa', 'chiapas', 'tuxtla', 'yucatan', 'merida', 'cancun', 'quintana roo', 'campeche'], displayName: 'Veracruz' },
-    slp: { cities: ['san luis potosi', 'slp', 'soledad', 'matehuala', 'ciudad valles'], displayName: 'San Luis Potosí' },
-    puebla: { cities: ['puebla', 'cholula', 'atlixco', 'tehuacan', 'san andres cholula'], displayName: 'Puebla' }
+    guadalajara: {
+        cities: ['guadalajara', 'gdl', 'zapopan', 'tlaquepaque', 'tonala', 'tlajomulco', 'jalisco', 'nayarit', 'tepic', 'colima', 'manzanillo'],
+        displayName: 'Guadalajara'
+    },
+    coahuila: {
+        cities: ['saltillo', 'torreon', 'monclova', 'piedras negras', 'coahuila', 'acuña', 'sabinas', 'durango', 'chihuahua', 'ciudad juarez', 'delicias'],
+        displayName: 'Coahuila (Torreón/Saltillo)'
+    },
+    leon: {
+        cities: ['leon', 'león', 'guanajuato', 'irapuato', 'celaya', 'salamanca', 'silao', 'aguascalientes', 'zacatecas'],
+        displayName: 'León'
+    },
+    queretaro: {
+        cities: ['queretaro', 'querétaro', 'qro', 'san juan del rio', 'corregidora', 'el marques', 'juriquilla'],
+        displayName: 'Querétaro'
+    },
+    toluca: {
+        cities: ['toluca', 'metepec', 'zinacantepec', 'estado de mexico', 'edomex', 'lerma', 'michoacan', 'morelia', 'uruapan'],
+        displayName: 'Toluca'
+    },
+    monterrey: {
+        cities: ['monterrey', 'mty', 'san pedro', 'apodaca', 'guadalupe', 'san nicolas', 'santa catarina', 'nuevo leon', 'tamaulipas', 'reynosa', 'matamoros', 'nuevo laredo', 'tampico', 'ciudad victoria'],
+        displayName: 'Monterrey'
+    },
+    centro: {
+        cities: ['cdmx', 'ciudad de mexico', 'df', 'mexico df', 'cdmx centro', 'centro historico', 'cuauhtemoc', 'venustiano carranza', 'benito juarez', 'iztacalco', 'gustavo a madero'],
+        displayName: 'CDMX Centro'
+    },
+    armas: {
+        // Armas cubre zonas industriales y periferia norte/sur de CDMX + Estados vecinos
+        cities: ['azcapotzalco', 'miguel hidalgo', 'tlalpan', 'coyoacan', 'alvaro obregon', 'magdalena contreras', 'cuajimalpa', 'naucalpan', 'tlalnepantla', 'atizapan', 'ecatepec', 'nezahualcoyotl', 'morelos', 'cuernavaca', 'hidalgo', 'pachuca', 'tlaxcala', 'guerrero', 'acapulco', 'chilpancingo'],
+        displayName: 'CDMX Armas'
+    },
+    veracruz: {
+        cities: ['veracruz', 'xalapa', 'boca del rio', 'coatzacoalcos', 'poza rica', 'cordoba', 'orizaba', 'oaxaca', 'tabasco', 'villahermosa', 'chiapas', 'tuxtla', 'yucatan', 'merida', 'cancun', 'quintana roo', 'campeche'],
+        displayName: 'Veracruz'
+    },
+    slp: {
+        cities: ['san luis potosi', 'san luis potosí', 'slp', 'soledad', 'matehuala', 'ciudad valles'],
+        displayName: 'San Luis Potosí'
+    },
+    puebla: {
+        cities: ['puebla', 'cholula', 'atlixco', 'tehuacan', 'san andres cholula'],
+        displayName: 'Puebla'
+    }
 };
 
-// Estados sin sucursal directa - para mostrar mensaje especial
+// Estados sin sucursal directa - Sugerencias de canalización inteligente
 const ESTADOS_SIN_SUCURSAL: Record<string, string> = {
     // Norte
-    'baja california': 'No tenemos sucursal en Baja California',
-    'baja california sur': 'No tenemos sucursal en Baja California Sur',
-    'sonora': 'No tenemos sucursal en Sonora',
-    'sinaloa': 'No tenemos sucursal en Sinaloa',
-    // Sureste
-    'yucatan': 'No tenemos sucursal en Yucatán',
-    'quintana roo': 'No tenemos sucursal en Quintana Roo',
-    'campeche': 'No tenemos sucursal en Campeche',
-    'chiapas': 'No tenemos sucursal en Chiapas',
-    'oaxaca': 'No tenemos sucursal en Oaxaca',
-    'tabasco': 'No tenemos sucursal en Tabasco',
+    'baja california': 'No tenemos sucursal física en Baja California, pero atendemos envíos desde nuestra bodega de Monterrey o Guadalajara. ¿Te gustaría que te canalice con alguna de estas?',
+    'baja california sur': 'No tenemos sucursal en BCS, pero podemos enviarte desde Guadalajara. ¿Te canalizo con un asesor de allá?',
+    'sonora': 'Para Sonora, nuestra sucursal de Monterrey o Guadalajara puede apoyarte con el envío. ¿Cuál prefieres?',
+    'sinaloa': 'Todavía no estamos en Sinaloa, pero desde Guadalajara o Torreón cubrimos tu zona. ¿Te paso con un agente de esas sucursales?',
+    // Sureste (Cubierto mayormente por Veracruz, pero damos opción)
+    'yucatan': 'En Yucatán te atendemos con envíos directos desde nuestra matriz en Veracruz. ¿Te conecto con un experto de Veracruz?',
+    'quintana roo': 'Para Quintana Roo, coordinamos todo desde Veracruz con envíos rápidos. ¿Te paso con un asesor de Veracruz?',
+    'campeche': 'Campeche lo cubrimos perfectamente desde nuestra sede en Veracruz. ¿Te comunico con ellos?',
+    'chiapas': 'Chiapas es territorio de nuestra sucursal Veracruz. ¿Te conecto con un agente de allá?',
+    'oaxaca': 'Para Oaxaca, nuestras sucursales de Puebla o Veracruz son las más cercanas. ¿Cuál te queda mejor para coordinar?',
+    'tabasco': 'Tabasco lo atendemos directamente desde Veracruz o Coatzacoalcos. ¿Te paso con el equipo de Veracruz?',
     // Otros
-    'nayarit': 'No tenemos sucursal en Nayarit',
-    'colima': 'No tenemos sucursal en Colima',
-    'durango': 'No tenemos sucursal en Durango',
-    'chihuahua': 'No tenemos sucursal en Chihuahua',
-    'guerrero': 'No tenemos sucursal en Guerrero',
-    'morelos': 'No tenemos sucursal en Morelos',
+    'nayarit': 'Desde Guadalajara cubrimos todo Nayarit. ¿Te conecto con un asesor de GDL?',
+    'colima': 'Colima lo atendemos rápido desde Guadalajara. ¿Transferimos tu chat a GDL?',
+    'durango': 'Durango lo cubrimos desde nuestra sucursal de Torreón (Coahuila). ¿Te comunico con ellos?',
+    'chihuahua': 'Chihuahua lo gestionamos desde nuestra sucursal de Coahuila o Monterrey. ¿Con cuál prefieres hablar?',
+    'guerrero': 'Guerrero lo atendemos desde CDMX o Morelos. ¿Te paso con un asesor de la Zona Centro?',
+    'morelos': 'Morelos lo cubre nuestra sucursal de CDMX Armas. ¿Te conecto con ellos?',
+    'zacatecas': 'Zacatecas lo atendemos desde León o San Luis Potosí. ¿Cuál prefieres?',
+    'aguascalientes': 'Aguascalientes está cubierto por nuestra sucursal de León. ¿Te comunico con un asesor de León?'
 };
 
 /** Obtener lista de sucursales disponibles formateada */
