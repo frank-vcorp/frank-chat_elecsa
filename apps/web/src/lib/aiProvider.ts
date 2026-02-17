@@ -326,6 +326,16 @@ const ESTADOS_SIN_SUCURSAL: Record<string, string> = {
     'aguascalientes': 'Aguascalientes está cubierto por nuestra sucursal de León. ¿Te comunico con un asesor de León?'
 };
 
+/** Obtener lista plana de todas las ciudades configuradas para detección */
+export function getAllCities(): string[] {
+    const cities: string[] = [];
+    Object.values(BRANCHES_CONFIG).forEach(branch => {
+        cities.push(...branch.cities);
+    });
+    // Ordenar por longitud descendente para que "san luis potosi" se detecte antes que "san luis"
+    return cities.sort((a, b) => b.length - a.length);
+}
+
 /** Obtener lista de sucursales disponibles formateada */
 export function getBranchesListText(): string {
     const branches = [

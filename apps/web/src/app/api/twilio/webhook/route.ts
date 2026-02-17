@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Message, Conversation, Contact } from '@/lib/types';
-import { getSofiaResponse, handOffToHuman, detectBranchByCity, detectEstadoSinSucursal, getBranchesListText, normalizeText } from '@/lib/aiProvider';
+import { getSofiaResponse, handOffToHuman, detectBranchByCity, detectEstadoSinSucursal, getBranchesListText, normalizeText, getAllCities } from '@/lib/aiProvider';
 import { sendWhatsAppMessage, humanDelay, splitForWhatsApp } from '@/lib/twilio';
 
 /** Detecta si Sofia indica escalación a humano (semáforo rojo)
@@ -16,8 +16,10 @@ function detectEscalation(response: string): boolean {
         /te comunico con|te paso con/i,               // Frases de handoff
         /comunic.*humano|conectar.*asesor/i,
         /escalando.*conversación/i,
-        /un asesor.*te (ayude|contactar|atender)/i,   // "un asesor te ayude"
-        /en breve te contactarán/i,                   // Frase de cierre de escalación
+        /un asesor.*te (ayude|contactar|atender|llama|contacta)/i,   // Aumentado: "te llama", "te contacta"
+        /en breve te (contactarán|llaman|llamaran)/i,                 // Aumentado: "te llaman"
+        /el equipo de.*te (llama|contacta)/i,         // "El equipo de Querétaro te llama"
+        /te van a llamar/i,                           // Frase común
         /urgencia|urgente|emergencia/i,               // Palabras clave de usuario (Direct Red Light)
     ];
     return escalationPatterns.some(pattern => pattern.test(response));
@@ -26,13 +28,8 @@ function detectEscalation(response: string): boolean {
 /** Extrae menciones de ciudades en el mensaje del usuario o historial */
 function extractCityMention(text: string): string | null {
     // Lista de ciudades/términos a detectar (ordenadas por especificidad)
-    // Nota: normalizeText maneja acentos, así que listamos sin acentos para coincidir
-    const cityPatterns = [
-        'san luis potosi', 'san juan del rio', 'ciudad de mexico', 'cdmx',
-        'guadalajara', 'monterrey', 'queretaro', 'qro',
-        'toluca', 'puebla', 'veracruz', 'leon', 'saltillo', 'torreon', 'coahuila',
-        'jalisco', 'nuevo leon', 'guanajuato', 'slp'
-    ];
+    // Nota: normalizeText maneja acentos y getAllCities viene ordenado por longitud
+    const cityPatterns = getAllCities();
 
     const normalized = normalizeText(text);
     for (const city of cityPatterns) {
