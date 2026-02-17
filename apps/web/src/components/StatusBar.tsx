@@ -69,18 +69,43 @@ export default function StatusBar() {
 
             // Filtrar conversaciones relevantes para el usuario actual
             // FIX: Evitar que agentes de una sucursal escuchen alarmas de otras
+            // Filtrar conversaciones relevantes para el usuario actual
+            // FIX: Evitar que agentes de una sucursal escuchen alarmas de otras
             const relevantDocs = allDocs.filter(doc => {
                 // 1. Si soy Admin o Supervisor, veo todo
-                if (isAdmin || isSupervisor) return true;
+                if (isAdmin || isSupervisor) {
+                    // console.log(`[StatusBar] Doc ${doc.id} visible (Admin/Sup)`);
+                    return true;
+                }
 
                 // 2. Si está asignado específicamente a mí
-                if (agent?.id && doc.assignedTo === agent.id) return true;
+                if (agent?.id && doc.assignedTo === agent.id) {
+                    // console.log(`[StatusBar] Doc ${doc.id} visible (Assigned)`);
+                    return true;
+                }
 
                 // 3. Si coincide con mi sucursal
-                if (branch && doc.branch === branch) return true;
+                if (branch && doc.branch === branch) {
+                    // console.log(`[StatusBar] Doc ${doc.id} visible (Branch Match: ${branch})`);
+                    return true;
+                }
 
+                // console.log(`[StatusBar] Doc ${doc.id} HIDDEN (Branch: ${doc.branch} vs MyBranch: ${branch})`);
                 return false;
             });
+
+            // LOG DE CONTEXTO (Solo cuando cambia el total para no saturar)
+            // UNCOMMENTED FOR DEBUGGING IMELDA CASE
+            if (relevantDocs.length > 0) {
+                console.log('[StatusBar] Context Debug:', {
+                    agentName: agent?.name,
+                    myRole: agent?.role,
+                    myBranch: branch,
+                    isAdmin,
+                    isSupervisor,
+                    docsVisible: relevantDocs.length
+                });
+            }
 
             const newStats = relevantDocs.reduce<typeof stats>((acc, curr: any) => ({
                 total: acc.total + 1,
