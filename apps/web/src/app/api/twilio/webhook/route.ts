@@ -193,10 +193,13 @@ export async function POST(request: NextRequest) {
 
             // Actualizar solo el branch, SIN marcar needsHuman (a menos que ya lo estuviera)
             const conversationRef = adminDb.collection('conversations').doc(conversationId);
+
+            // IMPORTANTE: Marcamos needsHuman: true para que suene la ALARMA y parpadee el SEMÁFORO 🚨
+            // PERO NO CAMBIAMOS assignedTo, así que la IA sigue platicando.
             await conversationRef.update({
                 branch: earlyBranch,
-                // No cambiamos assignedTo ni needsHuman aquí para dejar que la IA siga
-                // Solo "encendemos la luz" en el dashboard de la sucursal
+                needsHuman: true, // ¡DING! + 🔴 Flash
+                // assignedTo: 'ai' (implicito, no lo tocamos)
             });
         }
 
