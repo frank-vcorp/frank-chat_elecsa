@@ -16,18 +16,18 @@ export async function closeConversation(conversationId: string) {
         };
     });
 
-    // 2. Generate Summary
+    // 2. Intentar generar resumen (pero no bloquear el cierre si falla)
     let summary = '';
-    if (messages.length > 0) {
-        try {
+    try {
+        if (messages.length > 0) {
             summary = await generateConversationSummary(messages);
-        } catch (aiError) {
-            console.error('Error generating summary:', aiError);
-            summary = 'Error generando resumen automático.';
         }
+    } catch (aiError) {
+        console.error('Error generating summary:', aiError);
+        summary = 'No se pudo generar el resumen automático.';
     }
 
-    // 3. Close conversation and save summary
+    // 3. Cerrar conversación SIEMPRE, con o sin resumen
     await adminDb.collection('conversations').doc(conversationId).update({
         status: 'closed',
         closedAt: new Date(),
