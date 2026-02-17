@@ -114,7 +114,7 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                 id: doc.id,
                 ...doc.data(),
             })) as Conversation[];
-            
+
             // Contar conversaciones que necesitan humano (filtradas por sucursal del agente)
             const needsHumanConvs = convs.filter(c => {
                 if (!c.needsHuman) return false;
@@ -127,9 +127,9 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                 if (branch) return c.branch === branch || c.branch === 'general' || !c.branch;
                 return true;
             });
-            
+
             const currentCount = needsHumanConvs.length;
-            
+
             // Si hay más conversaciones que antes, notificar
             // null = primera carga, no notificar (evita spam al abrir dashboard)
             // NOTA: El sonido se maneja centralizadamente en StatusBar para evitar eco
@@ -142,7 +142,7 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                     `${newConv.contactId} necesita ayuda${newConv.branch ? ` (${BRANCH_NAMES[newConv.branch]})` : ''}`
                 );
             }
-            
+
             prevNeedsHumanCountRef.current = currentCount;
             setConversations(convs);
         });
@@ -158,27 +158,24 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
             : filterStatus === 'human'
                 ? c.assignedTo !== 'ai'
                 : c.assignedTo === 'ai';
-        
-        // Filtro por sucursal:
-        // - Admin/Supervisor: ve todas o puede filtrar por sucursal
-        // - Agente normal: solo ve conversaciones de sus sucursales + las genéricas
-        // - Agente sin sucursal asignada: solo ve conversaciones genéricas (error de config)
-        // FIX REFERENCE: FIX-20250128-01
+
+        // Filtro por sucursal Strict Mode (Solicitud usuario: Cero ruido)
+        // - Admin/Supervisor: Ve todo
+        // - Agente: SOLO ve lo que es explícitamente de su sucursal
+        // - General/Sin asignar: SOLO visible para Admin/Supervisor (Limbo silencioso)
         let matchesBranch = true;
         if (isSupervisor || isAdmin) {
-            // Supervisores pueden filtrar manualmente
-            matchesBranch = filterBranch === 'all' || c.branch === filterBranch || !c.branch;
+            // Supervisores pueden ver todo
+            matchesBranch = filterBranch === 'all' || c.branch === filterBranch || !c.branch || c.branch === 'general';
         } else if (branches.length > 0) {
-            // Agentes con múltiples sucursales ven todas las asignadas + general
-            matchesBranch = branches.includes(c.branch as any) || c.branch === 'general' || !c.branch;
+            // Agentes multisucursal: Solo coinciencias exactas
+            matchesBranch = branches.includes(c.branch as any);
         } else if (branch) {
-            // Compatibilidad: agentes con una sola sucursal
-            matchesBranch = c.branch === branch || c.branch === 'general' || !c.branch;
+            // Agentes monosucursal: Solo coinciencias exactas
+            matchesBranch = c.branch === branch;
         } else {
-            // ⚠️ Agente sin sucursal asignada: solo ve genéricas para evitar ver todo
-            // Esto indica error de configuración del agente en Firestore
-            matchesBranch = c.branch === 'general' || !c.branch;
-            console.warn('[ChatList] Agent has no branch assigned - showing only general conversations');
+            // Agentes sin sucursal: No ven nada
+            matchesBranch = false;
         }
 
         return matchesSearch && matchesTags && matchesStatus && matchesBranch;
@@ -225,8 +222,8 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                     <div className="flex gap-1">
                         <button
                             onClick={() => notificationsEnabled ? setNotificationsEnabled(false) : requestNotificationPermission()}
-                            className={`p-1.5 rounded-lg transition-colors ${notificationsEnabled 
-                                ? 'bg-indigo-500/20 text-indigo-400' 
+                            className={`p-1.5 rounded-lg transition-colors ${notificationsEnabled
+                                ? 'bg-indigo-500/20 text-indigo-400'
                                 : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}
                             title={notificationsEnabled ? 'Desactivar notificaciones' : 'Activar notificaciones'}
                         >
@@ -234,8 +231,8 @@ export default function ChatList({ onSelectConversation, selectedConversationId 
                         </button>
                         <button
                             onClick={() => setSoundEnabled(!soundEnabled)}
-                            className={`p-1.5 rounded-lg transition-colors ${soundEnabled 
-                                ? 'bg-indigo-500/20 text-indigo-400' 
+                            className={`p-1.5 rounded-lg transition-colors ${soundEnabled
+                                ? 'bg-indigo-500/20 text-indigo-400'
                                 : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}
                             title={soundEnabled ? 'Desactivar sonido' : 'Activar sonido'}
                         >
