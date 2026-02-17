@@ -179,6 +179,27 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('[Webhook] Triggering AI response');
+
+        // ------------------------------------------------------------------
+        // EARLY WARNING SYSTEM: Detectar ciudad y asignar sucursal INMEDIATAMENTE
+        // ------------------------------------------------------------------
+        // Esto permite que la alarma suene en la sucursal correcta AUNQUE la IA siga platicando.
+        // El agente humano puede ver la charla en tiempo real y decidir cuándo intervenir.
+        const earlyCity = extractCityMention(body);
+        const earlyBranch = earlyCity ? detectBranchByCity(earlyCity) : null;
+
+        if (earlyBranch && currentConv?.branch !== earlyBranch) {
+            console.log(`[Webhook] Early Warning: City '${earlyCity}' detected. Assigning to branch '${earlyBranch}' immediately.`);
+
+            // Actualizar solo el branch, SIN marcar needsHuman (a menos que ya lo estuviera)
+            const conversationRef = adminDb.collection('conversations').doc(conversationId);
+            await conversationRef.update({
+                branch: earlyBranch,
+                // No cambiamos assignedTo ni needsHuman aquí para dejar que la IA siga
+                // Solo "encendemos la luz" en el dashboard de la sucursal
+            });
+        }
+
         try {
             const sofiaReply = await getSofiaResponse(body, conversationId, phoneNumber);
             if (sofiaReply) {
