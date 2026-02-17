@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Message, Conversation, Contact } from '@/lib/types';
-import { getSofiaResponse, handOffToHuman, detectBranchByCity, detectEstadoSinSucursal, getBranchesListText } from '@/lib/aiProvider';
+import { getSofiaResponse, handOffToHuman, detectBranchByCity, detectEstadoSinSucursal, getBranchesListText, normalizeText } from '@/lib/aiProvider';
 import { sendWhatsAppMessage, humanDelay, splitForWhatsApp } from '@/lib/twilio';
 
 /** Detecta si Sofia indica escalación a humano (semáforo rojo)
@@ -26,14 +26,15 @@ function detectEscalation(response: string): boolean {
 /** Extrae menciones de ciudades en el mensaje del usuario o historial */
 function extractCityMention(text: string): string | null {
     // Lista de ciudades/términos a detectar (ordenadas por especificidad)
+    // Nota: normalizeText maneja acentos, así que listamos sin acentos para coincidir
     const cityPatterns = [
         'san luis potosi', 'san juan del rio', 'ciudad de mexico', 'cdmx',
-        'guadalajara', 'monterrey', 'queretaro', 'toluca', 'puebla',
-        'veracruz', 'leon', 'saltillo', 'torreon', 'coahuila',
+        'guadalajara', 'monterrey', 'queretaro', 'qro',
+        'toluca', 'puebla', 'veracruz', 'leon', 'saltillo', 'torreon', 'coahuila',
         'jalisco', 'nuevo leon', 'guanajuato', 'slp'
     ];
 
-    const normalized = text.toLowerCase();
+    const normalized = normalizeText(text);
     for (const city of cityPatterns) {
         if (normalized.includes(city)) {
             return city;

@@ -320,7 +320,7 @@ export function detectEstadoSinSucursal(text: string): string | null {
 }
 
 /** Normaliza texto removiendo acentos para mejor matching */
-function normalizeText(text: string): string {
+export function normalizeText(text: string): string {
     return text
         .toLowerCase()
         .normalize('NFD')
