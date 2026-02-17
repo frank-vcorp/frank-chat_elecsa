@@ -21,6 +21,7 @@ export default function StatusBar() {
     });
     const [isFlashing, setIsFlashing] = useState(false);
     const prevNeedsHumanRef = useRef(0);
+    const prevTotalRef = useRef(0);
     const audioContextRef = useRef<AudioContext | null>(null);
 
     // Sonido sutil de notificación usando Web Audio API
@@ -95,8 +96,9 @@ export default function StatusBar() {
                 unreadTotal: 0
             });
 
-            // Si aumentaron los que necesitan humano, alertar
-            if (newStats.needsHuman > prevNeedsHumanRef.current && prevNeedsHumanRef.current >= 0) {
+            // Si aumentaron los que necesitan humano O si me cayó un chat nuevo (Early Warning)
+            if ((newStats.needsHuman > prevNeedsHumanRef.current && prevNeedsHumanRef.current >= 0) ||
+                (newStats.total > prevTotalRef.current && prevTotalRef.current >= 0)) {
                 playNotificationSound();
                 setIsFlashing(true);
                 // Flash más intenso por 3 segundos
@@ -104,6 +106,7 @@ export default function StatusBar() {
             }
 
             prevNeedsHumanRef.current = newStats.needsHuman;
+            prevTotalRef.current = newStats.total;
             setStats(newStats);
         });
 
