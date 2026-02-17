@@ -11,8 +11,8 @@ export async function closeConversation(conversationId: string) {
     const messages = messagesSnap.docs.map(doc => {
         const data = doc.data();
         return {
-            role: data.sender === 'user' ? 'user' : 'assistant',
-            content: data.body || ''
+            role: data.senderType === 'contact' ? 'user' : 'assistant',
+            content: data.content || ''
         };
     });
 
