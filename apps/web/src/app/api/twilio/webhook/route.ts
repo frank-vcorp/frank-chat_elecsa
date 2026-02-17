@@ -18,6 +18,7 @@ function detectEscalation(response: string): boolean {
         /escalando.*conversación/i,
         /un asesor.*te (ayude|contactar|atender)/i,   // "un asesor te ayude"
         /en breve te contactarán/i,                   // Frase de cierre de escalación
+        /urgencia|urgente|emergencia/i,               // Palabras clave de usuario (Direct Red Light)
     ];
     return escalationPatterns.some(pattern => pattern.test(response));
 }
@@ -224,8 +225,14 @@ export async function POST(request: NextRequest) {
                 // --------------------------------------------------------------
                 // 5.1 Detect escalation and route to correct branch
                 // --------------------------------------------------------------
-                if (detectEscalation(sofiaReply)) {
-                    console.log('[Webhook] Escalation detected, routing to human agent');
+                // --------------------------------------------------------------
+                // 5.1 Detect escalation (in User Input OR AI Response)
+                // --------------------------------------------------------------
+                const isUserEscalating = detectEscalation(body);
+                const isAiEscalating = detectEscalation(sofiaReply);
+
+                if (isUserEscalating || isAiEscalating) {
+                    console.log(`[Webhook] Escalation detected (User: ${isUserEscalating}, AI: ${isAiEscalating})`);
 
                     // Try to detect city from user's message or sofia's reply
                     const detectedCity = extractCityMention(body) || extractCityMention(sofiaReply);
