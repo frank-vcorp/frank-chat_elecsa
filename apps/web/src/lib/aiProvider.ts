@@ -175,84 +175,76 @@ async function callClaude(
     conversationHistory: any[]
 ): Promise<string> {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-    // Preparar historial compatible con Tool Calling de Anthropic
     const messages = [...conversationHistory];
+    let fullResponseText = "";
+    let iterations = 0;
+    const MAX_ITERATIONS = 5;
 
-    const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 400,
-        system: systemPrompt,
-        tools: [
-            {
-                name: 'buscar_productos_elecsa',
-                description: 'Busca productos en el inventario/catálogo de la base de datos de Elecsa. Úsalo SIEMPRE que el cliente pregunte por un producto, modelo, refacción, precio o disponibilidad.',
-                input_schema: {
-                    type: 'object',
-                    properties: {
-                        query: {
-                            type: 'string',
-                            description: 'Término de búsqueda, nombre del producto, marca o SKU (ej. "Taladro Truper", "llantas rin 15", "sk-123")'
-                        }
-                    },
-                    required: ['query']
+    while (iterations < MAX_ITERATIONS) {
+        iterations++;
+        const response = await anthropic.messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 600,
+            system: systemPrompt,
+            tools: [
+                {
+                    name: 'buscar_productos_elecsa',
+                    description: 'Busca productos en el inventario/catálogo de la base de datos de Elecsa. Úsalo SIEMPRE que el cliente pregunte por un producto, modelo, refacción, precio o disponibilidad.',
+                    input_schema: {
+                        type: 'object',
+                        properties: {
+                            query: {
+                                type: 'string',
+                                description: 'Término de búsqueda, nombre del producto, marca o SKU (ej. "Taladro Truper", "llantas rin 15", "sk-123")'
+                            }
+                        },
+                        required: ['query']
+                    }
                 }
+            ],
+            messages: messages,
+        });
+
+        const textBlocks = response.content.filter((block: any) => block.type === 'text') as Anthropic.TextBlock[];
+        for (const block of textBlocks) {
+            fullResponseText += (fullResponseText ? "\n\n" : "") + block.text;
+        }
+
+        if (response.stop_reason !== 'tool_use') {
+            break;
+        }
+
+        const toolUseBlocks = response.content.filter((block: any) => block.type === 'tool_use') as Anthropic.ToolUseBlock[];
+
+        messages.push({
+            role: 'assistant',
+            content: response.content
+        });
+
+        const toolResults = [];
+        for (const toolUse of toolUseBlocks) {
+            if (toolUse.name === 'buscar_productos_elecsa') {
+                const query = (toolUse.input as any).query;
+                const searchResults = await searchProductsInDB(query);
+                toolResults.push({
+                    type: 'tool_result' as const,
+                    tool_use_id: toolUse.id,
+                    content: searchResults,
+                });
             }
-        ],
-        messages: messages,
-    });
+        }
 
-    // Verificar si Claude decidió usar una herramienta
-    if (response.stop_reason === 'tool_use') {
-        const toolUseBlock = response.content.find((block: any) => block.type === 'tool_use') as Anthropic.ToolUseBlock;
-
-        if (toolUseBlock && toolUseBlock.name === 'buscar_productos_elecsa') {
-            const query = (toolUseBlock.input as any).query;
-            const searchResults = await searchProductsInDB(query);
-
-            // Re-inyectar el uso de la tool y la respuesta de la tool al historial
-            messages.push({
-                role: 'assistant',
-                content: response.content
-            });
-
+        if (toolResults.length > 0) {
             messages.push({
                 role: 'user',
-                content: [
-                    {
-                        type: 'tool_result',
-                        tool_use_id: toolUseBlock.id,
-                        content: searchResults,
-                    }
-                ]
+                content: toolResults
             });
-
-            // Segunda llamada a Claude para que formule la respuesta final
-            const finalResponse = await anthropic.messages.create({
-                model: 'claude-haiku-4-5-20251001',
-                max_tokens: 400,
-                system: systemPrompt,
-                tools: [
-                    {
-                        name: 'buscar_productos_elecsa',
-                        description: 'Busca productos en el catálogo',
-                        input_schema: {
-                            type: 'object',
-                            properties: { query: { type: 'string' } },
-                            required: ['query']
-                        }
-                    }
-                ],
-                messages: messages,
-            });
-
-            const textBlock = finalResponse.content.find((block: any) => block.type === 'text') as Anthropic.TextBlock;
-            return textBlock ? textBlock.text : '';
+        } else {
+            break;
         }
     }
 
-    const block = response.content.find((block: any) => block.type === 'text') as Anthropic.TextBlock;
-    return block ? block.text : '';
+    return fullResponseText.trim();
 }
 
 /** OpenAI GPT-4o-mini — Usado para funciones secundarias (resúmenes) */
