@@ -141,7 +141,8 @@ export async function getSofiaResponse(
 
     // Instrucción explícita para usar la herramienta
     finalPrompt += `\n\nIMPORTANTE PARA PRODUCTOS: 
-Ya NO tienes el catálogo inyectado aquí. Si el cliente pregunta por producto, precio o disponibilidad, DEBES usar obligatoriamente la herramienta \`buscar_productos_elecsa\`. No adivines precios.`;
+Ya NO tienes el catálogo inyectado aquí. Si el cliente pregunta por producto, precio o disponibilidad, DEBES usar obligatoriamente la herramienta \`buscar_productos_elecsa\`. No adivines precios. 
+⚠️ REGLA DE DINAMISMO: Al dar stock o precio, menciona brevemente que los datos son orientativos y las existencias cambian rápido (están sujetos a disponibilidad).`;
 
     // Social Robotics: inyectar hora actual para saludos contextuales
     const now = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
@@ -179,7 +180,7 @@ async function callClaude(
     const messages = [...conversationHistory];
 
     const response = await anthropic.messages.create({
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 400,
         system: systemPrompt,
         tools: [
@@ -228,7 +229,7 @@ async function callClaude(
 
             // Segunda llamada a Claude para que formule la respuesta final
             const finalResponse = await anthropic.messages.create({
-                model: 'claude-3-5-haiku-20241022',
+                model: 'claude-3-5-sonnet-20241022',
                 max_tokens: 400,
                 system: systemPrompt,
                 tools: [
