@@ -1,0 +1,74 @@
+# 🧪 Guía de Pruebas de Usuario (UAT) - Sofía v2.2
+**Para:** Equipo ELECSA
+**Objetivo:** Validar que Sofía actúe como un "Filtro Inteligente" y que las alertas lleguen correctamente a las sucursales.
+
+---
+
+## 🚦 1. Prueba de "Semáforos" (Inteligencia de Negocio)
+El objetivo es verificar que Sofía clasifique correctamente la intención del cliente.
+
+### Escenario A: Semáforo VERDE 🟢 (Venta Rápida)
+*   **Mensaje de Cliente:** "Hola, precio del cable calibre 12 marca Indio"
+*   **Comportamiento Esperado:**
+    1.  Sofía da el precio (orientativo + IVA).
+    2.  Sofía pregunta: "¿Qué cantidad necesitas y en qué ciudad estás?".
+    3.  **Dashboard:** El chat permanece en la bandeja de entrada normal.
+
+### Escenario B: Semáforo AMARILLO 🟡 (Cotización Compleja)
+*   **Mensaje de Cliente:** "Necesito cotizar un transformador de 500kVA y todo el material para una subestación nueva."
+*   **Comportamiento Esperado:**
+    1.  Sofía detecta que es un proyecto grande/especial.
+    2.  Responde: "Al ser un equipo especializado, te integro con un asesor técnico."
+    3.  **Dashboard:** Se marca con una etiqueta amarilla o alerta de "Oportunidad".
+
+### Escenario C: Semáforo ROJO 🔴 (Queja/Admin)
+*   **Mensaje de Cliente:** "Llevo 3 días esperando mi factura y nadie me contesta. Pésimo servicio."
+*   **Comportamiento Esperado:**
+    1.  Sofía detecta frustración.
+    2.  Responde con empatía y ofrece conectar con humano.
+    3.  **Dashboard:** Se activa la alerta **"Needs Human"** (Barra Roja parpadeando).
+
+---
+
+## 🚨 2. Prueba de "Early Warning" (Alerta Temprana)
+El objetivo es probar la nueva función de "Monitor Silencioso".
+
+**Pasos:**
+1.  Abre el Dashboard de Agente (con el volumen encendido 🔊).
+2.  Desde un celular (WhatsApp) escribe: *"Hola, soy de **Querétaro** y busco cable."*
+3.  **Lo que debe pasar EN EL DASHBOARD:**
+    *   🔊 Suena la campana ("Ding").
+    *   🔴 La barra superior parpadea en Rojo/Naranja.
+    *   El chat se asigna automáticamente a la columna de **Querétaro**.
+    *   **IMPORTANTE:** Sofía **SIGUE CONTESTANDO**. No se detiene.
+    *   *Tú como agente solo observas ("monitor") y entras si es necesario.*
+
+---
+
+## 📍 3. Prueba de Ubicación (Detección Crítica)
+El objetivo es asegurar que Sofía siempre obtenga la ciudad para asignarle sucursal.
+
+### Caso 1: Usuario NO dice ciudad
+*   **Cliente:** "Hola, precio de la tubería conduit."
+*   **Sofía:** Debe dar el precio Y PREGUNTAR: *"¿En qué ciudad te ubicas para revisar existencia?"*
+*   *(Nota: Si no lo pregunta, es un error).*
+
+### Caso 2: Usuario SÍ dice ciudad
+*   **Cliente:** "Hola, estoy en **León**, ¿tienen apagadores?"
+*   **Sofía:** Debe confirmar: *"Perfecto, revisamos disponibilidad en León..."*
+*   *(Nota: No debe volver a preguntar "¿De dónde eres?").*
+
+---
+
+## ✅ Checklist de Validación
+Marcar confirmación por sucursal:
+
+| Prueba | GDL | MTY | QRO | SLP | LEÓN | CDMX |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Semáforo Verde | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Semáforo Rojo | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Alerta de Audio 🔊 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Detección Ciudad | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+
+---
+*Cualquier comportamiento extraño, reportarlo con captura de pantalla.*

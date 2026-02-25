@@ -22,36 +22,13 @@ export default function StatusBar() {
     const [isFlashing, setIsFlashing] = useState(false);
     const prevNeedsHumanRef = useRef(0);
     const prevTotalRef = useRef(0);
-    const audioContextRef = useRef<AudioContext | null>(null);
 
-    // Sonido sutil de notificación usando Web Audio API
+    // Sonido de notificación usando archivo MP3
     const playNotificationSound = useCallback(() => {
         try {
-            // Crear AudioContext si no existe
-            if (!audioContextRef.current) {
-                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-            }
-            const ctx = audioContextRef.current;
-
-            // Crear oscilador para un "ding" sutil
-            const oscillator = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(ctx.destination);
-
-            // Frecuencias para un sonido agradable tipo "ding"
-            oscillator.frequency.setValueAtTime(880, ctx.currentTime); // Nota A5
-            oscillator.frequency.setValueAtTime(1320, ctx.currentTime + 0.1); // Nota E6
-
-            oscillator.type = 'sine';
-
-            // Volumen bajo y fade out
-            gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-
-            oscillator.start(ctx.currentTime);
-            oscillator.stop(ctx.currentTime + 0.3);
+            const audio = new Audio('/sounds/notification.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log('Error al reproducir sonido:', e));
         } catch (e) {
             console.log('Audio no disponible:', e);
         }

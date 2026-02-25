@@ -11,45 +11,14 @@ const db = getFirestore();
  * como texto para inyectarlo al prompt de Sofía.
  * Formato optimizado para que la IA pueda buscar por SKU o descripción.
  */
-async function getProductsCatalogText(): Promise<string> {
-    try {
-        const snap = await db
-            .collection('products')
-            .where('status', '==', 'active')
-            .get();
-
-        if (snap.empty) return '';
-
-        const products: string[] = [];
-        let totalBytes = 0;
-        const MAX_TOTAL_BYTES = 150 * 1024; // ~150KB para catálogo de productos
-
-        snap.forEach(doc => {
-            const p = doc.data() as any;
-            if (p?.sku) {
-                // Formato: SKU | Descripción | Precio | Moneda | Proveedor
-                const line = `- ${p.sku} | ${p.description || 'Sin descripción'} | ${p.price || 0} | ${p.currency || 'MXN'} | ${p.supplier || ''}`;
-                const lineBytes = Buffer.byteLength(line, 'utf8');
-                if (totalBytes + lineBytes <= MAX_TOTAL_BYTES) {
-                    products.push(line);
-                    totalBytes += lineBytes;
-                }
-            }
-        });
-
-        if (products.length === 0) return '';
-
-        console.log(`[getProductsCatalogText] Loaded ${products.length} products (~${Math.round(totalBytes / 1024)}KB)`);
-
-        return `\n\n## CATÁLOGO DE PRODUCTOS ELECSA (${products.length} productos activos)
-Formato: SKU | Descripción | Precio orientativo | Moneda | Proveedor
-IMPORTANTE: Estos precios son orientativos y pueden variar. Siempre menciona "más IVA" y "precio orientativo".
-
-${products.join('\n')}`;
-    } catch (error) {
-        console.error('[getProductsCatalogText] Error fetching products', error);
-        return '';
-    }
+/**
+ * Busca productos usando el índice en memoria (MiniSearch) ultrarrápido sin pegarle a Firestore por cada query
+ * @intervention IMPL-20260225-02
+ * @see context/ARCH-20260225-02
+ */
+async function searchProductsInDB(searchQuery: string): Promise<string> {
+    const { searchLocalProducts } = await import('./productSearch');
+    return await searchLocalProducts(searchQuery, 5);
 }
 
 async function getContextDocumentsText(): Promise<string> {
@@ -139,11 +108,10 @@ export async function getSofiaResponse(
         return TEST_KEYWORDS[trimmed];
     }
 
-    // 1. Cargar en paralelo: prompt, contexto, productos e historial
-    const [basePrompt, contextText, productsText, historySnap] = await Promise.all([
+    // 1. Cargar en paralelo: prompt, contexto e historial (Eliminamos getProductsCatalogText)
+    const [basePrompt, contextText, historySnap] = await Promise.all([
         getAgentPrompt('sofia'),
         getContextDocumentsText(),
-        getProductsCatalogText(),
         db.collection('messages')
             .where('conversationId', '==', conversationId)
             .orderBy('createdAt', 'desc')
@@ -165,14 +133,15 @@ export async function getSofiaResponse(
     // Agregar el mensaje actual al final
     history.push({ role: 'user', content: message });
 
-    // 3. Construir prompt final: base + catálogo + contexto + hora
+    // 3. Construir prompt final: base + contexto + hora
     let finalPrompt = basePrompt;
-    if (productsText) {
-        finalPrompt += productsText;
-    }
     if (contextText) {
         finalPrompt += contextText;
     }
+
+    // Instrucción explícita para usar la herramienta
+    finalPrompt += `\n\nIMPORTANTE PARA PRODUCTOS: 
+Ya NO tienes el catálogo inyectado aquí. Si el cliente pregunta por producto, precio o disponibilidad, DEBES usar obligatoriamente la herramienta \`buscar_productos_elecsa\`. No adivines precios.`;
 
     // Social Robotics: inyectar hora actual para saludos contextuales
     const now = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
@@ -181,45 +150,108 @@ export async function getSofiaResponse(
     return callClaude(finalPrompt, history);
 }
 
-/** Helper to test any agent with the current context documents AND products catalog */
+/** Helper to test any agent with the current context documents */
 export async function testAgentWithContext(agentId: string, message: string): Promise<string> {
-    const [basePrompt, contextText, productsText] = await Promise.all([
+    const [basePrompt, contextText] = await Promise.all([
         getAgentPrompt(agentId),
-        getContextDocumentsText(),
-        getProductsCatalogText(),
+        getContextDocumentsText()
     ]);
 
     let finalPrompt = basePrompt;
-    if (productsText) {
-        finalPrompt += productsText;
-    }
     if (contextText) {
         finalPrompt += contextText;
     }
 
+    finalPrompt += `\n\nIMPORTANTE PARA PRODUCTOS: 
+Si el cliente pregunta por producto, DEBES usar la herramienta \`buscar_productos_elecsa\`.`;
+
     return callClaude(finalPrompt, [{ role: 'user', content: message }]);
 }
 
-/** Claude 3.5 Haiku — Motor principal de Sofía (con prompt caching) */
+/** Claude 3.5 Haiku — Motor principal de Sofía con Function Calling */
 async function callClaude(
     systemPrompt: string,
-    conversationHistory: Array<{ role: 'user' | 'assistant', content: string }>
+    conversationHistory: any[]
 ): Promise<string> {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    // Preparar historial compatible con Tool Calling de Anthropic
+    const messages = [...conversationHistory];
+
     const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        system: [
+        model: 'claude-3-5-haiku-20241022',
+        max_tokens: 400,
+        system: systemPrompt,
+        tools: [
             {
-                type: 'text',
-                text: systemPrompt,
-                cache_control: { type: 'ephemeral' }, // Cache por 5 min — ahorra ~90% en prompt repetido
-            },
+                name: 'buscar_productos_elecsa',
+                description: 'Busca productos en el inventario/catálogo de la base de datos de Elecsa. Úsalo SIEMPRE que el cliente pregunte por un producto, modelo, refacción, precio o disponibilidad.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'Término de búsqueda, nombre del producto, marca o SKU (ej. "Taladro Truper", "llantas rin 15", "sk-123")'
+                        }
+                    },
+                    required: ['query']
+                }
+            }
         ],
-        messages: conversationHistory,
+        messages: messages,
     });
-    const block = response.content[0];
-    return block.type === 'text' ? block.text : '';
+
+    // Verificar si Claude decidió usar una herramienta
+    if (response.stop_reason === 'tool_use') {
+        const toolUseBlock = response.content.find((block: any) => block.type === 'tool_use') as Anthropic.ToolUseBlock;
+
+        if (toolUseBlock && toolUseBlock.name === 'buscar_productos_elecsa') {
+            const query = (toolUseBlock.input as any).query;
+            const searchResults = await searchProductsInDB(query);
+
+            // Re-inyectar el uso de la tool y la respuesta de la tool al historial
+            messages.push({
+                role: 'assistant',
+                content: response.content
+            });
+
+            messages.push({
+                role: 'user',
+                content: [
+                    {
+                        type: 'tool_result',
+                        tool_use_id: toolUseBlock.id,
+                        content: searchResults,
+                    }
+                ]
+            });
+
+            // Segunda llamada a Claude para que formule la respuesta final
+            const finalResponse = await anthropic.messages.create({
+                model: 'claude-3-5-haiku-20241022',
+                max_tokens: 400,
+                system: systemPrompt,
+                tools: [
+                    {
+                        name: 'buscar_productos_elecsa',
+                        description: 'Busca productos en el catálogo',
+                        input_schema: {
+                            type: 'object',
+                            properties: { query: { type: 'string' } },
+                            required: ['query']
+                        }
+                    }
+                ],
+                messages: messages,
+            });
+
+            const textBlock = finalResponse.content.find((block: any) => block.type === 'text') as Anthropic.TextBlock;
+            return textBlock ? textBlock.text : '';
+        }
+    }
+
+    const block = response.content.find((block: any) => block.type === 'text') as Anthropic.TextBlock;
+    return block ? block.text : '';
 }
 
 /** OpenAI GPT-4o-mini — Usado para funciones secundarias (resúmenes) */
