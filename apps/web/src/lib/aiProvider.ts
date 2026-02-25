@@ -229,7 +229,7 @@ async function callClaude(
 
             // Segunda llamada a Claude para que formule la respuesta final
             const finalResponse = await anthropic.messages.create({
-                model: 'claude-sonnet-4-6-20251001',
+                model: 'claude-haiku-4-5-20251001',
                 max_tokens: 400,
                 system: systemPrompt,
                 tools: [
