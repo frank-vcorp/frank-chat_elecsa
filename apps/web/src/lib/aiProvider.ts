@@ -142,7 +142,12 @@ export async function getSofiaResponse(
     // Instrucción explícita para usar la herramienta
     finalPrompt += `\n\nIMPORTANTE PARA PRODUCTOS: 
 Ya NO tienes el catálogo inyectado aquí. Si el cliente pregunta por producto, precio o disponibilidad, DEBES usar obligatoriamente la herramienta \`buscar_productos_elecsa\`. No adivines precios. 
-⚠️ REGLA DE DINAMISMO: Al dar stock o precio, menciona brevemente que los datos son orientativos y las existencias cambian rápido (están sujetos a disponibilidad).`;
+⚠️ REGLA DE DINAMISMO: Al dar stock o precio, menciona brevemente que los datos son orientativos y las existencias cambian rápido (están sujetos a disponibilidad).
+
+[REGLAS DE NATURALIDAD]:
+1. Usa sustantivos completos: "interruptores termomagnéticos", no solo "termomagnético".
+2. Evita frases robotizadas como "Tenemos ABB con termomagnético". Di: "Manejamos interruptores de la marca ABB" o "Contamos con la línea termomagnética de ABB".
+3. No anuncies tus acciones internas (ej. "Voy a buscar en el catálogo"). Solo da la respuesta final una vez que tengas la información.`;
 
     // Social Robotics: inyectar hora actual para saludos contextuales
     const now = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
@@ -205,13 +210,9 @@ async function callClaude(
             messages: messages,
         });
 
-        const textBlocks = response.content.filter((block: any) => block.type === 'text') as Anthropic.TextBlock[];
-        for (const block of textBlocks) {
-            fullResponseText += (fullResponseText ? "\n\n" : "") + block.text;
-        }
-
         if (response.stop_reason !== 'tool_use') {
-            break;
+            const textBlocks = response.content.filter((block: any) => block.type === 'text') as Anthropic.TextBlock[];
+            return textBlocks.map(b => b.text).join("\n\n").trim();
         }
 
         const toolUseBlocks = response.content.filter((block: any) => block.type === 'tool_use') as Anthropic.ToolUseBlock[];
