@@ -7,25 +7,45 @@ import * as xlsx from 'xlsx';
  * Función auxiliar para verificar que el usuario sea un administrador autenticado
  * Replicando el patrón de seguridad de /api/agents/fix
  */
-async function verifyAdminRole(): Promise<{ valid: boolean; error?: string; userId?: string }> {
+async function verifyAdminRole(request: Request): Promise<{ valid: boolean; error?: string; userId?: string }> {
     try {
-        const cookieStore = await cookies();
-        const sessionCookie = cookieStore.get('session')?.value;
+        // 1. Intentar obtener token del header Authorization (Prioridad para Firebase Client Auth)
+        const authHeader = request.headers.get('Authorization');
+        let token = '';
 
-        if (!sessionCookie) {
-            return { valid: false, error: 'No autenticado - sesión no encontrada' };
+        if (authHeader?.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+        } else {
+            // 2. Fallback: intentar obtener cookie de sesión
+            const cookieStore = await cookies();
+            token = cookieStore.get('session')?.value || '';
         }
 
-        const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
+        if (!token) {
+            return { valid: false, error: 'No autenticado - token no encontrado' };
+        }
+
+        // 3. Verificar el token (puede ser Session Cookie o ID Token)
+        let decodedClaims;
+        try {
+            // Intentar como ID Token (más común en este proyecto)
+            decodedClaims = await adminAuth.verifyIdToken(token);
+        } catch (e) {
+            // Intentar como Session Cookie (patrón legacy/fix)
+            decodedClaims = await adminAuth.verifySessionCookie(token, true);
+        }
+
         const userId = decodedClaims.uid;
 
+        // 4. Verificar rol en Firestore (Frank@vcorp.mx es Administrador)
         const agentDoc = await adminDb.collection('agents').doc(userId).get();
         if (!agentDoc.exists) {
             return { valid: false, error: 'Usuario no registrado como agente' };
         }
 
         const agentData = agentDoc.data();
-        if (agentData?.role !== 'admin') {
+        // Aceptamos 'admin' para coincidir con la lógica interna
+        if (agentData?.role !== 'admin' && agentData?.role !== 'Administrador') {
             return { valid: false, error: 'Acceso denegado - se requiere rol de administrador' };
         }
 
@@ -39,7 +59,7 @@ async function verifyAdminRole(): Promise<{ valid: boolean; error?: string; user
 export async function POST(request: Request) {
     try {
         // 🔒 SEGURIDAD: Verificar rol de administrador
-        const authResult = await verifyAdminRole();
+        const authResult = await verifyAdminRole(request);
         if (!authResult.valid) {
             return NextResponse.json({ error: authResult.error }, { status: 401 });
         }

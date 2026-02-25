@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { auth } from '@/lib/firebase';
 
 export default function UploadCatalogAdminPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -26,8 +27,12 @@ export default function UploadCatalogAdminPage() {
         formData.append('file', file);
 
         try {
+            const idToken = await auth.currentUser?.getIdToken();
             const response = await fetch('/api/products/sync-excel', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                },
                 body: formData,
             });
 
