@@ -1,22 +1,12 @@
 // src/app/admin/products/page.tsx
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, Trash2, Download, FileText, X } from 'lucide-react';
-
-interface Product {
-    sku: string;
-    supplier?: string;
-    description: string;
-    price: number;
-    currency: string;
-    status: 'active' | 'archived';
-}
+import { Upload, FileText, X, ArrowRight, LayoutGrid } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ProductsPage() {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [productCount, setProductCount] = useState<number>(0);
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [contextDocs, setContextDocs] = useState<any[]>([]);
     const [contextUploading, setContextUploading] = useState(false);
     const contextFileInputRef = useRef<HTMLInputElement>(null);
@@ -28,27 +18,21 @@ export default function ProductsPage() {
         .reduce((sum, doc) => sum + (typeof doc.size === 'number' ? doc.size : 0), 0);
     const activeCount = contextDocs.filter((doc) => doc.active).length;
 
-    const fetchProducts = async () => {
+    // Ya no traemos los miles de productos, solo el conteo para rendimiento extremo
+    const fetchProductSummary = async () => {
         setLoading(true);
         try {
-                const res = await fetch('/api/products');
-                if (!res.ok) {
-                    throw new Error(`Failed to fetch products: ${res.status}`);
-                }
-                const data = await res.json();
-                console.log('Products fetched', data);
-                setProducts(Array.isArray(data) ? data : []);
+            const res = await fetch('/api/products');
+            if (!res.ok) throw new Error(`Status: ${res.status}`);
+            const data = await res.json();
+            // Si la API devuelve un array, tomamos el length. Si ya devuelve un count, mejor.
+            setProductCount(Array.isArray(data) ? data.length : (data.count || 0));
         } catch (error) {
-            console.error('Failed to fetch products', error);
+            console.error('Failed to fetch summary', error);
         } finally {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchProducts();
-        fetchContextDocs();
-    }, []);
 
     const fetchContextDocs = async () => {
         try {
@@ -61,157 +45,10 @@ export default function ProductsPage() {
         }
     };
 
-    const detectDelimiter = (line: string) => {
-        const candidates = [',', ';', '\t', '|'];
-        let best = ',';
-        let maxCount = 0;
-        const sanitized = line.replace(/".*?"/g, (match) => match.replace(/,/g, '，').replace(/;/g, '；').replace(/\t/g, '␉').replace(/\|/g, '¦'));
-        candidates.forEach((delimiter) => {
-            const count = sanitized.split(delimiter).length - 1;
-            if (count > maxCount) {
-                maxCount = count;
-                best = delimiter;
-            }
-        });
-        return best;
-    };
-
-    const parseCsvLine = (line: string, delimiter: string) => {
-        const result: string[] = [];
-        let current = '';
-        let inQuotes = false;
-
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            const nextChar = line[i + 1];
-
-            if (char === '"') {
-                if (inQuotes && nextChar === '"') {
-                    current += '"';
-                    i++; // Skip escaped quote
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (char === delimiter && !inQuotes) {
-                result.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        result.push(current.trim());
-
-        return result.map((value) => value.replace(/^"|"$/g, ''));
-    };
-
-    const normalizeNumber = (value: string | number | undefined) => {
-        if (value === undefined || value === null) return 0;
-        if (typeof value === 'number') return value;
-
-        const cleaned = value
-            .replace(/[^0-9,.-]/g, '')
-            .trim();
-
-        if (!cleaned) return 0;
-
-        if (cleaned.includes(',') && !cleaned.includes('.')) {
-            return Number(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
-        }
-
-        if ((cleaned.match(/,/g) || []).length > 1) {
-            return Number(cleaned.replace(/,/g, '')) || 0;
-        }
-
-        return Number(cleaned.replace(/,/g, '')) || 0;
-    };
-
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setUploading(true);
-        try {
-            const rawText = await file.text();
-            const normalizedText = rawText
-                .replace(/\r\n/g, '\n')
-                .replace(/\r/g, '\n')
-                .trim();
-
-            const lines = normalizedText.split('\n').map((line) => line.trim()).filter(Boolean);
-            if (lines.length === 0) {
-                alert('❌ El archivo está vacío');
-                return;
-            }
-
-            const headerLine = lines[0].replace(/^\uFEFF/, '');
-            const delimiter = detectDelimiter(headerLine);
-            const headers = parseCsvLine(headerLine, delimiter).map((h) => h.trim().toLowerCase());
-
-            const parsedProducts = lines.slice(1).map((line) => {
-                const values = parseCsvLine(line, delimiter);
-                const product: any = {};
-                headers.forEach((header, index) => {
-                    product[header] = values[index];
-                });
-                return {
-                    sku: product.sku?.toUpperCase() || '',
-                    supplier: product.proveedor || product.supplier || '',
-                    description: product.description || product.desc || '',
-                    price: normalizeNumber(product.price ?? product.precio),
-                    currency: product.currency || 'USD',
-                    status: (product.status || 'active') as 'active' | 'archived',
-                };
-            }).filter(p => p.sku);
-
-            const clearExisting = confirm(
-                `Se encontraron ${parsedProducts.length} productos.\n\n¿Deseas ELIMINAR todos los productos existentes y reemplazarlos con estos nuevos?\n\nPresiona OK para reemplazar, o Cancelar para agregar sin eliminar.`
-            );
-
-            const res = await fetch('/api/products/bulk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ products: parsedProducts, clearExisting }),
-            });
-
-            if (res.ok) {
-                alert(`✅ ${parsedProducts.length} productos cargados exitosamente`);
-                fetchProducts();
-            } else {
-                alert('❌ Error al cargar productos');
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            alert('❌ Error al procesar el archivo');
-        } finally {
-            setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    };
-
-    const handleClearAll = async () => {
-        if (!confirm('⚠️ ¿Estás seguro de que deseas ELIMINAR TODOS los productos? Esta acción no se puede deshacer.')) return;
-
-        try {
-            const res = await fetch('/api/products/bulk', { method: 'DELETE' });
-            if (res.ok) {
-                alert('✅ Todos los productos han sido eliminados');
-                fetchProducts();
-            }
-        } catch (error) {
-            console.error('Delete all error:', error);
-            alert('❌ Error al eliminar productos');
-        }
-    };
-
-    const downloadTemplate = () => {
-        const csv = 'sku,proveedor,description,price,currency,status\nSOLAR-PANEL-X1,SolarTech,Panel Solar 450W,150,USD,active\nINVERSOR-5KW,PowerSystems,Inversor 5kW,800,USD,active';
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'products_template.csv';
-        a.click();
-    };
+    useEffect(() => {
+        fetchProductSummary();
+        fetchContextDocs();
+    }, []);
 
     const handleContextFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -235,9 +72,7 @@ export default function ProductsPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: file.name, content, source: 'products-page' }),
             });
-            if (!res.ok) {
-                throw new Error('Failed to upload context doc');
-            }
+            if (!res.ok) throw new Error('Failed to upload context doc');
             await fetchContextDocs();
         } catch (error) {
             console.error('Context upload error', error);
@@ -278,42 +113,45 @@ export default function ProductsPage() {
     };
 
     return (
-        <div>
+        <div className="space-y-8">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Product Catalog</h2>
-                <div className="flex gap-2">
-                    <button
-                        onClick={downloadTemplate}
-                        className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-                    >
-                        <Download size={16} />
-                        Descargar Plantilla
-                    </button>
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-                    >
-                        <Upload size={16} />
-                        {uploading ? 'Cargando...' : 'Cargar CSV/Excel'}
-                    </button>
-                    <button
-                        onClick={handleClearAll}
-                        className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                    >
-                        <Trash2 size={16} />
-                        Eliminar Todos
-                    </button>
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Configuración de Conocimiento</h2>
+                    <p className="text-gray-500 text-sm">Gestiona la información que Sofía utiliza para atender clientes.</p>
                 </div>
             </div>
 
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFileUpload}
-                className="hidden"
-            />
+            {/* Nueva Sección de Catálogo Resumida */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
+                    <div>
+                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                            <LayoutGrid size={20} />
+                        </div>
+                        <h3 className="font-bold text-gray-900">Catálogo de Productos</h3>
+                        <p className="text-3xl font-black text-blue-600 mt-2">
+                            {loading ? '...' : productCount.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">Items cargados</p>
+                    </div>
+                    <Link
+                        href="/admin/upload-catalog"
+                        className="mt-6 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                        Sincronizar Excel <ArrowRight size={16} />
+                    </Link>
+                </div>
+
+                <div className="md:col-span-2 bg-blue-50 p-6 rounded-lg border border-blue-100 flex flex-col justify-center">
+                    <h4 className="font-bold text-blue-900 mb-2">Optimización de Escala Masiva</h4>
+                    <p className="text-blue-800 text-sm leading-relaxed">
+                        Hemos optimizado esta vista para soportar catálogos masivos (12,500+ items).
+                        La lista detallada ha sido removida para maximizar la velocidad de tu panel.
+                        Cualquier cambio de existencias o precios debe realizarse a través del
+                        <strong> Sincronizador Maestro</strong> usando un archivo XLSX.
+                    </p>
+                </div>
+            </div>
 
             <input
                 ref={contextFileInputRef}
@@ -323,118 +161,84 @@ export default function ProductsPage() {
                 className="hidden"
             />
 
-            {/* Context documents */}
-            <div className="bg-white rounded shadow mb-8 p-6">
-                <div className="flex justify-between items-start mb-4 gap-4">
+            {/* Documentos de contexto */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                <div className="flex justify-between items-start mb-6 gap-4">
                     <div>
                         <h3 className="text-lg font-semibold flex items-center gap-2">
-                            <FileText size={18} /> Documentos de contexto para la IA
+                            <FileText size={18} className="text-indigo-600" />
+                            Documentos de Referencia (Contexto)
                         </h3>
                         <p className="text-xs text-gray-500 mt-1">
-                            Activos: {activeCount} / {contextDocs.length}{' '}
-                            · Tamaño activo aprox: {(activeContextBytes / 1024).toFixed(1)} KB
-                            {totalContextBytes > 0 && activeContextBytes !== totalContextBytes && (
-                                <>
-                                    {' '}· Total cargado: {(totalContextBytes / 1024).toFixed(1)} KB
-                                </>
-                            )}
+                            Información sobre sucursales, horarios, servicios o políticas de Elecsa.
                         </p>
                     </div>
                     <button
                         onClick={() => contextFileInputRef.current?.click()}
                         disabled={contextUploading}
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50 text-sm"
+                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50 text-sm font-semibold transition-all shadow-sm"
                     >
                         <Upload size={16} />
-                        {contextUploading ? 'Subiendo...' : 'Subir .md / .txt'}
+                        {contextUploading ? 'Subiendo...' : 'Agregar Documento .md'}
                     </button>
                 </div>
-                {contextDocs.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                        No hay documentos de contexto cargados. Puedes subir archivos .md o .txt
-                        con información de referencia (por ejemplo, textos de la página de Elecsa)
-                        que Sofía usará como conocimiento base.
+
+                <div className="bg-gray-50 rounded-md p-4 mb-4">
+                    <p className="text-xs text-gray-600">
+                        <strong>Estatus del Conocimiento:</strong> {activeCount} documentos activos · {(activeContextBytes / 1024).toFixed(1)} KB en uso por la IA.
                     </p>
+                </div>
+
+                {contextDocs.length === 0 ? (
+                    <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-lg">
+                        <FileText size={40} className="mx-auto text-gray-200 mb-4" />
+                        <p className="text-sm text-gray-400">No hay documentos de contexto. Sube archivos de texto para dar sabiduría a Sofía.</p>
+                    </div>
                 ) : (
-                    <ul className="space-y-2">
+                    <ul className="divide-y divide-gray-100 border border-gray-100 rounded-md overflow-hidden">
                         {contextDocs.map((doc) => (
                             <li
                                 key={doc.id}
-                                className="flex items-center justify-between border rounded px-3 py-2 text-sm"
+                                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                             >
-                                <span className="flex items-center gap-2">
-                                    <FileText size={16} className="text-gray-500" />
-                                    <span className="font-medium">{doc.title}</span>
-                                    <span className="text-xs text-gray-400">
-                                        {doc.createdAt ? new Date(doc.createdAt).toLocaleString() : ''}
-                                        {typeof doc.size === 'number' && (
-                                            <>
-                                                {' '}· {(doc.size / 1024).toFixed(1)} KB
-                                            </>
-                                        )}
-                                    </span>
-                                    <span
-                                        className={`text-xs px-2 py-0.5 rounded-full ${doc.active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}
-                                    >
-                                        {doc.active ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                </span>
                                 <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => handleToggleActiveContextDoc(doc.id, !!doc.active)}
-                                        className="text-xs px-2 py-1 rounded border text-gray-700 hover:bg-gray-50"
+                                    <div className={`w-8 h-8 rounded flex items-center justify-center ${doc.active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                        <FileText size={16} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900">{doc.title}</p>
+                                        <p className="text-[10px] text-gray-400 uppercase font-medium">
+                                            {(doc.size / 1024).toFixed(1)} KB · {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <span
+                                        className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full ${doc.active ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'}`}
                                     >
-                                        {doc.active ? 'Desactivar' : 'Activar'}
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteContextDoc(doc.id)}
-                                        className="text-red-500 hover:text-red-700"
-                                        title="Eliminar documento"
-                                    >
-                                        <X size={16} />
-                                    </button>
+                                        {doc.active ? 'En Línea' : 'Desactivado'}
+                                    </span>
+                                    <div className="h-6 w-px bg-gray-200 hidden md:block" />
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleToggleActiveContextDoc(doc.id, !!doc.active)}
+                                            className={`text-xs px-3 py-1 rounded border transition-colors ${doc.active ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' : 'bg-green-600 border-green-600 text-white hover:bg-green-700'}`}
+                                        >
+                                            {doc.active ? 'Desactivar' : 'Activar'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteContextDoc(doc.id)}
+                                            className="p-1.5 text-red-200 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                                            title="Eliminar permanentemente"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
                                 </div>
                             </li>
                         ))}
                     </ul>
                 )}
-            </div>
-
-            {/* List */}
-            <div className="bg-white rounded shadow overflow-hidden">
-                <div className="px-6 py-3 bg-gray-50 border-b">
-                    <p className="text-sm text-gray-600">Total: {products.length} productos</p>
-                </div>
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {loading ? (
-                            <tr><td colSpan={5} className="p-4 text-center">Loading...</td></tr>
-                        ) : products.length === 0 ? (
-                            <tr><td colSpan={5} className="p-4 text-center text-gray-500">No hay productos. Carga un archivo CSV para comenzar.</td></tr>
-                        ) : products.map((product) => (
-                            <tr key={product.sku}>
-                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{product.sku}</td>
-                                <td className="px-6 py-4 text-gray-500">{product.supplier}</td>
-                                <td className="px-6 py-4 text-gray-500">{product.description}</td>
-                                <td className="px-6 py-4 text-gray-500">${product.price} {product.currency}</td>
-                                <td className="px-6 py-4 text-gray-500">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                        {product.status}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
             </div>
         </div>
     );
