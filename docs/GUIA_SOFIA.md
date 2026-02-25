@@ -503,5 +503,22 @@ Así se ve el dashboard cuando hay conversaciones pendientes:
 
 ---
 
-*Documento actualizado: Enero 2026*
-*Versión: 1.0*
+## 4. Consulta de Catálogo Real (NUEVO v3.1)
+
+Sofía ahora tiene acceso directo a la base de datos de ELECSA (12k+ productos).
+
+### Cómo funciona:
+- Si el cliente pregunta por un modelo, marca o SKU, Sofía **busca en tiempo real**.
+- **Regla de Oro:** Siempre menciona que existencias y precios están sujetos a disponibilidad inmediata.
+- **Búsqueda Inteligente:** Si el cliente escribe mal el nombre, Sofía intentará corregirlo automáticamente.
+
+---
+
+## Preguntas frecuentes (v3.1)
+- **¿Qué pasa si no hay stock?** Sofía ofrecerá alternativas de marcas similares (ej. si no hay Schneider, ofrece ABB).
+- **¿Sofía inventa precios?** No. Si el producto no está en el catálogo cargado, ella dirá que no lo encontró.
+
+---
+
+*Documento actualizado: Febrero 2025*
+*Versión: 3.1 - Catalog Engine Active*
