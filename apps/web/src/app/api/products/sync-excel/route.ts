@@ -108,11 +108,15 @@ export async function POST(request: Request) {
             const row: any = rawData[i];
 
             // Extracción segura
-            const sku = (row['Artículo'] || '').toString().trim().toUpperCase();
-            if (!sku) continue;
+            const originalSku = (row['Artículo'] || '').toString().trim();
+            if (!originalSku) continue;
+
+            // Sanitización: Firestore no permite '/' en el path del documento ID
+            // porque lo interpreta como una subcolección (provocando error de path impar).
+            const skuForPath = originalSku.replace(/\//g, '-').toUpperCase();
 
             const mappedProduct = {
-                sku: sku,
+                sku: originalSku.toUpperCase(), // Mantenemos el SKU original para la IA
                 description: (row['Desc. Artículo'] || '').toString().trim(),
                 price: typeof row['PRECIO 2'] === 'number' ? row['PRECIO 2'] : parseFloat(row['PRECIO 2']) || 0,
                 currency: (row['MONEDA'] || 'MXN').toString().trim(),
@@ -124,7 +128,7 @@ export async function POST(request: Request) {
                 updatedAt: new Date().toISOString()
             };
 
-            const docRef = adminDb.collection('products').doc(sku);
+            const docRef = adminDb.collection('products').doc(skuForPath);
             batch.set(docRef, mappedProduct, { merge: true }); // Merge no borra campos antiguos existentes
             operationCount++;
 
