@@ -36,14 +36,26 @@ async function verifyAdminRole(request: Request): Promise<{ valid: boolean; erro
         }
 
         const userId = decodedClaims.uid;
+        const email = decodedClaims.email;
 
-        // 4. Verificar rol en Firestore (Frank@vcorp.mx es Administrador)
-        const agentDoc = await adminDb.collection('agents').doc(userId).get();
+        // 4. Verificar rol en Firestore
+        let agentDoc = await adminDb.collection('agents').doc(userId).get();
+        let agentData = agentDoc.data();
+
+        // Fallback: Si no existe por UID, buscar por email (común en migraciones legacy)
+        if (!agentDoc.exists && email) {
+            const agentQuery = await adminDb.collection('agents').where('email', '==', email).limit(1).get();
+            if (!agentQuery.empty) {
+                agentDoc = agentQuery.docs[0];
+                agentData = agentDoc.data();
+            }
+        }
+
         if (!agentDoc.exists) {
+            console.error(`[sync-excel] Acceso denegado: Usuario ${email} (${userId}) no encontrado en la colección 'agents'`);
             return { valid: false, error: 'Usuario no registrado como agente' };
         }
 
-        const agentData = agentDoc.data();
         // Aceptamos 'admin' para coincidir con la lógica interna
         if (agentData?.role !== 'admin' && agentData?.role !== 'Administrador') {
             return { valid: false, error: 'Acceso denegado - se requiere rol de administrador' };
