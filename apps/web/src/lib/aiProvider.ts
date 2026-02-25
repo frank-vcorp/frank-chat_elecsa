@@ -180,7 +180,7 @@ async function callClaude(
     const messages = [...conversationHistory];
 
     const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-6-20251001',
         max_tokens: 400,
         system: systemPrompt,
         tools: [
@@ -229,7 +229,7 @@ async function callClaude(
 
             // Segunda llamada a Claude para que formule la respuesta final
             const finalResponse = await anthropic.messages.create({
-                model: 'claude-3-5-sonnet-20241022',
+                model: 'claude-sonnet-4-6-20251001',
                 max_tokens: 400,
                 system: systemPrompt,
                 tools: [
