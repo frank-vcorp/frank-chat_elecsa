@@ -147,3 +147,104 @@ export function invalidateSearchIndexCaches() {
     console.log('[MiniSearch] Invalidando índice de RAM. Se reconstruirá en la próxima consulta.');
     global.searchIndexInstance = null;
 }
+
+/**
+ * Escanea todo el índice en RAM y devuelve las marcas (suppliers) únicas
+ * que coinciden con una categoría, familia o término general.
+ * Si no se pasa filtro, devuelve TODAS las marcas del catálogo.
+ * @intervention FIX-20260303-01
+ */
+export async function listBrandsByCategory(categoryFilter?: string): Promise<string> {
+    try {
+        let index = global.searchIndexInstance;
+        if (!index) {
+            index = await initializeSearchIndex();
+        }
+
+        // Si hay filtro, buscamos productos que coincidan y extraemos sus marcas
+        if (categoryFilter && categoryFilter.trim()) {
+            const results = index.search(categoryFilter.trim(), {
+                fuzzy: 0.2,
+                prefix: true,
+            });
+
+            if (results.length === 0) {
+                return `No se encontraron productos en la categoría "${categoryFilter}". No manejamos esa línea o intenta con otro término.`;
+            }
+
+            // Extraer marcas únicas de los resultados
+            const brandsSet = new Set<string>();
+            for (const r of results) {
+                if (r.supplier && String(r.supplier).trim()) {
+                    brandsSet.add(String(r.supplier).trim());
+                }
+            }
+
+            const brands = Array.from(brandsSet).sort();
+            return `Marcas disponibles en "${categoryFilter}" (${brands.length} marcas, ${results.length} productos encontrados):\n${brands.join(', ')}`;
+        }
+
+        // Sin filtro: extraer TODAS las marcas del catálogo completo
+        // Usamos una búsqueda con wildcard vacía — MiniSearch no lo soporta, 
+        // así que accedemos a los documentos almacenados directamente.
+        const allDocs = (index as any)._storedFields;
+        const brandsSet = new Set<string>();
+
+        if (allDocs) {
+            for (const [, fields] of allDocs) {
+                const supplier = fields?.supplier;
+                if (supplier && String(supplier).trim()) {
+                    brandsSet.add(String(supplier).trim());
+                }
+            }
+        }
+
+        const brands = Array.from(brandsSet).sort();
+        return `Marcas disponibles en el catálogo completo de ELECSA (${brands.length} marcas):\n${brands.join(', ')}`;
+
+    } catch (error) {
+        console.error('[listBrandsByCategory] Error:', error);
+        return 'Error al consultar marcas. Solicita asistencia humana.';
+    }
+}
+
+/**
+ * Lista las familias/categorías únicas disponibles en el catálogo.
+ * @intervention FIX-20260303-01
+ */
+export async function listCategories(): Promise<string> {
+    try {
+        let index = global.searchIndexInstance;
+        if (!index) {
+            index = await initializeSearchIndex();
+        }
+
+        const allDocs = (index as any)._storedFields;
+        const familiesSet = new Set<string>();
+        const categoriesSet = new Set<string>();
+
+        if (allDocs) {
+            for (const [, fields] of allDocs) {
+                if (fields?.family && String(fields.family).trim()) {
+                    familiesSet.add(String(fields.family).trim());
+                }
+                if (fields?.category && String(fields.category).trim()) {
+                    categoriesSet.add(String(fields.category).trim());
+                }
+            }
+        }
+
+        const families = Array.from(familiesSet).sort();
+        const categories = Array.from(categoriesSet).sort();
+
+        let result = `Familias de productos (${families.length}):\n${families.join(', ')}`;
+        if (categories.length > 0) {
+            result += `\n\nCategorías (${categories.length}):\n${categories.join(', ')}`;
+        }
+        return result;
+
+    } catch (error) {
+        console.error('[listCategories] Error:', error);
+        return 'Error al consultar categorías. Solicita asistencia humana.';
+    }
+}

@@ -140,14 +140,18 @@ export async function getSofiaResponse(
     }
 
     // Instrucción explícita para usar la herramienta
-    finalPrompt += `\n\nIMPORTANTE PARA PRODUCTOS: 
-Ya NO tienes el catálogo inyectado aquí. Si el cliente pregunta por producto, precio o disponibilidad, DEBES usar obligatoriamente la herramienta \`buscar_productos_elecsa\`. No adivines precios. 
-⚠️ REGLA DE DINAMISMO: Al dar stock o precio, menciona brevemente que los datos son orientativos y las existencias cambian rápido (están sujetos a disponibilidad).
+    finalPrompt += `\n\n🚨 REGLAS ABSOLUTAS SOBRE PRODUCTOS, MARCAS Y CATEGORÍAS:
+
+1. NUNCA respondas sobre productos, marcas, categorías, familias o líneas desde tu conocimiento general. TODA información sobre el inventario de ELECSA DEBE venir de las herramientas.
+2. Si el cliente pregunta "¿qué marcas manejas?", "¿qué tipo de cable tienen?" o cualquier pregunta sobre marcas/categorías/familias → USA la herramienta \`listar_marcas_elecsa\`.
+3. Si el cliente pregunta por un producto específico, precio o disponibilidad → USA la herramienta \`buscar_productos_elecsa\`.
+4. PROHIBIDO nombrar marcas (ABB, Schneider, Siemens, Condumex, etc.) sin haberlas obtenido PRIMERO de una herramienta. Si inventas una marca que no manejamos, el cliente perderá la confianza.
+5. Al dar stock o precio, menciona que son orientativos y sujetos a disponibilidad.
 
 [REGLAS DE NATURALIDAD]:
 1. Usa sustantivos completos: "interruptores termomagnéticos", no solo "termomagnético".
-2. Evita frases robotizadas como "Tenemos ABB con termomagnético". Di: "Manejamos interruptores de la marca ABB" o "Contamos con la línea termomagnética de ABB".
-3. No anuncies tus acciones internas (ej. "Voy a buscar en el catálogo"). Solo da la respuesta final una vez que tengas la información.`;
+2. Evita frases robotizadas. Di: "Manejamos interruptores de la marca ABB" o "Contamos con la línea termomagnética de ABB".
+3. No anuncies tus acciones internas. Solo da la respuesta final.`;
 
     // Social Robotics: inyectar hora actual para saludos contextuales
     const now = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
@@ -194,16 +198,30 @@ async function callClaude(
             tools: [
                 {
                     name: 'buscar_productos_elecsa',
-                    description: 'Busca productos en el inventario/catálogo de la base de datos de Elecsa. Úsalo SIEMPRE que el cliente pregunte por un producto, modelo, refacción, precio o disponibilidad.',
+                    description: 'Busca productos específicos en el inventario de Elecsa. Úsalo cuando el cliente pida un producto concreto, modelo, refacción, precio o disponibilidad.',
                     input_schema: {
                         type: 'object',
                         properties: {
                             query: {
                                 type: 'string',
-                                description: 'Término de búsqueda, nombre del producto, marca o SKU (ej. "Taladro Truper", "llantas rin 15", "sk-123")'
+                                description: 'Término de búsqueda, nombre del producto, marca o SKU (ej. "Taladro Truper", "Comfort Panel 15", "sk-123")'
                             }
                         },
                         required: ['query']
+                    }
+                },
+                {
+                    name: 'listar_marcas_elecsa',
+                    description: 'Lista las marcas disponibles en ELECSA, opcionalmente filtradas por categoría. DEBES usarlo SIEMPRE que el cliente pregunte qué marcas manejas, qué líneas tienes, qué categorías ofreces, o cualquier pregunta general sobre el catálogo. También úsalo si el cliente pregunta por una categoría de producto (ej. "cable", "gabinetes", "interruptores").',
+                    input_schema: {
+                        type: 'object',
+                        properties: {
+                            categoria: {
+                                type: 'string',
+                                description: 'Categoría o familia para filtrar marcas (ej. "cable", "gabinete", "interruptor", "iluminación"). Dejar vacío para listar TODAS las marcas del catálogo.'
+                            }
+                        },
+                        required: []
                     }
                 }
             ],
@@ -231,6 +249,15 @@ async function callClaude(
                     type: 'tool_result' as const,
                     tool_use_id: toolUse.id,
                     content: searchResults,
+                });
+            } else if (toolUse.name === 'listar_marcas_elecsa') {
+                const { listBrandsByCategory } = await import('./productSearch');
+                const categoria = (toolUse.input as any).categoria || '';
+                const brandsResult = await listBrandsByCategory(categoria || undefined);
+                toolResults.push({
+                    type: 'tool_result' as const,
+                    tool_use_id: toolUse.id,
+                    content: brandsResult,
                 });
             }
         }
