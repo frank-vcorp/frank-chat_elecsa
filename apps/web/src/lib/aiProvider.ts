@@ -147,6 +147,7 @@ export async function getSofiaResponse(
 3. Si el cliente pregunta por un producto específico, precio o disponibilidad → USA la herramienta \`buscar_productos_elecsa\`.
 4. PROHIBIDO nombrar marcas (ABB, Schneider, Siemens, Condumex, etc.) sin haberlas obtenido PRIMERO de una herramienta. Si inventas una marca que no manejamos, el cliente perderá la confianza.
 5. Al dar stock o precio, menciona que son orientativos y sujetos a disponibilidad.
+6. NUNCA digas "eso no lo manejamos", "está fuera de mi área" o "no tenemos esa línea" SIN ANTES haber buscado en el catálogo con la herramienta. ELECSA maneja miles de productos (software, licencias, equipos industriales, PLCs, HMIs, etc.). SIEMPRE busca primero, y SOLO si la herramienta confirma que no hay resultados, entonces di que no lo encontraste y ofrece alternativas o conectar con un asesor.
 
 [REGLAS DE NATURALIDAD]:
 1. Usa sustantivos completos: "interruptores termomagnéticos", no solo "termomagnético".
