@@ -18,7 +18,7 @@ const db = getFirestore();
  */
 async function searchProductsInDB(searchQuery: string): Promise<string> {
     const { searchLocalProducts } = await import('./productSearch');
-    return await searchLocalProducts(searchQuery, 5);
+    return await searchLocalProducts(searchQuery, 10);
 }
 
 async function getContextDocumentsText(): Promise<string> {
