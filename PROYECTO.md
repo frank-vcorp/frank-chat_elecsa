@@ -1,12 +1,14 @@
 # PROYECTO: Frank Chat (Cliente: Frank Saavedra)
 
 ## Flujo de estados
+
 - [ ] Pendiente
 - [/] En Progreso
 - [✓] Hecho
-- [X] Aprobado
+- [x] Aprobado
 
 ## Backlog inicial
+
 - [✓] Bootstrap de estructura y artefactos
   - [✓] Configurar Monorepo (Turborepo + pnpm)
   - [✓] Inicializar Next.js app (apps/web)
@@ -28,6 +30,7 @@
   - [ ] Pruebas E2E con usuarios reales
 
 ## Actualización 2025-11-29 (Fase 2)
+
 - [✓] Implementación de Catálogo Dinámico y Gestión de Agentes
   - [✓] API Routes para Productos y Agentes (CRUD)
   - [✓] Helper `aiProvider` para lógica centralizada de IA
@@ -40,12 +43,14 @@
   - [✓] Botón "Take Conversation" para asignación manual
 
 ### Artefactos Generados (Metodología Integra)
+
 - [✓] `task.md` - Lista de tareas actualizada
 - [✓] `implementation_plan.md` - Plan de implementación Fase 2
 - [✓] `walkthrough.md` - Guía de uso actualizada
 - [✓] `Checkpoints/CHK_2025-11-29_2200.md` - Checkpoint Fase 2
 
 ## Actualización SOFIA (2025-12-04)
+
 - [✓] Implementación de Automatización Faltante
   - [✓] Resumen Automático con IA al cerrar conversación (`/api/conversation/close`)
   - [✓] Endpoint para Cron Job de Cierre Automático (`/api/cron/close-inactive`)
@@ -53,6 +58,7 @@
   - [✓] Crear `TESTING.md` con instrucciones de validación manual
 
 ## Actualización SOFIA (2026-01-14) - Integración Catálogo Dinámico
+
 - [✓] Inyección de Catálogo de Productos al Prompt de Sofía
   - [✓] Nueva función `getProductsCatalogText()` en `aiProvider.ts`
   - [✓] Modificar `getSofiaResponse()` para incluir productos activos
@@ -61,6 +67,7 @@
 - [✓] Checkpoint: `Checkpoints/CHK_2026-01-14_SOFIA_CATALOGO.md`
 
 ## Actualización SOFIA (2025-01-15) - Sistema de Routing por Sucursales
+
 - [✓] Routing Automático de Conversaciones por Sucursal
   - [✓] Tipo `BranchId` con 11 sucursales de ELECSA
   - [✓] `detectBranchByCity()` mapea ciudades a sucursales
@@ -77,4 +84,5 @@
 - [✓] Checkpoint: `Checkpoints/CHK_2025-01-15_BRANCH_ROUTING.md`
 
 ## Notas y Referencias
+
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)

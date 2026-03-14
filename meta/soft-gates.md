@@ -27,11 +27,13 @@ Cada gate debe pasar **exitosamente** para avanzar al siguiente. Si alguno falla
 ## Gate 1: Compilación ✅
 
 ### Objetivo
+
 Garantizar que el código es sintácticamente correcto y cumple con estándares básicos.
 
 ### Verificaciones Obligatorias
 
 #### TypeScript
+
 ```bash
 # Debe pasar sin errores
 pnpm tsc --noEmit
@@ -41,10 +43,12 @@ pnpm tsc --noEmit
 ```
 
 **Criterios de aprobación:**
+
 - ❌ **0 errores** (obligatorio)
 - ⚠️ Warnings permitidos, pero deben documentarse
 
 #### ESLint
+
 ```bash
 # Debe pasar sin errores críticos
 pnpm lint
@@ -54,14 +58,17 @@ pnpm lint --filter @farianergy/core
 ```
 
 **Criterios de aprobación:**
+
 - ❌ **0 errores** (obligatorio)
 - ⚠️ Warnings < 5 (preferiblemente 0)
 - 💡 Info messages permitidos
 
 ### Responsable
+
 **SOFIA** ejecuta y verifica Gate 1 antes de pasar a `[V]`.
 
 ### Ejemplo de Fallo
+
 ```markdown
 - [/] Implementación de API de pagos
   **Gate 1: FAILED ❌**
@@ -71,18 +78,19 @@ pnpm lint --filter @farianergy/core
     - src/lib/validators.ts:12 - Argument of type 'unknown' not assignable
   - ESLint: 1 error, 3 warnings
     - error: 'paymentId' is defined but never used
-  
+
   **Acción:** SOFIA corrige errores y re-ejecuta Gate 1
 ```
 
 ### Ejemplo de Éxito
+
 ```markdown
 - [V] Implementación de API de pagos
   **Gate 1: PASSED ✅**
   - TypeScript: 0 errors
   - ESLint: 0 errors, 2 warnings (acceptable)
     - warning: Consider using optional chaining (payment?.id)
-  
+
   **Siguiente:** Proceder a Gate 2 (Testing)
 ```
 
@@ -91,11 +99,13 @@ pnpm lint --filter @farianergy/core
 ## Gate 2: Testing 🧪
 
 ### Objetivo
+
 Garantizar que el código funciona correctamente y no introduce regresiones.
 
 ### Verificaciones Obligatorias
 
 #### Tests Unitarios
+
 ```bash
 # Vitest (cuando esté configurado)
 pnpm test --filter <paquete>
@@ -105,41 +115,50 @@ pnpm jest --coverage
 ```
 
 **Criterios de aprobación:**
+
 - ✅ **100% de tests pasan** (obligatorio)
 - 📊 **Coverage mínimo:**
   - Funciones nuevas: 80%
   - Proyecto global: 60% (objetivo: 80%)
 
 #### Tests de Integración (si aplica)
+
 ```bash
 pnpm test:integration
 ```
 
 **Criterios de aprobación:**
+
 - ✅ **Todos pasan** (si existen)
 - ⏭️ Si no existen, documentar como deuda técnica
 
 ### Responsable
+
 **SOFIA** ejecuta Gate 2 durante estado `[V]`.
 
 ### Excepciones Permitidas
 
 #### 1. Feature sin tests (temporal)
+
 ```markdown
 **Gate 2: SKIPPED ⏭️**
+
 - Razón: Prototipo rápido para validación de Frank
 - Deuda técnica creada: DEBT-001
 - Compromiso: Agregar tests antes de [X] Aprobado
 ```
 
 #### 2. Cambios triviales
+
 ```markdown
 **Gate 2: N/A**
+
 - Razón: Solo cambios en documentación (.md files)
 - No requiere tests
 ```
 
 ### Ejemplo de Fallo
+
 ```markdown
 - [V] Implementación de API de pagos
   **Gate 1: PASSED ✅**
@@ -150,11 +169,12 @@ pnpm test:integration
     - ❌ processRefund() timeout (>5s)
   - Coverage: 65% (objetivo: 80%)
     - Missing: Error handling en processPayment()
-  
+
   **Acción:** SOFIA vuelve a [/] para corregir tests
 ```
 
 ### Ejemplo de Éxito
+
 ```markdown
 - [V] Implementación de API de pagos
   **Gate 1: PASSED ✅**
@@ -162,7 +182,7 @@ pnpm test:integration
   - Tests unitarios: 18/18 passed (100%)
   - Tests integración: 5/5 passed (100%)
   - Coverage: 87% (✓ > 80%)
-  
+
   **Siguiente:** Proceder a Gate 3 (Revisión)
 ```
 
@@ -171,11 +191,13 @@ pnpm test:integration
 ## Gate 3: Revisión de Código 👁️
 
 ### Objetivo
+
 Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría humana/IA.
 
 ### Checklist de Revisión (GEMINI)
 
 #### 3.1 Convenciones de Código
+
 ```markdown
 - [ ] Cumple SPEC-CODIGO.md §II (Convenciones de Nombres)
 - [ ] Cumple SPEC-CODIGO.md §III (Política de Comentarios)
@@ -185,6 +207,7 @@ Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría h
 ```
 
 #### 3.2 Calidad de Código
+
 ```markdown
 - [ ] No hay código duplicado
 - [ ] Funciones < 50 líneas (preferiblemente < 30)
@@ -194,6 +217,7 @@ Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría h
 ```
 
 #### 3.3 Seguridad
+
 ```markdown
 - [ ] No hay secretos hardcoded
 - [ ] Validación de inputs en APIs públicas
@@ -203,6 +227,7 @@ Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría h
 ```
 
 #### 3.4 Performance
+
 ```markdown
 - [ ] Sin loops innecesarios O(n²) cuando puede ser O(n)
 - [ ] Queries a BD optimizadas
@@ -211,6 +236,7 @@ Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría h
 ```
 
 #### 3.5 Mantenibilidad
+
 ```markdown
 - [ ] Lógica clara y fácil de entender
 - [ ] Sin acoplamiento excesivo
@@ -219,64 +245,69 @@ Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría h
 ```
 
 ### Responsable
+
 **GEMINI** (Gemini Code Assist) ejecuta Gate 3 durante estado `[R]`.
 
 ### Formatos de Revisión
 
 #### Aprobación Directa
+
 ```markdown
 - [R] Implementación de API de pagos
   **Gate 3: PASSED ✅**
   **Revisor:** GEMINI
   **Fecha:** 2025-11-08 16:30
-  
+
   **Resumen:**
   - ✅ Código limpio y bien estructurado
   - ✅ Tipado fuerte en todas las funciones
   - ✅ Manejo de errores robusto
   - ✅ Sin vulnerabilidades detectadas
   - ✅ Performance óptima
-  
+
   **Observaciones menores:**
   - 💡 Considerar extraer validatePaymentInput() a utils
   - 💡 Agregar JSDoc a calculateTax()
-  
+
   **Decisión:** APROBADO - Proceder a Gate 4
 ```
 
 #### Aprobación Condicional (Cambios Menores)
+
 ```markdown
 - [R] Implementación de API de pagos
   **Gate 3: CONDITIONAL PASS ⚠️**
   **Revisor:** GEMINI
-  
+
   **Cambios requeridos (menores):**
   1. Renombrar `amt` a `amount` (línea 45) - claridad
   2. Agregar comentario explicativo en cálculo de impuestos (línea 67)
   3. Extraer constante `TAX_RATE = 0.16`
-  
+
   **Sin bloqueo:** SOFIA puede hacer cambios sin volver a [/]
   **Re-review:** No requerido (cambios triviales)
 ```
 
 #### Rechazo (Cambios Mayores)
+
 ```markdown
 - [R] Implementación de API de pagos
   **Gate 3: FAILED ❌**
   **Revisor:** GEMINI
-  
+
   **Problemas críticos:**
   1. 🔴 Función processPayment() tiene 150 líneas - refactorizar
   2. 🔴 Lógica de cálculo de impuestos duplicada en 3 lugares
   3. 🔴 No hay validación de monto negativo
   4. 🟡 Variables `data`, `result`, `temp` - nombres no descriptivos
   5. 🟡 Sin manejo de error cuando Stripe API falla
-  
+
   **Acción:** Volver a [/] para refactorización mayor
   **Tiempo estimado de corrección:** 2-3 horas
 ```
 
 ### Ejemplo de Éxito Completo
+
 ```markdown
 - [R] Implementación de API de pagos
   **Gate 1: PASSED ✅**
@@ -285,7 +316,7 @@ Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría h
   - Revisor: GEMINI
   - Calificación: 9.5/10
   - Comentarios: Código ejemplar, listo para producción
-  
+
   **Siguiente:** Proceder a Gate 4 (Documentación)
 ```
 
@@ -294,11 +325,13 @@ Garantizar calidad, mantenibilidad y seguridad del código mediante auditoría h
 ## Gate 4: Documentación 📚
 
 ### Objetivo
+
 Garantizar que el código esté documentado y sea comprensible para futuros desarrolladores.
 
 ### Verificaciones Obligatorias
 
 #### 4.1 README.md (si aplica)
+
 ```markdown
 - [ ] README.md actualizado con nuevos endpoints/features
 - [ ] Ejemplos de uso agregados
@@ -306,16 +339,19 @@ Garantizar que el código esté documentado y sea comprensible para futuros desa
 ```
 
 **Cuándo aplica:**
+
 - Nueva feature pública
 - Nuevo paquete/módulo
 - Cambio en API pública
 
 **Cuándo NO aplica:**
+
 - Cambios internos
 - Bugfixes menores
 - Refactorización sin cambios en API
 
 #### 4.2 dossier_tecnico.md
+
 ```markdown
 - [ ] Decisiones técnicas importantes documentadas
 - [ ] Cambios arquitectónicos registrados
@@ -323,6 +359,7 @@ Garantizar que el código esté documentado y sea comprensible para futuros desa
 ```
 
 **Ejemplo:**
+
 ```markdown
 ### 2025-11-08 - Implementación de API de Pagos
 
@@ -332,12 +369,14 @@ Garantizar que el código esté documentado y sea comprensible para futuros desa
 **Trade-offs:** Comisiones 3.6% + $3 MXN vs 3.5% de Conekta
 
 **Implementación:**
+
 - `apps/web/src/lib/stripe-client.ts` - Cliente Stripe
 - `apps/web/src/app/api/payments/route.ts` - API REST
 - `packages/core/src/types.ts` - Tipos de pago
 ```
 
 #### 4.3 Comentarios en Código (solo si es necesario)
+
 ```markdown
 - [ ] Decisiones no obvias comentadas (ver SPEC-CODIGO.md §III)
 - [ ] JSDoc en funciones públicas
@@ -345,60 +384,65 @@ Garantizar que el código esté documentado y sea comprensible para futuros desa
 ```
 
 **Ejemplo de JSDoc:**
-```typescript
+
+````typescript
 /**
  * Calcula el impuesto total de una transacción.
- * 
+ *
  * @param amount - Monto base en centavos (1000 = $10.00 MXN)
  * @param taxRate - Tasa de impuesto (0.16 = 16%)
  * @returns Impuesto calculado en centavos
  * @throws {Error} Si amount es negativo
- * 
+ *
  * @example
  * ```typescript
  * const tax = calculateTax(10000, 0.16); // 1600 centavos ($16.00)
  * ```
  */
 export function calculateTax(amount: number, taxRate: number): number {
-  if (amount < 0) throw new Error('Amount cannot be negative');
+  if (amount < 0) throw new Error("Amount cannot be negative");
   return Math.round(amount * taxRate);
 }
-```
+````
 
 #### 4.4 Changelog / PROYECTO.md
+
 ```markdown
 - [ ] PROYECTO.md actualizado con estado [✓]
 - [ ] Checkpoint generado (CHK_YYYY-MM-DD_HHMM.md)
 ```
 
 ### Responsable
+
 **CODEX** verifica Gate 4 antes de marcar `[✓]`.
 
 ### Ejemplo de Fallo
+
 ```markdown
 - [/] Implementación de API de pagos
   **Gate 1: PASSED ✅**
   **Gate 2: PASSED ✅**
   **Gate 3: PASSED ✅**
   **Gate 4: FAILED ❌**
-  
+
   **Faltantes:**
   - ❌ README.md no menciona nuevos endpoints /api/payments
   - ❌ dossier_tecnico.md sin decisión de usar Stripe
   - ❌ Función calculateTax() sin JSDoc
-  
+
   **Acción:** CODEX solicita a SOFIA completar documentación
   **Tiempo estimado:** 30 min
 ```
 
 ### Ejemplo de Éxito
+
 ```markdown
 - [✓] Implementación de API de pagos
   **Gate 1: PASSED ✅** (TypeScript + ESLint)
   **Gate 2: PASSED ✅** (Tests 100%, Coverage 87%)
   **Gate 3: PASSED ✅** (Revisión GEMINI aprobada)
   **Gate 4: PASSED ✅** (Documentación completa)
-  
+
   **Checkpoint:** CHK_2025-11-08_1730.md
   **Listo para:** Aprobación de Frank [X]
 ```
@@ -407,20 +451,21 @@ export function calculateTax(amount: number, taxRate: number): number {
 
 ## Matriz de Decisión
 
-| Resultado Gates | Próximo Estado | Acción Requerida |
-|----------------|---------------|------------------|
-| ✅✅✅✅ | `[✓]` | Marcar como completado |
-| ❌... | `[/]` | SOFIA corrige |
-| ✅❌.. | `[/]` | SOFIA corrige tests |
-| ✅✅❌. | `[/]` | SOFIA refactoriza según GEMINI |
-| ✅✅✅❌ | `[/]` | SOFIA/CODEX completan docs |
-| ⏭️⏭️⏭️⏭️ | `[!]` | Bloqueador crítico, escalar |
+| Resultado Gates | Próximo Estado | Acción Requerida               |
+| --------------- | -------------- | ------------------------------ |
+| ✅✅✅✅        | `[✓]`          | Marcar como completado         |
+| ❌...           | `[/]`          | SOFIA corrige                  |
+| ✅❌..          | `[/]`          | SOFIA corrige tests            |
+| ✅✅❌.         | `[/]`          | SOFIA refactoriza según GEMINI |
+| ✅✅✅❌        | `[/]`          | SOFIA/CODEX completan docs     |
+| ⏭️⏭️⏭️⏭️        | `[!]`          | Bloqueador crítico, escalar    |
 
 ---
 
 ## Excepciones y Casos Especiales
 
 ### 1. Prototipo Rápido (Spike)
+
 ```markdown
 **Gates:** ⏭️ Todos skipped temporalmente
 **Razón:** Validación rápida de concepto para Frank
@@ -429,6 +474,7 @@ export function calculateTax(amount: number, taxRate: number): number {
 ```
 
 ### 2. Hotfix Crítico en Producción
+
 ```markdown
 **Gates:** ✅❌⏭️⏭️ (Solo Gate 1)
 **Razón:** Bug crítico bloqueando usuarios
@@ -437,6 +483,7 @@ export function calculateTax(amount: number, taxRate: number): number {
 ```
 
 ### 3. Cambios Solo de Documentación
+
 ```markdown
 **Gates:** N/A N/A N/A ✅
 **Razón:** Solo cambios en archivos .md
@@ -448,6 +495,7 @@ export function calculateTax(amount: number, taxRate: number): number {
 ## Automatización (Futuro)
 
 ### GitHub Actions (Propuesta)
+
 ```yaml
 name: Soft Gates CI
 
@@ -461,7 +509,7 @@ jobs:
       - run: pnpm install
       - run: pnpm tsc --noEmit
       - run: pnpm lint
-  
+
   gate-2-testing:
     needs: gate-1-compilation
     runs-on: ubuntu-latest
@@ -483,12 +531,14 @@ jobs:
 ## Notación en PROYECTO.md
 
 ### Formato Compacto
+
 ```markdown
 - [✓] Implementación de API de pagos
   **Gates:** ✅ Compilación | ✅ Tests (87%) | ✅ Revisión | ✅ Docs
 ```
 
 ### Formato Extendido
+
 ```markdown
 - [✓] Implementación de API de pagos
   **Soft Gates:**
@@ -496,7 +546,7 @@ jobs:
   - [✅] Gate 2: Testing (18/18 tests, 87% coverage)
   - [✅] Gate 3: Revisión (GEMINI aprobó)
   - [✅] Gate 4: Documentación (README + dossier_tecnico)
-  
+
   **Checkpoint:** CHK_2025-11-08_1730.md
 ```
 

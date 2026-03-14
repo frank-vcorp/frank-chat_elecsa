@@ -20,6 +20,7 @@
 3. También carga `context_docs` de Firestore (línea 52-79) para información adicional
 
 **CAUSA RAÍZ:**
+
 - **No hay información de sucursales en los `context_docs` de Firestore**
 - Sofía no tiene datos concretos sobre horarios, direcciones y teléfonos de sucursales
 - Al no saber responder, opta por escalar (comportamiento defensivo correcto según su prompt)
@@ -35,16 +36,18 @@
 **Hallazgo forense:**
 
 1. **Función `detectEscalation()` en [webhook/route.ts](apps/web/src/app/api/twilio/webhook/route.ts#L9-L16)**:
+
 ```typescript
 const escalationPatterns = [
-    /\[SEMÁFORO:\s*ROJO\]/i,       // ✅ Detecta [SEMÁFORO: ROJO]
-    /transferir.*asesor/i,          // ❌ NO detecta "realizo la transferencia"
-    /comunic.*humano/i,             // ❌ NO detecta este caso
-    /escalando.*conversación/i,     // ❌ NO detecta este caso
+  /\[SEMÁFORO:\s*ROJO\]/i, // ✅ Detecta [SEMÁFORO: ROJO]
+  /transferir.*asesor/i, // ❌ NO detecta "realizo la transferencia"
+  /comunic.*humano/i, // ❌ NO detecta este caso
+  /escalando.*conversación/i, // ❌ NO detecta este caso
 ];
 ```
 
 **CAUSA RAÍZ:**
+
 - El patrón `transferir.*asesor` busca "transferir" seguido de "asesor"
 - Sofía respondió: **"realizo la transferencia"** que NO contiene "asesor"
 - Además, el orden de palabras puede variar
@@ -54,6 +57,7 @@ const escalationPatterns = [
    - `needsHuman` nunca cambia a `true` → No hay alerta
 
 **Flujo fallido:**
+
 ```
 Sofía dice "realizo la transferencia"
     → detectEscalation() devuelve FALSE (patrón no coincide)
@@ -72,33 +76,39 @@ Sofía dice "realizo la transferencia"
 **Hallazgo forense:**
 
 1. **AuthContext.tsx** (líneas 103-108) determina roles correctamente:
+
 ```typescript
-const isAdmin = agent?.role === 'admin';
-const isSupervisor = agent?.role === 'supervisor' || isAdmin;
+const isAdmin = agent?.role === "admin";
+const isSupervisor = agent?.role === "supervisor" || isAdmin;
 const branch = agent?.branch || null;
 const branches = agent?.branches || (agent?.branch ? [agent.branch] : []);
 ```
 
 2. **ChatList.tsx** (líneas 145-159) implementa filtro por sucursal:
+
 ```typescript
 if (isSupervisor || isAdmin) {
-    matchesBranch = filterBranch === 'all' || c.branch === filterBranch || !c.branch;
+  matchesBranch =
+    filterBranch === "all" || c.branch === filterBranch || !c.branch;
 } else if (branches.length > 0) {
-    matchesBranch = branches.includes(c.branch) || c.branch === 'general' || !c.branch;
+  matchesBranch =
+    branches.includes(c.branch) || c.branch === "general" || !c.branch;
 }
 ```
 
 **CAUSA RAÍZ PROBABLE:**
+
 - El agente Cesar tiene `role: 'agent'` pero **no tiene `branch` ni `branches` asignados** en Firestore
 - Cuando `branches.length === 0` y `branch === null`, el else final no filtra nada
 - El código tiene un "fallback" que permite ver todo si no hay sucursal asignada (línea 159 no tiene else)
 
 **Verificar en Firestore:** `agents/{cesarId}` debe tener:
+
 ```json
 {
   "role": "agent",
-  "branch": "queretaro",     // O la sucursal correcta
-  "branches": ["queretaro"]  // Array de sucursales
+  "branch": "queretaro", // O la sucursal correcta
+  "branches": ["queretaro"] // Array de sucursales
 }
 ```
 
@@ -109,10 +119,12 @@ if (isSupervisor || isAdmin) {
 ### Corrección Bug 1: Agregar documentos de contexto
 
 **NO es cambio de código** - Es contenido en Firestore:
+
 1. Crear `context_doc` con información de sucursales
 2. Incluir: dirección, teléfono, horarios de cada sucursal
 
 **Archivo a crear vía API o Admin:**
+
 ```
 POST /api/context-docs
 {
@@ -129,35 +141,37 @@ POST /api/context-docs
 **Archivo:** [apps/web/src/app/api/twilio/webhook/route.ts](apps/web/src/app/api/twilio/webhook/route.ts#L9-L16)
 
 **Código actual:**
+
 ```typescript
 function detectEscalation(response: string): boolean {
-    const escalationPatterns = [
-        /\[SEMÁFORO:\s*ROJO\]/i,
-        /transferir.*asesor/i,
-        /comunic.*humano/i,
-        /escalando.*conversación/i,
-    ];
-    return escalationPatterns.some(pattern => pattern.test(response));
+  const escalationPatterns = [
+    /\[SEMÁFORO:\s*ROJO\]/i,
+    /transferir.*asesor/i,
+    /comunic.*humano/i,
+    /escalando.*conversación/i,
+  ];
+  return escalationPatterns.some((pattern) => pattern.test(response));
 }
 ```
 
 **Código corregido:**
+
 ```typescript
 /** Detecta si Sofia indica escalación a humano (semáforo rojo)
  * FIX REFERENCE: FIX-20250128-01
  */
 function detectEscalation(response: string): boolean {
-    const escalationPatterns = [
-        /\[SEMÁFORO:\s*ROJO\]/i,
-        /transferir|transfiero/i,                    // Cualquier variante de transferir
-        /realizo la transferencia/i,                  // Frase exacta que usa Sofía
-        /te comunico con|te paso con/i,               // Frases de handoff
-        /comunic.*humano|conectar.*asesor/i,
-        /escalando.*conversación/i,
-        /un asesor.*te (ayude|contactar|atender)/i,   // "un asesor te ayude"
-        /en breve te contactarán/i,                   // Frase de cierre de escalación
-    ];
-    return escalationPatterns.some(pattern => pattern.test(response));
+  const escalationPatterns = [
+    /\[SEMÁFORO:\s*ROJO\]/i,
+    /transferir|transfiero/i, // Cualquier variante de transferir
+    /realizo la transferencia/i, // Frase exacta que usa Sofía
+    /te comunico con|te paso con/i, // Frases de handoff
+    /comunic.*humano|conectar.*asesor/i,
+    /escalando.*conversación/i,
+    /un asesor.*te (ayude|contactar|atender)/i, // "un asesor te ayude"
+    /en breve te contactarán/i, // Frase de cierre de escalación
+  ];
+  return escalationPatterns.some((pattern) => pattern.test(response));
 }
 ```
 
@@ -168,19 +182,23 @@ function detectEscalation(response: string): boolean {
 **Archivo:** [apps/web/src/components/ChatList.tsx](apps/web/src/components/ChatList.tsx#L145-L160)
 
 **Código actual (tiene falla lógica):**
+
 ```typescript
 let matchesBranch = true;
 if (isSupervisor || isAdmin) {
-    matchesBranch = filterBranch === 'all' || c.branch === filterBranch || !c.branch;
+  matchesBranch =
+    filterBranch === "all" || c.branch === filterBranch || !c.branch;
 } else if (branches.length > 0) {
-    matchesBranch = branches.includes(c.branch as any) || c.branch === 'general' || !c.branch;
+  matchesBranch =
+    branches.includes(c.branch as any) || c.branch === "general" || !c.branch;
 } else if (branch) {
-    matchesBranch = c.branch === branch || c.branch === 'general' || !c.branch;
+  matchesBranch = c.branch === branch || c.branch === "general" || !c.branch;
 }
 // ❌ FALLA: Si no es admin, no tiene branches, y no tiene branch → matchesBranch = true (ve TODO)
 ```
 
 **Código corregido:**
+
 ```typescript
 // Filtro por sucursal:
 // - Admin/Supervisor: ve todas o puede filtrar por sucursal
@@ -189,19 +207,23 @@ if (isSupervisor || isAdmin) {
 // FIX REFERENCE: FIX-20250128-01
 let matchesBranch = true;
 if (isSupervisor || isAdmin) {
-    // Supervisores pueden filtrar manualmente
-    matchesBranch = filterBranch === 'all' || c.branch === filterBranch || !c.branch;
+  // Supervisores pueden filtrar manualmente
+  matchesBranch =
+    filterBranch === "all" || c.branch === filterBranch || !c.branch;
 } else if (branches.length > 0) {
-    // Agentes con múltiples sucursales ven todas las asignadas + general
-    matchesBranch = branches.includes(c.branch as any) || c.branch === 'general' || !c.branch;
+  // Agentes con múltiples sucursales ven todas las asignadas + general
+  matchesBranch =
+    branches.includes(c.branch as any) || c.branch === "general" || !c.branch;
 } else if (branch) {
-    // Compatibilidad: agentes con una sola sucursal
-    matchesBranch = c.branch === branch || c.branch === 'general' || !c.branch;
+  // Compatibilidad: agentes con una sola sucursal
+  matchesBranch = c.branch === branch || c.branch === "general" || !c.branch;
 } else {
-    // ⚠️ Agente sin sucursal asignada: solo ve genéricas para evitar ver todo
-    // Esto indica error de configuración del agente
-    matchesBranch = c.branch === 'general' || !c.branch;
-    console.warn('[ChatList] Agent has no branch assigned - showing only general conversations');
+  // ⚠️ Agente sin sucursal asignada: solo ve genéricas para evitar ver todo
+  // Esto indica error de configuración del agente
+  matchesBranch = c.branch === "general" || !c.branch;
+  console.warn(
+    "[ChatList] Agent has no branch assigned - showing only general conversations",
+  );
 }
 ```
 
@@ -239,6 +261,7 @@ Verificar campos:
 ### Tarea 4: Crear context_doc con información de sucursales
 
 **Desde el Admin Panel:**
+
 1. Ir a: `/admin/templates` (o donde se gestionan context_docs)
 2. Crear nuevo documento:
    - Título: "Información de Sucursales ELECSA"
@@ -246,15 +269,18 @@ Verificar campos:
    - Active: true
 
 **Contenido mínimo sugerido:**
+
 ```markdown
 # Sucursales ELECSA
 
 ## Querétaro
+
 - 📍 Dirección: [COMPLETAR - solicitar a administración]
 - 📞 Teléfono: [COMPLETAR]
 - 🕐 Horario: Lunes a Viernes 8:00-18:00, Sábados 8:00-14:00
 
 ## Guadalajara
+
 - 📍 Dirección: [COMPLETAR]
 - 📞 Teléfono: [COMPLETAR]
 - 🕐 Horario: Lunes a Viernes 8:00-18:00, Sábados 8:00-14:00
@@ -266,30 +292,33 @@ Verificar campos:
 
 ## D. ARCHIVOS MODIFICADOS (RESUMEN)
 
-| Archivo | Líneas | Cambio |
-|---------|--------|--------|
-| `apps/web/src/app/api/twilio/webhook/route.ts` | 9-16 | Mejorar patrones de escalación |
-| `apps/web/src/components/ChatList.tsx` | 145-160 | Agregar else para agentes sin sucursal |
-| Firestore `agents/{cesarId}` | N/A | Verificar/corregir campo `branch` |
-| Firestore `context_docs` | N/A | Crear doc con info de sucursales |
+| Archivo                                        | Líneas  | Cambio                                 |
+| ---------------------------------------------- | ------- | -------------------------------------- |
+| `apps/web/src/app/api/twilio/webhook/route.ts` | 9-16    | Mejorar patrones de escalación         |
+| `apps/web/src/components/ChatList.tsx`         | 145-160 | Agregar else para agentes sin sucursal |
+| Firestore `agents/{cesarId}`                   | N/A     | Verificar/corregir campo `branch`      |
+| Firestore `context_docs`                       | N/A     | Crear doc con info de sucursales       |
 
 ---
 
 ## E. PRUEBAS RECOMENDADAS
 
 ### Test 1: Verificar detección de escalación
+
 ```
 Mensaje de Sofía: "Permíteme un momento mientras realizo la transferencia."
 Esperado: detectEscalation() = true
 ```
 
 ### Test 2: Verificar filtro de sucursales
+
 ```
 - Login como admin Frank → Debe ver TODAS las conversaciones
 - Login como agente Cesar (branch: queretaro) → Solo debe ver queretaro + general
 ```
 
 ### Test 3: Verificar información de sucursales
+
 ```
 Usuario: "Necesito información de la sucursal de Querétaro"
 Esperado: Sofía responde con dirección, teléfono y horarios SIN escalar
@@ -300,28 +329,31 @@ Esperado: Sofía responde con dirección, teléfono y horarios SIN escalar
 ## F. CORRECCIÓN ADICIONAL: Campo `branches` no se guardaba (2026-01-28)
 
 ### Síntoma Reportado
+
 Al crear agentes desde `/admin/agents`, los campos `branch`, `branches` y `role` NO se guardaban correctamente en Firestore.
 
 ### Hallazgo Forense
 
 **El código de la API (`/api/agents/route.ts`) estaba CORRECTO.** El problema era de **datos históricos**:
 
-| Campo | Código API | Firestore Real |
-|-------|------------|----------------|
-| `role` | ✅ Se guarda | ✅ Todos los agentes humanos lo tenían |
-| `branch` | ✅ Se guarda | ✅ Todos los agentes humanos lo tenían |
-| `branches` | ✅ Se guarda | ⚠️ Solo 1 de 13 agentes lo tenía |
+| Campo      | Código API   | Firestore Real                         |
+| ---------- | ------------ | -------------------------------------- |
+| `role`     | ✅ Se guarda | ✅ Todos los agentes humanos lo tenían |
+| `branch`   | ✅ Se guarda | ✅ Todos los agentes humanos lo tenían |
+| `branches` | ✅ Se guarda | ⚠️ Solo 1 de 13 agentes lo tenía       |
 
 **Causa raíz:** Los agentes fueron creados ANTES de implementar el soporte multi-sucursal (`branches`). El código nuevo sí guarda `branches`, pero los agentes antiguos solo tenían el campo legacy `branch`.
 
 ### Solución Aplicada
 
 Se ejecutó migración automática via script:
+
 ```bash
 node scripts/migrate-agents-branches.js
 ```
 
 **Resultado de la migración (2026-01-28):**
+
 ```
 ✅ Migrados: 12
 ⏭️  Saltados (ya tenían branches): 1
@@ -330,6 +362,7 @@ node scripts/migrate-agents-branches.js
 ```
 
 **Verificación post-migración:** Todos los 13 agentes ahora tienen:
+
 - ✅ `role` correctamente asignado
 - ✅ `branch` correctamente asignado
 - ✅ `branches` array correctamente asignado
@@ -339,6 +372,7 @@ node scripts/migrate-agents-branches.js
 **Ubicación:** `scripts/migrate-agents-branches.js`
 
 Uso:
+
 ```bash
 # Ver qué se migrará (sin cambios)
 node scripts/migrate-agents-branches.js --dry-run

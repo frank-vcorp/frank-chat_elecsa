@@ -3,6 +3,7 @@
 ## Direcciones Físicas
 
 ### ZONA CENTRO
+
 - **CDMX Armas (Corporativo)**
   - Dirección: Calzada de las Armas #42, Zona Industrial, Tlalnepantla, Estado de México.
 
@@ -16,6 +17,7 @@
   - Dirección: C. Tehuacán Sur 60, Torre Albertina, La Paz, Puebla.
 
 ### ZONA BAJÍO
+
 - **Querétaro**
   - Dirección: Av. 5 de Febrero No. 1716-A, Oficina 203 (Torre Altius), Jurica, Querétaro.
 
@@ -26,6 +28,7 @@
   - _(Solicitar ubicación exacta a asesor)_
 
 ### ZONA NORTE
+
 - **Monterrey**
   - Dirección: Florencia #408, Col. Valle de las Alamedas, San Nicolás de los Garza, Nuevo León.
 
@@ -33,6 +36,7 @@
   - Dirección: Lib. Manuel Pérez Treviño #2416 Local 16, Col. Tecnológico, Piedras Negras.
 
 ### ZONA SURESTE / OCCIDENTE
+
 - **Veracruz**
   - Dirección: Lago Titicaca #30, Fracc. Dream Lagoons, Veracruz.
 
@@ -40,6 +44,7 @@
   - _(Solicitar ubicación exacta a asesor)_
 
 ## Horarios Generales
+
 - **Lunes a Viernes:** 8:00 AM - 6:00 PM
 - **Sábado:** 8:00 AM - 2:00 PM
 - **Domingo:** CERRADO

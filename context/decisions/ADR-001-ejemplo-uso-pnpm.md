@@ -80,12 +80,14 @@ pnpm turbo run build
 Package manager por defecto de Node.js, con workspaces support desde v7.
 
 **Pros:**
+
 - ✅ Pre-instalado con Node.js (no requiere setup adicional)
 - ✅ Documentación extensa y comunidad masiva
 - ✅ Familiaridad del equipo (cero curva de aprendizaje)
 - ✅ Compatibilidad universal
 
 **Contras:**
+
 - ❌ Instalaciones lentas comparado con pnpm (~2-3x más lento)
 - ❌ Alto uso de espacio en disco (duplica dependencias entre workspaces)
 - ❌ Lockfile `package-lock.json` genera diffs grandes y difíciles de revisar
@@ -102,12 +104,14 @@ En un monorepo con agentes IA que reinstalan constantemente, la lentitud de npm 
 Package manager alternativo de Facebook, con Plug'n'Play (PnP) que elimina `node_modules`.
 
 **Pros:**
+
 - ✅ Muy rápido (comparable a pnpm)
 - ✅ PnP elimina `node_modules` (aún más ahorro de espacio)
 - ✅ Workspaces bien soportados
 - ✅ Features avanzadas (constraints, patches)
 
 **Contras:**
+
 - ❌ PnP tiene problemas de compatibilidad con Next.js y algunas librerías
 - ❌ Requiere config compleja para proyectos TypeScript
 - ❌ Migración de Yarn 1 a Yarn 3 es breaking
@@ -125,12 +129,14 @@ Aunque Yarn 3 es técnicamente superior, la incompatibilidad de PnP con Next.js 
 Versión legacy de Yarn, en mantenimiento pero estable.
 
 **Pros:**
+
 - ✅ Más rápido que npm
 - ✅ Workspaces soportados
 - ✅ Compatible con todo
 - ✅ Lockfile más limpio que npm
 
 **Contras:**
+
 - ❌ En modo mantenimiento (no hay nuevas features)
 - ❌ Yarn team recomienda migrar a v3
 - ❌ Más lento que pnpm (~40% más lento)
@@ -147,10 +153,12 @@ Elegir una tecnología en maintenance mode no es estratégico. Si vamos a aprend
 Continuar con el setup actual usando npm.
 
 **Pros:**
+
 - ✅ Cero esfuerzo de migración
 - ✅ Sin curva de aprendizaje
 
 **Contras:**
+
 - ❌ Instalaciones lentas afectan productividad de agentes IA
 - ❌ Desperdicio de espacio en disco (issue en CI/CD gratuitos con límites)
 - ❌ No aprovechamos mejoras del ecosistema
@@ -187,12 +195,12 @@ El costo de oportunidad de instalaciones lentas supera el costo de migración (e
 
 ## Riesgos y Mitigaciones
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|--------------|---------|------------|
-| Incompatibilidad con alguna librería | Media | Medio | Usar `.npmrc` con `shamefully-hoist=true` como fallback |
-| Desarrolladores usan `npm` por error | Alta | Bajo | Agregar `.npmrc` con `engine-strict=true` y script `preinstall` que bloquea npm |
-| Problemas en CI/CD con cache | Baja | Alto | Testear en rama antes de mergear, usar setup oficial de pnpm |
-| Pérdida de productividad durante transición | Media | Bajo | Guía de migración en ONBOARDING.md, 1 sesión de aprendizaje |
+| Riesgo                                      | Probabilidad | Impacto | Mitigación                                                                      |
+| ------------------------------------------- | ------------ | ------- | ------------------------------------------------------------------------------- |
+| Incompatibilidad con alguna librería        | Media        | Medio   | Usar `.npmrc` con `shamefully-hoist=true` como fallback                         |
+| Desarrolladores usan `npm` por error        | Alta         | Bajo    | Agregar `.npmrc` con `engine-strict=true` y script `preinstall` que bloquea npm |
+| Problemas en CI/CD con cache                | Baja         | Alto    | Testear en rama antes de mergear, usar setup oficial de pnpm                    |
+| Pérdida de productividad durante transición | Media        | Bajo    | Guía de migración en ONBOARDING.md, 1 sesión de aprendizaje                     |
 
 ---
 
@@ -212,6 +220,7 @@ El costo de oportunidad de instalaciones lentas supera el costo de migración (e
 ### Configuración Necesaria
 
 **`.npmrc`:**
+
 ```ini
 # Usar node-linker por defecto (links simbólicos)
 node-linker=hoisted
@@ -227,6 +236,7 @@ lockfile-format=v6
 ```
 
 **`package.json`:**
+
 ```json
 {
   "packageManager": "pnpm@8.15.0",
@@ -241,13 +251,15 @@ lockfile-format=v6
 ```
 
 **`pnpm-workspace.yaml`:**
+
 ```yaml
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 ```
 
 **GitHub Actions (`.github/workflows/ci.yml`):**
+
 ```yaml
 - uses: pnpm/action-setup@v2
   with:
@@ -255,7 +267,7 @@ packages:
 - uses: actions/setup-node@v4
   with:
     node-version: 18
-    cache: 'pnpm'
+    cache: "pnpm"
 - run: pnpm install --frozen-lockfile
 - run: pnpm turbo run lint test build
 ```
@@ -345,11 +357,11 @@ Esta decisión debería revisarse si:
 
 ## Historial de Cambios
 
-| Fecha | Cambio | Autor |
-|-------|--------|-------|
-| 2025-11-01 | Creación inicial | SOFIA |
-| 2025-11-02 | Estado cambiado a "Aceptada" tras testing exitoso | CODEX |
-| 2025-11-08 | Agregado a metodología INTEGRA como ejemplo | GEMINI |
+| Fecha      | Cambio                                            | Autor  |
+| ---------- | ------------------------------------------------- | ------ |
+| 2025-11-01 | Creación inicial                                  | SOFIA  |
+| 2025-11-02 | Estado cambiado a "Aceptada" tras testing exitoso | CODEX  |
+| 2025-11-08 | Agregado a metodología INTEGRA como ejemplo       | GEMINI |
 
 ---
 
@@ -357,14 +369,14 @@ Esta decisión debería revisarse si:
 
 ### Apéndice A: Comandos Equivalentes
 
-| Tarea | npm | pnpm |
-|-------|-----|------|
-| Instalar deps | `npm install` | `pnpm install` |
-| Agregar dep | `npm install lodash` | `pnpm add lodash` |
-| Agregar dev dep | `npm install -D vitest` | `pnpm add -D vitest` |
-| Remover dep | `npm uninstall lodash` | `pnpm remove lodash` |
-| Ejecutar script | `npm run dev` | `pnpm run dev` o `pnpm dev` |
-| Listar deps | `npm list` | `pnpm list` |
+| Tarea             | npm                              | pnpm                                |
+| ----------------- | -------------------------------- | ----------------------------------- |
+| Instalar deps     | `npm install`                    | `pnpm install`                      |
+| Agregar dep       | `npm install lodash`             | `pnpm add lodash`                   |
+| Agregar dev dep   | `npm install -D vitest`          | `pnpm add -D vitest`                |
+| Remover dep       | `npm uninstall lodash`           | `pnpm remove lodash`                |
+| Ejecutar script   | `npm run dev`                    | `pnpm run dev` o `pnpm dev`         |
+| Listar deps       | `npm list`                       | `pnpm list`                         |
 | Workspace command | `npm run dev -w @farianergy/web` | `pnpm --filter @farianergy/web dev` |
 
 ### Apéndice B: Benchmark Detallado
@@ -386,6 +398,7 @@ time pnpm install  # 0m 31s
 ```
 
 **node_modules size:**
+
 - npm: 487 MB
 - yarn: 462 MB
 - pnpm: 198 MB (usando content-addressable store)

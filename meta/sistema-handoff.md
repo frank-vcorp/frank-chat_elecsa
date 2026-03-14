@@ -9,19 +9,24 @@ Establecer un protocolo claro y consistente para la transferencia de trabajo ent
 ## 🤝 Principios Fundamentales
 
 ### 1. Claridad sobre Brevedad
+
 Un handoff debe ser tan detallado como sea necesario para que el siguiente agente pueda continuar sin necesidad de investigación adicional.
 
 ### 2. Contexto Completo
+
 Incluir no solo QUÉ se hizo, sino también POR QUÉ se tomaron ciertas decisiones y QUÉ alternativas se descartaron.
 
 ### 3. Trazabilidad
+
 Cada handoff debe quedar documentado en PROYECTO.md y/o en el checkpoint correspondiente.
 
 ### 4. Responsabilidad Compartida
+
 - **Agente que entrega:** Responsable de documentar completamente
 - **Agente que recibe:** Responsable de confirmar comprensión antes de empezar
 
 ### 5. Formato Consistente
+
 Usar siempre el template de handoff para facilitar parsing y comprensión rápida.
 
 ---
@@ -30,7 +35,7 @@ Usar siempre el template de handoff para facilitar parsing y comprensión rápid
 
 ### Formato Completo
 
-```markdown
+````markdown
 ## 🤝 Handoff: [AGENTE_ORIGEN] → [AGENTE_DESTINO]
 
 **Fecha:** YYYY-MM-DD HH:mm
@@ -45,13 +50,12 @@ Usar siempre el template de handoff para facilitar parsing y comprensión rápid
 [Cuál es el objetivo final de esta tarea]
 
 **Alcance:**
+
 - ✅ **Completado hasta ahora:**
   - [Item 1 terminado]
   - [Item 2 terminado]
-  
 - 🚧 **En progreso:**
   - [Item parcialmente hecho - detallar qué falta]
-  
 - ⏳ **Pendiente:**
   - [Item no iniciado 1]
   - [Item no iniciado 2]
@@ -61,23 +65,29 @@ Usar siempre el template de handoff para facilitar parsing y comprensión rápid
 ### 💼 Trabajo Realizado
 
 **Archivos Creados:**
+
 - `path/to/file1.ts` - [Propósito]
 - `path/to/file2.tsx` - [Propósito]
 
 **Archivos Modificados:**
+
 - `path/to/file3.ts` (líneas 45-78) - [Qué se cambió]
 - `path/to/file4.tsx` (líneas 120-135) - [Qué se cambió]
 
 **Archivos Eliminados:**
+
 - `path/to/old-file.ts` - [Razón de eliminación]
 
 **Comandos Ejecutados:**
+
 ```bash
 pnpm install package-name
 pnpm run test
 ```
+````
 
 **Tests:**
+
 - [x] Unit tests para módulo X: ✅ Pasan
 - [ ] Integration tests: ⏳ Pendientes
 - [x] Lint: ✅ Sin errores
@@ -110,6 +120,7 @@ pnpm run test
 ### 🔑 Decisiones Técnicas
 
 **Decisiones Tomadas:**
+
 - **[Decisión 1]:** [Qué se decidió]
   - Razón: [Por qué]
   - Alternativas descartadas: [Qué más se consideró]
@@ -118,6 +129,7 @@ pnpm run test
 - **[Decisión 2]:** [...]
 
 **Decisiones Pendientes (requieren input):**
+
 - ❓ **[Decisión pendiente 1]:** [Qué hay que decidir]
   - Opciones: [A, B, C]
   - Criterio sugerido: [En qué basarse para decidir]
@@ -127,11 +139,13 @@ pnpm run test
 ### ⚠️ Problemas Encontrados
 
 **Resueltos:**
+
 - ✅ **[Problema 1]:** [Descripción]
   - Solución aplicada: [Cómo se resolvió]
   - Archivos afectados: [Dónde quedó el fix]
 
 **Bloqueadores Activos:**
+
 - 🚧 **[Bloqueador 1]:** [Descripción]
   - Tipo: [Técnico/Información/Recurso]
   - Impacto: [Alto/Medio/Bajo]
@@ -143,17 +157,21 @@ pnpm run test
 ### 📚 Recursos y Referencias
 
 **Documentación Consultada:**
+
 - [Link 1 - Título]
 - [Link 2 - Título]
 
 **ADRs Relevantes:**
+
 - [ADR-XXX: Título](path/to/adr.md)
 
 **Issues/PRs Relacionados:**
+
 - Issue #XX: [Descripción]
 - PR #YY: [Descripción]
 
 **Conversaciones Importantes:**
+
 - [Resumen de cualquier clarificación con stakeholders]
 
 ---
@@ -161,6 +179,7 @@ pnpm run test
 ### 🧪 Testing y Validación
 
 **Cómo Testear el Trabajo Actual:**
+
 ```bash
 # Comandos para reproducir el estado actual
 pnpm install
@@ -169,10 +188,12 @@ pnpm run dev --filter @farianergy/web
 ```
 
 **Casos de Prueba Importantes:**
+
 1. [Caso 1 - qué testear y resultado esperado]
 2. [Caso 2 - qué testear y resultado esperado]
 
 **Conocidos que NO funcionan aún:**
+
 - ❌ [Funcionalidad X] - Razón: [pendiente de implementar]
 
 ---
@@ -180,13 +201,16 @@ pnpm run dev --filter @farianergy/web
 ### 💡 Notas Importantes
 
 **Contexto Adicional:**
+
 - [Cualquier información que no encaje en secciones anteriores pero sea crucial]
 
 **Lecciones Aprendidas:**
+
 - [Aprendizaje 1 - para evitar repetir errores]
 - [Aprendizaje 2]
 
 **Sugerencias para el Siguiente Agente:**
+
 - 💡 [Sugerencia 1 - ej: "Considera usar librería X para esto"]
 - 💡 [Sugerencia 2]
 
@@ -207,7 +231,8 @@ pnpm run dev --filter @farianergy/web
 **Firma:** [AGENTE_ORIGEN]
 **Timestamp:** YYYY-MM-DD HH:mm:ss
 **Hash del Último Commit:** [git hash si aplica]
-```
+
+````
 
 ---
 
@@ -288,10 +313,10 @@ Crear un dashboard que muestre todos los equipos disponibles con filtros por tip
   - Especificación técnica creada (`context/SPEC-DASHBOARD-EQUIPOS.md`)
   - Wireframes en Figma ([link])
   - ADR-015 creado para decisión de usar Server Components
-  
+
 - 🚧 **En progreso:**
   - Nada actualmente
-  
+
 - ⏳ **Pendiente:**
   - Implementación de componentes UI
   - Integración con API `/api/equipos`
@@ -342,7 +367,7 @@ Crear un dashboard que muestre todos los equipos disponibles con filtros por tip
 ### 🔑 Decisiones Técnicas
 
 **Decisiones Tomadas:**
-- **Usar Server Components para fetch inicial:** 
+- **Usar Server Components para fetch inicial:**
   - Razón: Reducir JS enviado al cliente, mejor performance
   - Alternativas descartadas: Client Component con useEffect (más lento, peor UX)
   - Consecuencias: Filtros deben ser Client Components separados
@@ -400,9 +425,10 @@ pnpm run dev --filter @farianergy/web
 # Probar endpoint
 curl http://localhost:3000/api/equipos
 curl http://localhost:3000/api/equipos?tipo=generador&estado=disponible
-```
+````
 
 **Casos de Prueba para la UI:**
+
 1. Al cargar `/equipos/dashboard` → Debe mostrar todos los equipos
 2. Al filtrar por tipo "Generador" → Solo muestra generadores
 3. Al buscar por serie "GEN-001" → Solo muestra ese equipo
@@ -413,11 +439,13 @@ curl http://localhost:3000/api/equipos?tipo=generador&estado=disponible
 ### 💡 Notas Importantes
 
 **Contexto Adicional:**
+
 - El cliente usa este dashboard diariamente, performance es crítico
 - Equipos tienen fotos en Firebase Storage, considerar lazy loading
 - Mobile responsive es importante (60% del uso es en tablets)
 
 **Sugerencias para GEMINI:**
+
 - 💡 Usa `loading.tsx` en la carpeta para mostrar skeleton mientras carga
 - 💡 Los iconos de tipo de equipo están en `components/icons/EquipoIcons.tsx`
 - 💡 Para imágenes, wrapper `<EquipoImage />` ya maneja Storage URLs
@@ -438,7 +466,8 @@ curl http://localhost:3000/api/equipos?tipo=generador&estado=disponible
 
 **Firma:** SOFIA
 **Timestamp:** 2025-11-08 14:30:00
-```
+
+````
 
 ---
 
@@ -463,7 +492,7 @@ Los usuarios reportan que las fechas de vencimiento de pago en rentas están inc
   - Bug reproducido localmente
   - Causa raíz identificada (zona horaria UTC vs local)
   - Casos de prueba documentados
-  
+
 - ⏳ **Pendiente:**
   - Fix en backend (cálculo de fechas)
   - Tests unitarios para prevenir regresión
@@ -511,7 +540,7 @@ Los usuarios reportan que las fechas de vencimiento de pago en rentas están inc
 
 **Decisiones Pendientes:**
 - ❓ **¿Qué librería usar para timezones?**
-  - Opciones: 
+  - Opciones:
     - A) `date-fns-tz` (ya usamos date-fns)
     - B) `luxon` (más completo pero nuevo)
     - C) Nativo con Intl API (sin deps)
@@ -564,9 +593,10 @@ describe('calculateFechaVencimiento', () => {
     // Verificar que considera el cambio de horario
   });
 });
-```
+````
 
 **Validación Manual:**
+
 ```bash
 # Después del fix, probar estos casos:
 curl -X POST http://localhost:3000/api/rentas \
@@ -586,11 +616,13 @@ curl -X POST http://localhost:3000/api/rentas \
 ### 💡 Notas Importantes
 
 **Impacto:**
+
 - 🔴 Alta prioridad: Afecta facturación
 - 📊 ~15 rentas en producción necesitan corrección
 - 💰 Posibles cobros incorrectos si no se arregla pronto
 
 **Contexto de Negocio:**
+
 - Cliente factura mensualmente basado en estas fechas
 - Error de 1 día puede causar confusión en facturación
 - Importante comunicar a finanzas cuando se corrija
@@ -611,7 +643,8 @@ curl -X POST http://localhost:3000/api/rentas \
 
 **Firma:** GEMINI
 **Timestamp:** 2025-11-08 16:45:00
-```
+
+````
 
 ---
 
@@ -639,7 +672,7 @@ Implementar sistema de notificaciones para alertar a usuarios sobre:
   - Investigación de opciones (Firebase FCM, SendGrid, Twilio)
   - Spike técnico de FCM (funciona, PoC en branch `spike/fcm`)
   - Documento de comparación de opciones
-  
+
 - 🚧 **Bloqueado:**
   - Decisión sobre arquitectura (push vs email vs ambos)
   - Decisión sobre cuándo/cómo enviar notificaciones
@@ -765,7 +798,7 @@ Implementar sistema de notificaciones para alertar a usuarios sobre:
 **Timestamp:** 2025-11-08 10:20:00
 **Decisión requerida de:** SOFIA
 **Bloqueador hasta:** Decisión de estrategia de notificaciones
-```
+````
 
 ---
 
@@ -774,29 +807,34 @@ Implementar sistema de notificaciones para alertar a usuarios sobre:
 Antes de entregar, verificar:
 
 ### Documentación
+
 - [ ] Template de handoff completo
 - [ ] Todos los archivos modificados listados
 - [ ] Decisiones técnicas documentadas
 - [ ] Bloqueadores claramente identificados
 
 ### Contexto
+
 - [ ] Objetivo original claro
 - [ ] Trabajo completado detallado
 - [ ] Próximos pasos accionables
 - [ ] Referencias y recursos incluidos
 
 ### Trazabilidad
+
 - [ ] PROYECTO.md actualizado
 - [ ] Checkpoint creado (si >2h trabajo)
 - [ ] ADRs creados/referenciados
 - [ ] Commits con mensajes descriptivos
 
 ### Testing
+
 - [ ] Tests ejecutados y resultados documentados
 - [ ] Comandos para reproducir incluidos
 - [ ] Casos de prueba especificados
 
 ### Entrega
+
 - [ ] Handoff documentado en PROYECTO.md
 - [ ] Siguiente agente notificado
 - [ ] Tiempo estimado para próximos pasos
@@ -809,7 +847,9 @@ Antes de entregar, verificar:
 Los handoffs se documentan en **dos lugares**:
 
 ### 1. PROYECTO.md (Principal)
+
 Agregar sección al final de la tarea:
+
 ```markdown
 ### [T-045] Implementar Dashboard
 
@@ -820,17 +860,20 @@ Agregar sección al final de la tarea:
 #### 🤝 Handoff History
 
 **2025-11-08 14:30 | SOFIA → GEMINI**
+
 - Completado: Spec y wireframes
 - Siguiente: Implementar UI
 - Ver: `Checkpoints/CHK_2025-11-08_1430.md` para detalles
 
 **2025-11-09 10:15 | GEMINI → CODEX**
+
 - Completado: UI implementado
 - Siguiente: Optimizar queries de la API
 - Ver: `Checkpoints/CHK_2025-11-09_1015.md`
 ```
 
 ### 2. Checkpoint (Detallado)
+
 El checkpoint correspondiente contiene el handoff completo con todos los detalles.
 
 ---
@@ -850,6 +893,7 @@ Un handoff de calidad debe permitir al siguiente agente:
 ## 🚨 Anti-Patrones (Qué NO Hacer)
 
 ### ❌ Handoff Vago
+
 ```markdown
 ## Handoff: CODEX → GEMINI
 
@@ -863,6 +907,7 @@ Archivos: algunos en /api/
 ---
 
 ### ❌ Handoff Sin Contexto
+
 ```markdown
 ## Handoff: SOFIA → CODEX
 
@@ -874,6 +919,7 @@ Crear endpoint POST /api/clientes
 ---
 
 ### ❌ Handoff con Decisiones No Documentadas
+
 ```markdown
 ## Handoff: GEMINI → CODEX
 

@@ -52,28 +52,37 @@ Cada ADR sigue este formato (ver `ADR-TEMPLATE.md`):
 **Stakeholders:** [Quién se ve afectado]
 
 ## Contexto
+
 [Situación y fuerzas que llevaron a necesitar una decisión]
 
 ## Decisión
+
 [Qué se decidió hacer]
 
 ## Alternativas Consideradas
+
 [Otras opciones evaluadas y por qué se descartaron]
 
 ## Consecuencias
+
 ### Positivas
+
 [Beneficios de esta decisión]
 
 ### Negativas
+
 [Trade-offs, limitaciones o deuda técnica]
 
 ### Neutras
+
 [Otros efectos que no son claramente positivos/negativos]
 
 ## Notas de Implementación
+
 [Detalles técnicos relevantes]
 
 ## Referencias
+
 [Enlaces a docs, RFCs, issues, etc.]
 ```
 
@@ -92,6 +101,7 @@ Donde:
 ```
 
 **Ejemplos:**
+
 - `ADR-001-uso-pnpm-como-package-manager.md`
 - `ADR-002-firebase-como-backend.md`
 - `ADR-003-monorepo-con-turborepo.md`
@@ -100,6 +110,7 @@ Donde:
 ### Secuencia de Números
 
 Los números son **secuenciales e inmutables**:
+
 - Una vez asignado un número, NO se reutiliza aunque se rechace la decisión
 - Los números reflejan el orden cronológico de creación
 - Gaps en la secuencia son normales (decisiones rechazadas o eliminadas)
@@ -108,13 +119,13 @@ Los números son **secuenciales e inmutables**:
 
 ## 📊 Estados de un ADR
 
-| Estado | Descripción | Acción |
-|--------|-------------|--------|
-| **Propuesta** | Decisión en discusión, no final | Continuar debate |
-| **Aceptada** | Decisión aprobada e implementada | Seguir la decisión |
-| **Rechazada** | Propuesta evaluada pero descartada | No implementar, aprender |
-| **Deprecada** | Era válida pero ya no aplica | Migrar gradualmente |
-| **Supersedida** | Reemplazada por un ADR más nuevo | Ver ADR de reemplazo |
+| Estado          | Descripción                        | Acción                   |
+| --------------- | ---------------------------------- | ------------------------ |
+| **Propuesta**   | Decisión en discusión, no final    | Continuar debate         |
+| **Aceptada**    | Decisión aprobada e implementada   | Seguir la decisión       |
+| **Rechazada**   | Propuesta evaluada pero descartada | No implementar, aprender |
+| **Deprecada**   | Era válida pero ya no aplica       | Migrar gradualmente      |
+| **Supersedida** | Reemplazada por un ADR más nuevo   | Ver ADR de reemplazo     |
 
 ---
 
@@ -137,16 +148,20 @@ Para facilitar búsqueda, mantener un índice al final de este README:
 #### Por Categoría
 
 **Infraestructura:**
+
 - ADR-001: Uso de pnpm como package manager
 - ADR-003: Monorepo con Turborepo
 
 **Backend:**
+
 - ADR-002: Firebase como backend (Auth, Firestore, Storage)
 
 **Frontend:**
+
 - ADR-004: Next.js 14 con App Router (pending)
 
 **Testing:**
+
 - ADR-015: Estrategia de testing (unit/integration/e2e) (pending)
 
 #### Por Estado
@@ -163,6 +178,7 @@ Para facilitar búsqueda, mantener un índice al final de este README:
 ### 1. Identificar la Necesidad
 
 Surge cuando:
+
 - Hay múltiples opciones válidas para resolver un problema
 - La decisión tendrá impacto duradero
 - Otros necesitarán entender el razonamiento
@@ -210,7 +226,7 @@ Cuando implementes algo basado en un ADR, referéncialo en comentarios:
 ```typescript
 // ADR-002: Usamos Firebase Auth para autenticación
 // Ver: metodologia-integra/context/decisions/ADR-002-firebase-backend.md
-import { getAuth } from 'firebase/auth';
+import { getAuth } from "firebase/auth";
 ```
 
 ---
@@ -250,6 +266,7 @@ Ver `ADR-001-ejemplo-uso-pnpm.md` para un ejemplo real del proyecto Farianergy.
 ## Nota de Deprecación (2025-02-20)
 
 Esta decisión fue reemplazada por ADR-042: Migración a GraphQL debido a:
+
 - Complejidad creciente de endpoints
 - Necesidad de reducir over-fetching
 - Mejor developer experience con type safety

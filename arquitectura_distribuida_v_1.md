@@ -1,6 +1,7 @@
 ## 📘 ARQUITECTURA DISTRIBUIDA – SISTEMA INTEGRA EVOLUCIONADA v2.0
 
 ### I. Principios Operativos Generales
+
 - **Metodología:** Integra Evolucionada.
 - **Rol del Director (Frank):** Supervisor y validador del flujo completo. Interviene solo cuando hay tareas externas o con permisos especiales.
 - **Principio de Flexibilidad Funcional:** Los roles de IA no son excluyentes; pueden apoyarse mutuamente o asumir tareas fuera de su dominio principal cuando la situación lo requiera.
@@ -9,8 +10,10 @@
 ---
 
 ### II. Ecosistema Google – Principio de Uso Inteligente y Abierto
+
 - **Alcance:** El sistema Integra Evolucionada utiliza el ecosistema Google como eje operativo y de integración, sin limitarse a él. Incluye Workspace, Firebase, Cloud Platform, Vertex AI, Gemini, AppSheet, Apps Script y Sheets.
 - **Filosofía de Uso:**
+
   > "Google es el punto de convergencia, no la jaula."
 
   Se prioriza el uso del entorno Google por su interoperabilidad, seguridad y bajo costo, pero las IA pueden emplear herramientas externas (IONOS, GitHub, Twilio, Zapier, etc.) cuando mejoren velocidad, compatibilidad o rendimiento.
@@ -31,28 +34,34 @@
   Estos puentes garantizan un flujo sin fricción entre ecosistemas y una capa de contexto unificada dentro de VS Code y Continue.
 
 ---
+
 https://github.com/frank-vcorp/frank-chat_elecsa
+
 ### III. Roles y Jerarquía de IA
 
 #### 🧠 CODEX – Arquitecto de Soluciones y Estratega de Producto
+
 - Gestiona el proyecto, estructura SPECs, valida entregables y genera PROYECTO.md.
 - Actúa como ejecutor si GEMINI no está disponible (modo Gemini interno).
 - Explica el porqué de cada decisión técnica o estratégica.
 - Supervisa la sincronización entre VS Code, Continue y GitHub.
 
 #### 🧩 SOFIA – Constructora Principal
+
 - Ejecuta, prueba, documenta y valida los entregables técnicos.
 - Puede solicitar mentoría a GEMINI.
 - Tiene autoridad para crear archivos y carpetas directamente en el workspace.
 - Supervisa los commits automáticos y confirma la integridad del código antes de cada push.
 
 #### ⚙️ GEMINI – Ingeniero Mentor y Segundo Programador
+
 - Propone optimizaciones, audita decisiones técnicas y explica conceptos cuando se le solicita.
 - No actúa como mentor a menos que Frank lo pida explícitamente.
 - Verifica compatibilidad de dependencias, calidad del código y mantiene alineación con los estándares de la Metodología Integra.
 - **Aplica estrictamente las convenciones de `meta/SPEC-CODIGO.md` en cada revisión.**
 
 #### 👑 FRANK – Director de Proyecto (humano)
+
 - Supervisa, valida y aprueba los entregables.
 - No modifica estados en PROYECTO.md directamente; las IA gestionan el flujo.
 - Su aprobación convierte una tarea en estado `[X] Aprobado`.
@@ -60,8 +69,10 @@ https://github.com/frank-vcorp/frank-chat_elecsa
 ---
 
 ### IV. Flujo de Trabajo y Artefactos
+
 - **Carpeta raíz:** `Proyectos/` → un folder por proyecto.
 - **Subcarpetas estándar:**
+
   ```
   context/
   context/varios/
@@ -87,6 +98,7 @@ https://github.com/frank-vcorp/frank-chat_elecsa
 ---
 
 ### V. Flujo de Roles
+
 1. **CODEX** inicia y organiza tareas en PROYECTO.md.
 2. **SOFIA** ejecuta construcción, documentación y validación.
 3. **GEMINI** asesora o revisa el código técnico bajo solicitud.
@@ -95,6 +107,7 @@ https://github.com/frank-vcorp/frank-chat_elecsa
 ---
 
 ### VI. Políticas de Integración y Registro
+
 - **Trazabilidad total:** Cada cambio genera un registro en `Checkpoints/`.
 - **Control de versiones y respaldos automáticos:**
   - CODEX gestiona la sincronización con GitHub mediante commits automatizados.
@@ -110,6 +123,7 @@ https://github.com/frank-vcorp/frank-chat_elecsa
 Esta sección documenta el conjunto de mejoras implementadas para gestión de tareas, control de calidad y trazabilidad del proyecto.
 
 #### 1. Sistema de Estados Granular
+
 **Referencia:** `meta/sistema-estados.md`
 
 - **8 estados operativos:**
@@ -129,6 +143,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
   - FRANK: Da aprobación final `[X]`
 
 #### 2. Soft Gates (Puertas de Calidad)
+
 **Referencia:** `meta/soft-gates.md`
 
 - **4 gates obligatorios antes de `[✓]`:**
@@ -141,6 +156,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
 - **Excepciones permitidas:** Solo con justificación documentada en checkpoint
 
 #### 3. Sistema de Priorización
+
 **Referencia:** `meta/sistema-priorizacion.md`
 
 - **Metadatos de tareas:**
@@ -149,6 +165,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
   - **Dependencias:** IDs de tareas bloqueantes
 
 - **Fórmulas de priorización:**
+
   ```
   Score = (Impacto × Urgencia) / Esfuerzo
   Impacto: 1-5 | Urgencia: 1-5 | Esfuerzo: 1-5
@@ -159,6 +176,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
   - Dashboard de dependencias actualizado en cada checkpoint
 
 #### 4. Checkpoints Enriquecidos
+
 **Referencia:** `meta/plantilla-checkpoint-enriquecido.md`
 
 - **Estructura extendida:**
@@ -170,6 +188,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
 - **Beneficios:** Historial completo de evolución del proyecto, auditoría técnica simplificada
 
 #### 5. Sistema de Handoff
+
 **Referencia:** `meta/sistema-handoff.md`
 
 - **Protocolo de comunicación entre agentes:**
@@ -181,6 +200,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
 - **Validación:** Checklist de completitud antes de pasar al siguiente agente
 
 #### 6. ADR (Architecture Decision Records)
+
 **Referencia:** `context/decisions/`
 
 - **Documentación de decisiones arquitectónicas:**
@@ -203,7 +223,6 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
   - **Principio del Cañón y la Mosca aplicado al código:** Solución más simple que resuelva el problema.
   - **Tipado fuerte obligatorio:** TypeScript con tipos explícitos en APIs públicas.
   - **Sin comentarios innecesarios:** No parafrasear código, no dejar dead code comentado.
-  
 - **Responsabilidades por rol:**
   - **SOFIA:** Sigue SPEC-CODIGO.md al escribir código, evita comentarios redundantes.
   - **GEMINI:** Audita cumplimiento de SPEC-CODIGO.md antes de aprobar código.
@@ -219,6 +238,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
 ---
 
 ### VIII. Principio de Continuidad
+
 - Si una IA falla, la siguiente asume sin pérdida de contexto.
 - Todos los cambios quedan registrados y trazables.
 - Solo FRANK puede cerrar oficialmente un proyecto (estado `[X] Aprobado`).
@@ -233,6 +253,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
 ### Registro de Cambios
 
 #### v2.0 (2025-11-08) - MAJOR UPDATE
+
 - ✨ Sistema de Estados Granular (8 estados)
 - ✨ Soft Gates (4 puertas de calidad obligatorias)
 - ✨ Sistema de Priorización y Metadatos
@@ -247,6 +268,7 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
 - 🎯 42,000+ líneas de documentación profesional
 
 #### v1.2 (2025-11-08)
+
 - Agregada sección VII: Estándares de Código y Calidad
 - Integración de `meta/SPEC-CODIGO.md` como documento rector de convenciones
 - Actualizada lista de archivos base obligatorios (incluye SPECs de Seguridad, Testing y Código)
@@ -254,4 +276,5 @@ Esta sección documenta el conjunto de mejoras implementadas para gestión de ta
 - Checklist de calidad antes de marcar tareas como `[✓]`
 
 #### v1.1 (original)
+
 - Versión inicial de la Arquitectura Distribuida - Sistema Integra Evolucionada

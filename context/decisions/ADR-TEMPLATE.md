@@ -46,10 +46,12 @@
 [Breve descripción de esta opción]
 
 **Pros:**
+
 - ✅ [Ventaja 1]
 - ✅ [Ventaja 2]
 
 **Contras:**
+
 - ❌ [Desventaja 1]
 - ❌ [Desventaja 2]
 
@@ -70,10 +72,12 @@
 [Qué pasaría si no se toma ninguna acción]
 
 **Pros:**
+
 - ✅ Sin costo de implementación
 - ✅ Sin riesgo de romper cosas
 
 **Contras:**
+
 - ❌ El problema persiste
 - ❌ [Otras consecuencias]
 
@@ -105,8 +109,8 @@
 
 ## Riesgos y Mitigaciones
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|--------------|---------|------------|
+| Riesgo                     | Probabilidad    | Impacto         | Mitigación          |
+| -------------------------- | --------------- | --------------- | ------------------- |
 | [Descripción del riesgo 1] | Alta/Media/Baja | Alto/Medio/Bajo | [Cómo lo mitigamos] |
 | [Descripción del riesgo 2] | Alta/Media/Baja | Alto/Medio/Bajo | [Cómo lo mitigamos] |
 
@@ -194,11 +198,11 @@ Esta decisión debería revisarse si:
 
 ## Historial de Cambios
 
-| Fecha | Cambio | Autor |
-|-------|--------|-------|
-| YYYY-MM-DD | Creación inicial | [Autor] |
+| Fecha      | Cambio                               | Autor   |
+| ---------- | ------------------------------------ | ------- |
+| YYYY-MM-DD | Creación inicial                     | [Autor] |
 | YYYY-MM-DD | Actualización de estado a "Aceptada" | [Autor] |
-| YYYY-MM-DD | [Otro cambio significativo] | [Autor] |
+| YYYY-MM-DD | [Otro cambio significativo]          | [Autor] |
 
 ---
 
@@ -210,11 +214,11 @@ Esta decisión debería revisarse si:
 
 ### Apéndice B: Benchmark
 
-| Opción | Métrica 1 | Métrica 2 | Métrica 3 |
-|--------|-----------|-----------|-----------|
-| Alternativa 1 | valor | valor | valor |
-| Alternativa 2 | valor | valor | valor |
-| **Decisión** | **valor** | **valor** | **valor** |
+| Opción        | Métrica 1 | Métrica 2 | Métrica 3 |
+| ------------- | --------- | --------- | --------- |
+| Alternativa 1 | valor     | valor     | valor     |
+| Alternativa 2 | valor     | valor     | valor     |
+| **Decisión**  | **valor** | **valor** | **valor** |
 
 ---
 

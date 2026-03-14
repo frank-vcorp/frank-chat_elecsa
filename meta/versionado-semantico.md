@@ -29,6 +29,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 ### MAJOR (X.0.0)
 
 **Incrementar cuando:**
+
 - ❗ Cambios que rompen compatibilidad con versión anterior
 - ❗ Cambios en API que requieren modificar código cliente
 - ❗ Eliminación de features existentes
@@ -36,6 +37,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 - ❗ Cambios en autenticación/autorización que afectan usuarios existentes
 
 **Ejemplos:**
+
 ```
 1.5.3 → 2.0.0
 - Migración de Firebase Auth a sistema custom
@@ -44,6 +46,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 ```
 
 **Reglas:**
+
 - MAJOR = 0 indica desarrollo inicial (0.x.y = API inestable)
 - Al incrementar MAJOR, resetear MINOR y PATCH a 0
 - Requiere migration guide en docs
@@ -54,6 +57,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 ### MINOR (x.Y.0)
 
 **Incrementar cuando:**
+
 - ✨ Nueva funcionalidad añadida (backward compatible)
 - ✨ Mejora significativa de feature existente
 - ✨ Nuevos endpoints de API
@@ -62,6 +66,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 - 🔄 Deprecation de features (pero aún funcionan)
 
 **Ejemplos:**
+
 ```
 1.2.4 → 1.3.0
 - Añadido dashboard de reportes
@@ -70,6 +75,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 ```
 
 **Reglas:**
+
 - Al incrementar MINOR, resetear PATCH a 0
 - MAJOR se mantiene igual
 - Features nuevas deben tener tests
@@ -80,6 +86,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 ### PATCH (x.y.Z)
 
 **Incrementar cuando:**
+
 - 🐛 Bug fixes (corrección de errores)
 - 🔧 Ajustes menores de UI/UX
 - 📝 Correcciones de texto/traducciones
@@ -89,6 +96,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 - 🧹 Refactoring interno sin cambio de comportamiento
 
 **Ejemplos:**
+
 ```
 1.2.4 → 1.2.5
 - Corregido cálculo de fechas en rentas
@@ -98,6 +106,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 ```
 
 **Reglas:**
+
 - MAJOR y MINOR se mantienen iguales
 - Puede hacerse múltiples PATCHes por día si es necesario
 - Hotfixes van aquí
@@ -108,12 +117,14 @@ Ejemplo: 2.3.1-beta.1+20251108
 ### PRERELEASE (x.y.z-LABEL.N)
 
 **Labels comunes:**
+
 - `alpha.N` - Primera fase de testing, inestable
 - `beta.N` - Testing más amplio, features congeladas
 - `rc.N` - Release Candidate, potencialmente final
 - `dev.N` - Build de desarrollo (uso interno)
 
 **Ejemplos:**
+
 ```
 2.0.0-alpha.1   - Primera versión alpha de v2.0.0
 2.0.0-alpha.2   - Segunda versión alpha
@@ -123,12 +134,14 @@ Ejemplo: 2.3.1-beta.1+20251108
 ```
 
 **Cuándo usar:**
+
 - `alpha`: Features en desarrollo, API puede cambiar
 - `beta`: Features completas, testing intensivo
 - `rc`: Creemos que está listo, última validación
 - `dev`: Builds automáticos de CI/CD
 
 **Reglas:**
+
 - Prereleases son anteriores a la versión final
 - `1.0.0-alpha < 1.0.0-beta < 1.0.0-rc < 1.0.0`
 - No usar en producción (excepto rc en staging)
@@ -138,12 +151,14 @@ Ejemplo: 2.3.1-beta.1+20251108
 ### BUILD METADATA (x.y.z+METADATA)
 
 **Información adicional sin semántica de versión:**
+
 - Fecha: `1.2.3+20251108`
 - Commit hash: `1.2.3+g5f3a1b2`
 - Build number: `1.2.3+build.456`
 - Combinado: `1.2.3+20251108.g5f3a1b2`
 
 **Ejemplos:**
+
 ```
 1.2.3+20251108              - Build del 8 de noviembre 2025
 1.2.3+g5f3a1b2              - Build del commit g5f3a1b2
@@ -151,6 +166,7 @@ Ejemplo: 2.3.1-beta.1+20251108
 ```
 
 **Reglas:**
+
 - Build metadata NO afecta precedencia de versiones
 - `1.0.0+001 == 1.0.0+002` (son la misma versión)
 - Útil para debugging y trazabilidad
@@ -173,21 +189,27 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Added
+
 - [Feature nueva en desarrollo pero no released]
 
 ### Changed
+
 - [Cambio en feature existente]
 
 ### Deprecated
+
 - [Feature que será removida en próximas versiones]
 
 ### Removed
+
 - [Feature eliminada]
 
 ### Fixed
+
 - [Bug fix]
 
 ### Security
+
 - [Security fix]
 
 ---
@@ -195,19 +217,23 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [1.3.0] - 2025-11-08
 
 ### Added
+
 - Dashboard de equipos con filtros avanzados (#45)
 - Exportación de reportes a Excel (#52)
 - Sistema de notificaciones por email (#67)
 
 ### Changed
+
 - Mejorado performance de carga de tabla de rentas (50% más rápido) (#48)
 - Actualizada UI de formulario de clientes con mejor validación (#51)
 
 ### Fixed
+
 - Corregido cálculo de fechas de vencimiento en rentas (#42)
 - Fix de bug en filtro por estado en equipos (#49)
 
 ### Security
+
 - Actualizada dependencia `next` a 14.0.4 para fix de CVE-2023-XXXXX (#50)
 
 ---
@@ -215,6 +241,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [1.2.1] - 2025-11-01
 
 ### Fixed
+
 - Hotfix: Error en login cuando email contiene mayúsculas (#40)
 - Corregido typo en mensaje de error de pagos (#41)
 
@@ -223,15 +250,18 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [1.2.0] - 2025-10-28
 
 ### Added
+
 - Módulo de mantenimientos programados (#30)
 - API endpoints para mantenimientos (GET, POST, PUT, DELETE) (#31)
 - UI para gestión de mantenimientos (#32)
 
 ### Changed
+
 - Migrado componente de tabla de equipos a Server Component (#35)
 - Actualizada documentación de API en README (#36)
 
 ### Deprecated
+
 - API endpoint `/api/v1/equipos` será removido en v2.0.0 (usar `/api/equipos`) (#37)
 
 ---
@@ -239,10 +269,12 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [1.1.0] - 2025-10-15
 
 ### Added
+
 - Filtros por fecha en rentas (#20)
 - Paginación en tabla de equipos (#22)
 
 ### Fixed
+
 - Error en validación de NIF en formulario de clientes (#21)
 - Corregido responsive de dashboard en mobile (#23)
 
@@ -251,6 +283,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [1.0.0] - 2025-10-01
 
 ### Added
+
 - Release inicial de producción
 - CRUD completo de Clientes
 - CRUD completo de Equipos
@@ -264,11 +297,13 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [0.2.0] - 2025-09-20
 
 ### Added
+
 - Beta pública
 - Implementado módulo de rentas (#10)
 - Implementado módulo de pagos (#12)
 
 ### Changed
+
 - Mejorada UI de dashboard (#11)
 
 ---
@@ -276,6 +311,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [0.1.0] - 2025-09-10
 
 ### Added
+
 - Alpha inicial
 - Setup del proyecto (Next.js + Firebase)
 - Módulo de clientes básico (#1)
@@ -299,54 +335,67 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## 🏷️ Categorías de Cambios
 
 ### Added
+
 Nueva funcionalidad añadida al proyecto.
 
 **Ejemplos:**
+
 - Nuevo módulo de cotizaciones
 - Nueva página de reportes
 - Nuevo endpoint API
 - Nuevos tests
 
 ### Changed
+
 Cambios en funcionalidad existente (backward compatible).
 
 **Ejemplos:**
+
 - Mejorada performance de carga
 - Actualizada UI de formulario
 - Refactorizado componente X para mejor reusabilidad
 
 ### Deprecated
+
 Funcionalidad que será removida en futuras versiones.
 
 **Ejemplos:**
+
 - API v1 deprecated (usar v2)
 - Componente `OldButton` deprecated (usar `Button`)
 
 **Reglas:**
+
 - Indicar cuándo será removida (ej: "será removida en v3.0.0")
 - Proveer alternativa clara
 - Mantener funcionalidad al menos 1 MINOR version
 
 ### Removed
+
 Funcionalidad eliminada (breaking change → MAJOR).
 
 **Ejemplos:**
+
 - Eliminada API v1
 - Removido soporte para IE11
 - Eliminado módulo legacy de reportes
 
 ### Fixed
+
 Corrección de bugs.
 
 **Ejemplos:**
+
 - Corregido error en cálculo de totales
 - Fix de bug en validación de formularios
 - Solucionado problema de responsive en mobile
 
 ### Security
+
 Cambios relacionados con seguridad.
 
 **Ejemplos:**
+
 - Actualizada dependencia con CVE
 - Corregida vulnerabilidad XSS
 - Mejorada validación de inputs para prevenir SQL injection
@@ -358,17 +407,22 @@ Cambios relacionados con seguridad.
 ### Caso 1: Bug Fix Simple
 
 **Cambio:**
+
 - Corregido typo en mensaje de error
 
 **Incremento:**
+
 ```
 1.2.3 → 1.2.4
 ```
 
 **Changelog:**
+
 ```markdown
 ## [1.2.4] - 2025-11-08
+
 ### Fixed
+
 - Corregido typo en mensaje de error de login (#123)
 ```
 
@@ -377,17 +431,22 @@ Cambios relacionados con seguridad.
 ### Caso 2: Nueva Feature
 
 **Cambio:**
+
 - Añadido módulo de cotizaciones completo
 
 **Incremento:**
+
 ```
 1.2.4 → 1.3.0
 ```
 
 **Changelog:**
+
 ```markdown
 ## [1.3.0] - 2025-11-08
+
 ### Added
+
 - Módulo de cotizaciones con CRUD completo (#124)
 - API endpoints para cotizaciones (#125)
 - UI para gestión de cotizaciones (#126)
@@ -399,30 +458,37 @@ Cambios relacionados con seguridad.
 ### Caso 3: Breaking Change
 
 **Cambio:**
+
 - Migración de Firestore a PostgreSQL (cambio de API)
 
 **Incremento:**
+
 ```
 1.3.0 → 2.0.0
 ```
 
 **Changelog:**
+
 ```markdown
 ## [2.0.0] - 2025-11-08
 
 ### BREAKING CHANGES
+
 - Migración de Firestore a PostgreSQL
 - API endpoints ahora retornan `camelCase` en lugar de `snake_case`
 - Autenticación migrada a JWT (Firebase Auth descontinuado)
 
 ### Migration Guide
+
 Ver `docs/MIGRATION_v1_to_v2.md` para guía detallada de migración.
 
 ### Added
+
 - Nueva API v2 con mejor performance
 - Soporte para transacciones complejas
 
 ### Removed
+
 - API v1 (deprecada en v1.5.0)
 - Firebase Auth (reemplazada por JWT)
 ```
@@ -432,28 +498,34 @@ Ver `docs/MIGRATION_v1_to_v2.md` para guía detallada de migración.
 ### Caso 4: Multiple Changes
 
 **Cambios:**
+
 - Nueva feature: Dashboard de reportes
 - Bug fix: Error en cálculo de rentas
 - Security: Actualización de dependencia
 
 **Incremento:**
+
 ```
 1.3.0 → 1.4.0  (MINOR por nueva feature)
 ```
 
 **Changelog:**
+
 ```markdown
 ## [1.4.0] - 2025-11-08
 
 ### Added
+
 - Dashboard de reportes con gráficas de rentas y pagos (#130)
 - Exportación de reportes a PDF (#131)
 
 ### Fixed
+
 - Corregido error en cálculo de totales de rentas (#128)
 - Fix de bug en filtro de fechas (#129)
 
 ### Security
+
 - Actualizada dependencia `next` a 14.0.4 (CVE-2023-XXXXX) (#132)
 ```
 
@@ -518,6 +590,7 @@ git show v1.3.0
 ### GitHub Releases
 
 Cada versión debe tener un GitHub Release con:
+
 - Tag correspondiente (v1.3.0)
 - Título descriptivo
 - Notas del release (copiar de CHANGELOG.md)
@@ -616,6 +689,7 @@ BREAKING CHANGE: API v1 endpoints removed"
 ```
 
 **Interpretación:**
+
 - MAJOR = 0: Proyecto en desarrollo inicial, API inestable
 - MINOR = 1: Primera iteración funcional
 - PATCH = 0: Sin hotfixes aún
@@ -638,16 +712,19 @@ v2.0.0 - Migración a multi-tenant (futuro)
 ## [0.2.0] - 2025-11-15 (Planned)
 
 ### Added
+
 - Módulo de mantenimientos programados
 - Sistema de notificaciones por email
 - Filtros avanzados en todas las tablas
 - Exportación de datos a Excel
 
 ### Changed
+
 - Mejorada performance de carga de datos (caching)
 - Actualizada UI de formularios con mejor UX
 
 ### Fixed
+
 - Todos los bugs reportados en v0.1.0
 ```
 

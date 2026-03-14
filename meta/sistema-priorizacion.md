@@ -14,6 +14,7 @@ Cada tarea en `PROYECTO.md` debe incluir estos metadatos:
 ### [ID] Nombre de la Tarea
 
 **Metadatos:**
+
 - 🎯 **Prioridad:** [🔴 Alta | 🟡 Media | 🟢 Baja]
 - ⏱️ **Estimación:** [Xh Ym]
 - 👤 **Asignado:** [SOFIA | CODEX | GEMINI | Sin asignar]
@@ -29,6 +30,7 @@ Cada tarea en `PROYECTO.md` debe incluir estos metadatos:
 [Descripción detallada de la tarea]
 
 **Criterios de Aceptación:**
+
 - [ ] Criterio 1
 - [ ] Criterio 2
 ```
@@ -40,6 +42,7 @@ Cada tarea en `PROYECTO.md` debe incluir estos metadatos:
 ### 🔴 Prioridad Alta (Crítica)
 
 **Cuándo usar:**
+
 - ❗ **Bloqueadores:** Impide el progreso de otras tareas o del equipo
 - 🐛 **Bugs Críticos:** Afecta funcionalidad core o producción
 - 🔐 **Seguridad:** Vulnerabilidades o exposición de datos
@@ -48,6 +51,7 @@ Cada tarea en `PROYECTO.md` debe incluir estos metadatos:
 - 🔥 **Producción Down:** Sistema no operativo
 
 **Criterios de priorización:**
+
 ```
 Puntaje = (Valor_Negocio * 3) + (Urgencia * 2) - (Complejidad * 0.5)
 
@@ -60,11 +64,13 @@ Si Puntaje >= 25 → 🔴 Alta
 ```
 
 **SLA (Service Level Agreement):**
+
 - Tiempo de respuesta: Inmediato
 - Tiempo de resolución objetivo: <24h
 - Revisión diaria obligatoria
 
 **Ejemplos Farienergy:**
+
 - 🔴 Fix: Firebase Auth no permite login (producción)
 - 🔴 Implementar validación de pagos antes de demo con cliente
 - 🔴 Corregir cálculo de rentas que genera cobros incorrectos
@@ -74,6 +80,7 @@ Si Puntaje >= 25 → 🔴 Alta
 ### 🟡 Prioridad Media (Importante)
 
 **Cuándo usar:**
+
 - ✨ **Features Planificadas:** En el sprint actual
 - 🐛 **Bugs No Críticos:** Afecta UX pero hay workaround
 - 📈 **Mejoras de Performance:** Optimizaciones significativas
@@ -82,16 +89,19 @@ Si Puntaje >= 25 → 🔴 Alta
 - 📅 **Deadlines Mediano Plazo:** Vence en 3-7 días
 
 **Criterios de priorización:**
+
 ```
 Si 15 <= Puntaje < 25 → 🟡 Media
 ```
 
 **SLA:**
+
 - Tiempo de respuesta: <24h
 - Tiempo de resolución objetivo: 2-5 días
 - Revisión semanal en sprint planning
 
 **Ejemplos Farienergy:**
+
 - 🟡 Implementar filtros avanzados en tabla de equipos
 - 🟡 Añadir validación de formulario de clientes
 - 🟡 Documentar API endpoints en Swagger
@@ -102,6 +112,7 @@ Si 15 <= Puntaje < 25 → 🟡 Media
 ### 🟢 Prioridad Baja (Deseable)
 
 **Cuándo usar:**
+
 - 💡 **Nice to Have:** Mejoras que agregan valor pero no son urgentes
 - 🎨 **UI/UX Enhancements:** Pulir detalles visuales
 - 🧹 **Refactors Menores:** Limpieza de código sin impacto funcional
@@ -110,16 +121,19 @@ Si 15 <= Puntaje < 25 → 🟡 Media
 - 📅 **Sin Deadline:** Backlog sin fecha límite
 
 **Criterios de priorización:**
+
 ```
 Si Puntaje < 15 → 🟢 Baja
 ```
 
 **SLA:**
+
 - Tiempo de respuesta: Cuando haya capacidad
 - Tiempo de resolución objetivo: Flexible
 - Revisión mensual en backlog grooming
 
 **Ejemplos Farienergy:**
+
 - 🟢 Añadir tema oscuro a la UI
 - 🟢 Crear dashboard de métricas de uso interno
 - 🟢 Investigar migración a Turbopack
@@ -131,28 +145,31 @@ Si Puntaje < 15 → 🟢 Baja
 
 ### Tallas de Camiseta → Horas
 
-| Talla | Horas | Descripción | Ejemplos |
-|-------|-------|-------------|----------|
-| **XS** | 0.5-1h | Cambio trivial, una función o componente pequeño | Fix typo, ajustar color, añadir prop |
-| **S** | 1-3h | Cambio simple, un archivo o componente | Nuevo componente UI, endpoint CRUD básico |
-| **M** | 3-8h | Feature pequeño, varios archivos | Formulario completo con validación |
-| **L** | 8-16h | Feature mediano, múltiples componentes | Sistema de auth completo |
-| **XL** | 16-40h | Feature grande, varios módulos | Dashboard con múltiples vistas |
-| **XXL** | 40+h | Épica, requiere dividir en tareas | Migración completa de base de datos |
+| Talla   | Horas  | Descripción                                      | Ejemplos                                  |
+| ------- | ------ | ------------------------------------------------ | ----------------------------------------- |
+| **XS**  | 0.5-1h | Cambio trivial, una función o componente pequeño | Fix typo, ajustar color, añadir prop      |
+| **S**   | 1-3h   | Cambio simple, un archivo o componente           | Nuevo componente UI, endpoint CRUD básico |
+| **M**   | 3-8h   | Feature pequeño, varios archivos                 | Formulario completo con validación        |
+| **L**   | 8-16h  | Feature mediano, múltiples componentes           | Sistema de auth completo                  |
+| **XL**  | 16-40h | Feature grande, varios módulos                   | Dashboard con múltiples vistas            |
+| **XXL** | 40+h   | Épica, requiere dividir en tareas                | Migración completa de base de datos       |
 
 ### Factores de Ajuste
 
 **Multiplicadores por complejidad:**
+
 - 🟢 **Baja:** x1.0 (código directo, sin dependencias)
 - 🟡 **Media:** x1.5 (requiere investigación o integración)
 - 🔴 **Alta:** x2.5 (arquitectura compleja, múltiples integraciones)
 
 **Multiplicadores por experiencia:**
+
 - 🧠 **Experto en el área:** x0.8
 - 📚 **Conocimiento medio:** x1.0
 - 🆕 **Primera vez con la tech:** x1.8
 
 **Fórmula final:**
+
 ```
 Estimación_Real = Base_Horas * Complejidad * Experiencia * 1.2
 
@@ -162,16 +179,18 @@ Estimación_Real = Base_Horas * Complejidad * Experiencia * 1.2
 ### Ejemplos de Estimación Farienergy
 
 **Tarea:** Implementar CRUD de Equipos
+
 - **Base:** M (5h promedio)
 - **Complejidad:** Media (x1.5) - requiere Firestore + validación
 - **Experiencia:** Experto (x0.8) - ya hicimos otros CRUDs
-- **Cálculo:** 5 * 1.5 * 0.8 * 1.2 = **7.2h → 7h 15m**
+- **Cálculo:** 5 _ 1.5 _ 0.8 \* 1.2 = **7.2h → 7h 15m**
 
 **Tarea:** Migrar de REST a GraphQL
+
 - **Base:** XXL (50h promedio)
 - **Complejidad:** Alta (x2.5) - cambio arquitectónico
 - **Experiencia:** Primera vez (x1.8) - nuevo con GraphQL
-- **Cálculo:** 50 * 2.5 * 1.8 * 1.2 = **270h → Épica, dividir**
+- **Cálculo:** 50 _ 2.5 _ 1.8 \* 1.2 = **270h → Épica, dividir**
 
 ---
 
@@ -201,11 +220,11 @@ Estimación_Real = Base_Horas * Complejidad * Experiencia * 1.2
 ### [T-045] Implementar Sistema de Notificaciones
 
 **Metadatos:**
+
 - 🔗 **Dependencias:**
   - ✅ [T-023] Configurar Firebase Cloud Messaging (completada)
   - 🚧 [T-041] Diseñar templates de emails (en progreso)
   - ⏳ [T-038] Definir triggers de eventos (bloqueada)
-  
 - 🔄 **Esta tarea bloquea a:**
   - [T-050] Implementar notificaciones push en mobile
   - [T-051] Dashboard de notificaciones para admin
@@ -235,22 +254,24 @@ TOTAL: 23h (Cadena crítica - cualquier retraso impacta el deadline)
 
 ### Tipos de Bloqueadores
 
-| Tipo | Símbolo | Descripción | Acción |
-|------|---------|-------------|--------|
-| **Técnico** | 🔧 | Falta herramienta, librería o config | Investigar alternativas o solicitar instalación |
-| **Información** | ❓ | Faltan requisitos o clarificación | Contactar stakeholder, documentar asunciones |
-| **Dependencia** | ⛓️ | Tarea previa no completada | Re-priorizar o paralelizar si es posible |
-| **Recurso** | 👤 | Persona o servicio no disponible | Buscar alternativa o agendar |
-| **Aprobación** | ✋ | Requiere review o sign-off | Notificar y seguir mientras tanto |
-| **Ambiente** | 🌍 | Problema con dev/staging/prod | Usar emuladores o ambiente alternativo |
+| Tipo            | Símbolo | Descripción                          | Acción                                          |
+| --------------- | ------- | ------------------------------------ | ----------------------------------------------- |
+| **Técnico**     | 🔧      | Falta herramienta, librería o config | Investigar alternativas o solicitar instalación |
+| **Información** | ❓      | Faltan requisitos o clarificación    | Contactar stakeholder, documentar asunciones    |
+| **Dependencia** | ⛓️      | Tarea previa no completada           | Re-priorizar o paralelizar si es posible        |
+| **Recurso**     | 👤      | Persona o servicio no disponible     | Buscar alternativa o agendar                    |
+| **Aprobación**  | ✋      | Requiere review o sign-off           | Notificar y seguir mientras tanto               |
+| **Ambiente**    | 🌍      | Problema con dev/staging/prod        | Usar emuladores o ambiente alternativo          |
 
 ### Protocolo de Bloqueadores
 
 **Cuando encuentres un bloqueador:**
 
 1. **Documentar inmediatamente** en PROYECTO.md:
+
    ```markdown
    🚧 **BLOQUEADOR ACTIVO**
+
    - **Tipo:** 🔧 Técnico
    - **Descripción:** Firebase Emulator no arranca en Windows
    - **Impacto:** No se pueden probar Cloud Functions localmente
@@ -273,6 +294,7 @@ TOTAL: 23h (Cadena crítica - cualquier retraso impacta el deadline)
 4. **Actualizar estado:**
    ```markdown
    ✅ **BLOQUEADOR RESUELTO**
+
    - **Solución:** Usar WSL2 para emuladores en lugar de Windows nativo
    - **Resuelto:** 2025-11-08 14:45
    - **Tiempo perdido:** 4h 15m
@@ -289,13 +311,14 @@ TOTAL: 23h (Cadena crítica - cualquier retraso impacta el deadline)
 ### [T-067] Implementar Carga Masiva de Equipos desde Excel
 
 **Metadatos:**
+
 - 🎯 **Prioridad:** 🟡 Media
 - ⏱️ **Estimación:** 6h 30m
   - Base: M (5h)
   - Complejidad: Media (x1.5) - parsing Excel + validación
   - Experiencia: Medio (x1.0)
   - Buffer: x1.2
-  - Cálculo: 5 * 1.5 * 1.0 * 1.2 = 9h → Reducido a 6.5h tras spike técnico
+  - Cálculo: 5 _ 1.5 _ 1.0 \* 1.2 = 9h → Reducido a 6.5h tras spike técnico
 - 👤 **Asignado:** CODEX
 - 📦 **Sprint:** Sprint 3
 - 🏷️ **Tags:** `#feature` `#import` `#excel` `#equipos`
@@ -311,6 +334,7 @@ TOTAL: 23h (Cadena crítica - cualquier retraso impacta el deadline)
 Permitir al administrador cargar múltiples equipos desde un archivo Excel (.xlsx) en lugar de ingresarlos uno por uno. Debe validar formato, detectar duplicados y mostrar preview antes de importar.
 
 **Criterios de Aceptación:**
+
 - [ ] Acepta archivos .xlsx con columnas: modelo, serie, tipo, año, estado
 - [ ] Valida que todos los campos requeridos estén presentes
 - [ ] Detecta y alerta sobre números de serie duplicados
@@ -320,14 +344,16 @@ Permitir al administrador cargar múltiples equipos desde un archivo Excel (.xls
 - [ ] Genera log descargable de la importación
 
 **Puntaje de Priorización:**
+
 - Valor_Negocio: 8 (cliente lo pidió)
 - Urgencia: 5 (puede esperar 1 semana)
 - Complejidad: 6 (mediana)
-- **Puntaje:** (8*3) + (5*2) - (6*0.5) = 24 + 10 - 3 = **31 → 🔴 Alta**
+- **Puntaje:** (8*3) + (5*2) - (6\*0.5) = 24 + 10 - 3 = **31 → 🔴 Alta**
 
-*Nota: Aunque empezó como 🟡 Media, el puntaje sugiere 🔴 Alta. Mantener en 🟡 porque hay tareas de seguridad más críticas en el sprint.*
+_Nota: Aunque empezó como 🟡 Media, el puntaje sugiere 🔴 Alta. Mantener en 🟡 porque hay tareas de seguridad más críticas en el sprint._
 
 **Subtareas:**
+
 1. [x] Spike: Evaluar librerías (SheetJS vs ExcelJS) - 1h
 2. [ ] Implementar parser de Excel - 2h
 3. [ ] Crear validaciones de negocio - 1.5h
@@ -337,6 +363,7 @@ Permitir al administrador cargar múltiples equipos desde un archivo Excel (.xls
 7. [ ] Documentación de uso - 0.5h
 
 **Notas Técnicas:**
+
 - Usar `xlsx` library (lighter than ExcelJS)
 - Limitar a 100 rows para evitar timeout de Firestore batch
 - Para >100, implementar chunking en futuro sprint
@@ -350,13 +377,14 @@ Permitir al administrador cargar múltiples equipos desde un archivo Excel (.xls
 ### [BUG-012] Error al calcular total de renta con descuento
 
 **Metadatos:**
+
 - 🎯 **Prioridad:** 🔴 Alta
 - ⏱️ **Estimación:** 2h 15m
   - Base: S (2h)
   - Complejidad: Baja (x1.0) - lógica simple
   - Experiencia: Experto (x0.8)
   - Buffer: x1.2
-  - Cálculo: 2 * 1.0 * 0.8 * 1.2 = 1.92h → 2h 15m
+  - Cálculo: 2 _ 1.0 _ 0.8 \* 1.2 = 1.92h → 2h 15m
 - 👤 **Asignado:** GEMINI
 - 📦 **Sprint:** Sprint 2 (Hotfix)
 - 🏷️ **Tags:** `#bug` `#critical` `#rentas` `#cálculo`
@@ -371,27 +399,31 @@ Cuando se aplica un descuento porcentual a una renta, el total calculado es inco
 
 **Reporte del Usuario:**
 ```
+
 Renta ID: R-2024-089
 Subtotal: $1,200.00
 Descuento: 10%
 Total esperado: $1,080.00
 Total mostrado: $1,320.00 ❌
-```
+
+````
 
 **Causa Raíz:**
 En `apps/web/src/lib/calculations.ts:45` se usa `+` en lugar de `-`:
 ```typescript
 // Código incorrecto
 const total = subtotal + (subtotal * discount / 100);
-```
+````
 
 **Solución:**
+
 ```typescript
 // Código correcto
-const total = subtotal - (subtotal * discount / 100);
+const total = subtotal - (subtotal * discount) / 100;
 ```
 
 **Criterios de Aceptación:**
+
 - [x] Fix aplicado en `calculations.ts`
 - [ ] Test unitario que reproduce el bug
 - [ ] Test pasando con el fix
@@ -401,22 +433,26 @@ const total = subtotal - (subtotal * discount / 100);
 - [ ] Notificación a usuario que reportó
 
 **Impacto:**
+
 - 🔴 **Severidad:** Crítica
 - 📊 **Usuarios Afectados:** ~15 rentas en producción con descuento
 - 💸 **Impacto Financiero:** Potenciales cobros incorrectos
 
 **Plan de Remediación:**
+
 1. Fix inmediato en código
 2. Script para recalcular rentas afectadas
 3. Notificar a finanzas sobre rentas a ajustar
 4. Agregar validación adicional en UI
 
 **Puntaje de Priorización:**
+
 - Valor_Negocio: 10 (afecta dinero directamente)
 - Urgencia: 10 (debe arreglarse hoy)
 - Complejidad: 2 (fix simple)
-- **Puntaje:** (10*3) + (10*2) - (2*0.5) = 30 + 20 - 1 = **49 → 🔴 Alta**
-```
+- **Puntaje:** (10*3) + (10*2) - (2\*0.5) = 30 + 20 - 1 = **49 → 🔴 Alta**
+
+````
 
 ---
 
@@ -456,7 +492,7 @@ Migrar rutas actuales que usan patrones legacy a los nuevos patterns de Next.js 
   - Migrar `/clientes`, `/equipos`, `/rentas` a app router
   - Implementar layouts compartidos
   - Convertir componentes apropiados a Server Components
-  
+
 - ❌ **Excluido:**
   - Páginas de admin (se hará en Sprint 4)
   - Rutas de auth (requieren análisis separado)
@@ -492,7 +528,7 @@ Mover a backlog. Ejecutar cuando:
 1. Haya capacidad sobrante en sprint, O
 2. El bundle size se vuelva un problema real, O
 3. Next.js deprece patterns actuales
-```
+````
 
 ---
 
@@ -543,15 +579,15 @@ FIN
 ```markdown
 ## 📊 Sprint 3 - Métricas de Priorización
 
-| Métrica | Valor | Status |
-|---------|-------|--------|
-| Tareas 🔴 completadas | 4/5 | ✅ 80% |
-| Tareas 🟡 completadas | 8/12 | ⚠️ 67% |
-| Tareas 🟢 completadas | 2/8 | ✅ 25% (esperado) |
-| Promedio resolución 🔴 | 28h | ✅ <48h |
-| Precisión estimaciones | +15% | ✅ <20% |
-| Bloqueadores activos | 2 | ⚠️ Monitorear |
-| Re-priorizaciones | 3 | ✅ <5 |
+| Métrica                | Valor | Status            |
+| ---------------------- | ----- | ----------------- |
+| Tareas 🔴 completadas  | 4/5   | ✅ 80%            |
+| Tareas 🟡 completadas  | 8/12  | ⚠️ 67%            |
+| Tareas 🟢 completadas  | 2/8   | ✅ 25% (esperado) |
+| Promedio resolución 🔴 | 28h   | ✅ <48h           |
+| Precisión estimaciones | +15%  | ✅ <20%           |
+| Bloqueadores activos   | 2     | ⚠️ Monitorear     |
+| Re-priorizaciones      | 3     | ✅ <5             |
 ```
 
 ---
@@ -559,12 +595,14 @@ FIN
 ## 🔄 Revisión y Ajuste
 
 **Frecuencia:**
+
 - **Diaria:** Revisar 🔴 Alta (en handoffs)
 - **Semanal:** Re-priorizar 🟡 Media según progreso
 - **Quincenal:** Grooming de 🟢 Baja y backlog
 - **Mensual:** Revisar y ajustar criterios de priorización
 
 **Señales para Ajustar Sistema:**
+
 - Estimaciones consistentemente off por >30%
 - Bloqueadores frecuentes del mismo tipo
 - Quejas de stakeholders sobre priorización

@@ -21,6 +21,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 1,100+
 
 **Contenido:**
+
 - Definición de 8 estados operativos:
   - `[ ]` Pendiente
   - `[~]` Planificado (SPEC generado)
@@ -29,7 +30,6 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
   - `[R]` En Revisión (GEMINI auditando)
   - `[✓]` Completado (todos los gates pasados)
   - `[X]` Aprobado (Frank validó)
-  
 - Estados especiales:
   - `[!]` Bloqueado
   - `[?]` Necesita Clarificación
@@ -40,6 +40,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 - Ejemplos completos con timeline
 
 **Impacto:**
+
 - ✅ Elimina ambigüedad sobre el estado de tareas
 - ✅ Claridad en responsabilidades
 - ✅ Facilita automatización futura
@@ -52,6 +53,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 900+
 
 **Contenido:**
+
 - 4 Gates Obligatorios:
   1. **Gate 1: Compilación** (TypeScript + ESLint)
   2. **Gate 2: Testing** (Tests unitarios + cobertura)
@@ -66,6 +68,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 - Propuesta de automatización (GitHub Actions)
 
 **Impacto:**
+
 - ✅ Calidad garantizada antes de completar tareas
 - ✅ Reduce bugs en producción
 - ✅ Documentación nunca se olvida
@@ -78,6 +81,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 2,400+
 
 **Contenido:**
+
 - Metadata completa (fecha, agente, tiempo, estado)
 - Objetivo y contexto de la tarea
 - Cambios realizados (archivos + líneas modificadas)
@@ -89,6 +93,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 - Próximos pasos
 
 **Impacto:**
+
 - ✅ Historial completo y buscable
 - ✅ Aprendizajes documentados
 - ✅ Métricas para estimación futura
@@ -101,6 +106,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 5,300+
 
 **Contenido:**
+
 - Escala de prioridad (🔴🟡🟢) con fórmulas
 - Sistema de estimación:
   - XS (< 2h)
@@ -109,7 +115,6 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
   - L (1-2 días)
   - XL (2-5 días)
   - XXL (> 5 días)
-  
 - Gestión de dependencias
 - Detección y manejo de bloqueadores
 - Fórmulas de priorización (valor / esfuerzo)
@@ -117,6 +122,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 - Template de metadatos para PROYECTO.md
 
 **Impacto:**
+
 - ✅ Priorización objetiva
 - ✅ Mejor planificación
 - ✅ Detecta bloqueadores temprano
@@ -126,11 +132,13 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 ### 5️⃣ Sistema de ADR (Architecture Decision Records) ✅
 
 **Archivos creados:**
+
 - `metodologia-integra/context/decisions/README.md` (2,600 líneas)
 - `metodologia-integra/context/decisions/ADR-TEMPLATE.md` (1,800 líneas)
 - `metodologia-integra/context/decisions/ADR-001-ejemplo-uso-pnpm.md` (3,600 líneas)
 
 **Contenido:**
+
 - Sistema completo de documentación de decisiones
 - Template profesional con secciones:
   - Contexto
@@ -138,13 +146,13 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
   - Alternativas consideradas
   - Consecuencias
   - Referencias
-  
 - Estados: Propuesto, Aceptado, Deprecado, Superseded
 - Categorías: Arquitectura, Stack Tecnológico, Infraestructura, etc.
 - Ejemplo real: ADR-001 sobre uso de pnpm
 - Proceso de creación y numeración
 
 **Impacto:**
+
 - ✅ Decisiones trazables
 - ✅ Onboarding más rápido
 - ✅ Evita re-discutir decisiones pasadas
@@ -157,18 +165,19 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 3,800+
 
 **Contenido:**
+
 - Contexto automático de metodología
 - Reglas de código (SPEC-CODIGO.md)
 - Configuración por agente:
   - SOFIA (ChatGPT API)
   - CODEX (GitHub Copilot)
   - GEMINI (Gemini Code Assist)
-  
 - Snippets de código
 - Comandos personalizados
 - Shortcuts útiles
 
 **Impacto:**
+
 - ✅ Contexto compartido entre agentes
 - ✅ Menos repetición de instrucciones
 - ✅ Snippets reutilizables
@@ -181,6 +190,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 4,000+
 
 **Contenido:**
+
 - Parser de PROYECTO.md
 - Generador de estadísticas:
   - Progreso global (% completado)
@@ -188,13 +198,13 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
   - Bloqueadores activos
   - Prioridades de la semana
   - Métricas (commits, tests, cobertura)
-  
 - Generador de README-DASHBOARD.md visual
 - Barras de progreso ASCII
 - Instrucciones de uso
 - Integración con scripts de package.json
 
 **Impacto:**
+
 - ✅ Visibilidad del estado del proyecto
 - ✅ Automatización de reportes
 - ✅ Métricas en tiempo real
@@ -207,6 +217,7 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 9,600+
 
 **Contenido:**
+
 - Protocolo estructurado de comunicación
 - Template de handoff con:
   - Tarea completada
@@ -215,16 +226,15 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
   - Contexto necesario
   - Riesgos identificados
   - Próximos pasos sugeridos
-  
 - 3 ejemplos completos:
   - SOFIA → GEMINI (revisión de código)
   - GEMINI → CODEX (validación arquitectónica)
   - CODEX → SOFIA (implementación de diseño)
-  
 - Mejores prácticas
 - Formato en PROYECTO.md
 
 **Impacto:**
+
 - ✅ Comunicación clara entre agentes
 - ✅ No se pierde contexto
 - ✅ Menos idas y venidas
@@ -237,18 +247,19 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 4,500+
 
 **Contenido:**
+
 - Formato MAJOR.MINOR.PATCH explicado
 - Reglas de incremento:
   - MAJOR: Cambios que rompen compatibilidad
   - MINOR: Nuevas funcionalidades
   - PATCH: Correcciones menores
-  
 - Template de CHANGELOG.md
 - Integración con Conventional Commits
 - Ejemplos de cada tipo de cambio
 - Proceso de release
 
 **Impacto:**
+
 - ✅ Versionado consistente
 - ✅ Changelog automático
 - ✅ Comunicación clara de cambios
@@ -261,29 +272,28 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 **Líneas:** 5,000+
 
 **Contenido:**
+
 - Bienvenida personalizada por agente
 - Documentos obligatorios a leer (con tiempo estimado):
   - arquitectura_distribuida_v_1.md (10 min)
   - meta/SPEC-CODIGO.md (15 min)
   - PROYECTO.md (5 min)
-  
 - Reglas de Oro:
   - Siempre consultar PROYECTO.md
   - Marcar tareas en progreso
   - Generar checkpoints
   - Nunca commitear secretos
-  
 - Herramientas por rol:
   - SOFIA: ChatGPT API
   - CODEX: GitHub Copilot
   - GEMINI: Gemini Code Assist
-  
 - Setup paso a paso
 - FAQ completo
 - Troubleshooting común
 - Primera tarea sugerida
 
 **Impacto:**
+
 - ✅ Onboarding rápido
 - ✅ Menos preguntas repetitivas
 - ✅ Consistencia desde día 1
@@ -294,28 +304,28 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 
 ### Archivos Creados/Modificados
 
-| Categoría | Archivos | Líneas | Impacto |
-|-----------|---------|--------|---------|
-| Sistema de Estados | 1 | 1,100+ | Alto |
-| Soft Gates | 1 | 900+ | Alto |
-| Checkpoints | 1 | 2,400+ | Medio |
-| Priorización | 1 | 5,300+ | Alto |
-| ADR | 3 | 8,000+ | Medio |
-| Continue.dev | 1 | 3,800+ | Medio |
-| Dashboard | 1 | 4,000+ | Bajo |
-| Handoff | 1 | 9,600+ | Alto |
-| Versionado | 1 | 4,500+ | Bajo |
-| Onboarding | 1 | 5,000+ | Alto |
-| **TOTAL** | **13** | **44,600+** | - |
+| Categoría          | Archivos | Líneas      | Impacto |
+| ------------------ | -------- | ----------- | ------- |
+| Sistema de Estados | 1        | 1,100+      | Alto    |
+| Soft Gates         | 1        | 900+        | Alto    |
+| Checkpoints        | 1        | 2,400+      | Medio   |
+| Priorización       | 1        | 5,300+      | Alto    |
+| ADR                | 3        | 8,000+      | Medio   |
+| Continue.dev       | 1        | 3,800+      | Medio   |
+| Dashboard          | 1        | 4,000+      | Bajo    |
+| Handoff            | 1        | 9,600+      | Alto    |
+| Versionado         | 1        | 4,500+      | Bajo    |
+| Onboarding         | 1        | 5,000+      | Alto    |
+| **TOTAL**          | **13**   | **44,600+** | -       |
 
 ### Impacto por Agente
 
-| Agente | Mejoras | Impacto Principal |
-|--------|---------|-------------------|
-| **SOFIA** | 7/10 | Estados, Soft Gates, Handoff, Checkpoints |
-| **GEMINI** | 6/10 | Soft Gates (Gate 3), Handoff, Código |
-| **CODEX** | 8/10 | ADR, Priorización, Estados, Versionado |
-| **Continue.dev** | 1/10 | Configuración compartida |
+| Agente           | Mejoras | Impacto Principal                         |
+| ---------------- | ------- | ----------------------------------------- |
+| **SOFIA**        | 7/10    | Estados, Soft Gates, Handoff, Checkpoints |
+| **GEMINI**       | 6/10    | Soft Gates (Gate 3), Handoff, Código      |
+| **CODEX**        | 8/10    | ADR, Priorización, Estados, Versionado    |
+| **Continue.dev** | 1/10    | Configuración compartida                  |
 
 ---
 
@@ -324,16 +334,19 @@ Implementar todas las sugerencias de mejora para la Metodología Integra Evoluci
 Además de las 10 sugerencias principales:
 
 ### 1. Actualización de arquitectura_distribuida_v_1.md
+
 - ✅ Nueva sección VI.5 "Sistema de Gestión de Tareas y Calidad"
 - ✅ Actualizado a v2.0
 - ✅ Changelog completo
 
 ### 2. Actualización de README.md
+
 - ✅ Sección "Novedades en v2.0"
 - ✅ Herramientas recomendadas por rol
 - ✅ Documentación completa indexada
 
 ### 3. Integración Completa
+
 - ✅ Todos los archivos cross-referenciados
 - ✅ Ejemplos realistas del proyecto Farianergy
 - ✅ Templates listos para copiar
@@ -378,7 +391,8 @@ metodologia-integra/
     └── generate-dashboard.js (nuevo) ⭐
 ```
 
-**Total:** 
+**Total:**
+
 - 📁 4 carpetas principales
 - 📄 13 archivos nuevos
 - 📄 6 archivos actualizados
@@ -389,6 +403,7 @@ metodologia-integra/
 ## 🚀 Cómo Usar la Metodología v2.0
 
 ### Paso 1: Leer Onboarding
+
 ```bash
 # Tiempo estimado: 30 minutos
 1. ONBOARDING.md (15 min)
@@ -397,6 +412,7 @@ metodologia-integra/
 ```
 
 ### Paso 2: Configurar Proyecto
+
 ```bash
 # Copiar templates
 cp templates/PROYECTO-template.md PROYECTO.md
@@ -405,17 +421,18 @@ cp templates/gitignore-template.txt .gitignore
 ```
 
 ### Paso 3: Iniciar Primera Tarea
+
 ```markdown
 - [ ] Primera tarea de ejemplo
-  **Meta:**
+      **Meta:**
   - Prioridad: 🟡 Media
   - Estimación: S (2-4h)
   - Agente: SOFIA
   - Dependencias: Ninguna
-  
+
   **Estados esperados:**
   [ ] → [~] → [/] → [V] → [R] → [✓] → [X]
-  
+
   **Soft Gates:**
   - [ ] Gate 1: Compilación
   - [ ] Gate 2: Testing
@@ -424,6 +441,7 @@ cp templates/gitignore-template.txt .gitignore
 ```
 
 ### Paso 4: Generar Dashboard (opcional)
+
 ```bash
 node scripts/generate-dashboard.js
 # Genera: README-DASHBOARD.md
@@ -434,21 +452,25 @@ node scripts/generate-dashboard.js
 ## 🎯 Beneficios Clave de v2.0
 
 ### Para CODEX (Arquitecto)
+
 - ✅ Sistema de priorización claro
 - ✅ ADR para documentar decisiones
 - ✅ Visionado semántico formalizado
 
 ### Para SOFIA (Constructora)
+
 - ✅ Estados granulares (sabe exactamente qué hacer)
 - ✅ Soft Gates (criterios claros de completado)
 - ✅ Handoff estructurado a GEMINI
 
 ### Para GEMINI (Revisor)
+
 - ✅ Checklist completo de revisión (Gate 3)
 - ✅ Protocolo de handoff (qué revisar)
 - ✅ SPEC-CODIGO.md como referencia
 
 ### Para Frank (Director)
+
 - ✅ Dashboard automático del proyecto
 - ✅ Visibilidad de bloqueadores
 - ✅ Decisiones documentadas (ADR)
@@ -458,16 +480,19 @@ node scripts/generate-dashboard.js
 ## 📈 Próximos Pasos Sugeridos
 
 ### Fase 1: Adopción Interna (1 semana)
+
 1. Capacitar a agentes IA con ONBOARDING.md
 2. Migrar PROYECTO.md actual a nuevo sistema de estados
 3. Generar primer checkpoint enriquecido
 
 ### Fase 2: Automatización (2 semanas)
+
 1. Implementar GitHub Actions para Soft Gates
 2. Script de actualización automática de dashboard
 3. Pre-commit hooks para validaciones
 
 ### Fase 3: Refinamiento (ongoing)
+
 1. Recopilar feedback de agentes
 2. Actualizar ADRs con decisiones nuevas
 3. Ajustar fórmulas de priorización según métricas reales

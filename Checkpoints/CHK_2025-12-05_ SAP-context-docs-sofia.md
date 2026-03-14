@@ -1,6 +1,7 @@
 # Checkpoint 2025-12-05 – Context docs y Sofía
 
 ## Resumen
+
 - Se añadió gestión de **documentos de contexto** (.md/.txt) en `admin/products`.
 - Sofía ahora consume dinámicamente los documentos activos desde Firestore (`context_docs`).
 - Se agregaron límites de tamaño y controles de activo/inactivo para evitar prompts excesivos.
@@ -9,6 +10,7 @@
 ## Cambios clave
 
 ### 1. UI admin – `admin/products`
+
 - Archivo: `apps/web/src/app/admin/products/page.tsx`
 - Nuevas capacidades:
   - Subida de archivos `.md`/`.txt` como documentos de contexto.
@@ -27,6 +29,7 @@
   - Máx. ~250 KB por archivo (validación en frontend + backend).
 
 ### 2. API de documentos de contexto
+
 - Archivo: `apps/web/src/app/api/context-docs/route.ts`
 - Funciones:
   - `GET`: lista documentos ordenados por `createdAt desc`.
@@ -40,6 +43,7 @@
   - `PATCH`: actualiza flag `active` por `id`.
 
 ### 3. Lógica de IA – `lib/aiProvider.ts`
+
 - Archivo: `apps/web/src/lib/aiProvider.ts`
 - Nuevas piezas:
   - `getContextDocumentsText()`:
@@ -53,6 +57,7 @@
     - Igual enfoque que Sofía, pero para cualquier agente.
 
 ### 4. Endpoint de test de agentes
+
 - Archivo: `apps/web/src/app/api/agent/test/route.ts`
 - Cambios:
   - Deja de construir el prompt y llamar a OpenAI directamente.
@@ -60,6 +65,7 @@
   - Esto garantiza que las pruebas de agentes también consideren los documentos de contexto activos.
 
 ## Estado y próximos pasos
+
 - Listo para usar:
   - Subir `.md`/`.txt` desde `admin/products` como conocimiento para Sofía.
   - Activar/Desactivar documentos para ajustar qué entra al contexto.

@@ -16,7 +16,7 @@ Esta guía te ayudará a entender la metodología de trabajo, estructura del pro
 - ✅ **Priorizar trabajo** de forma consistente y objetiva
 - ✅ **Trackear progreso** con checkpoints enriquecidos
 
-### Principios Fundamentalesrepo 
+### Principios Fundamentalesrepo
 
 1. **Documentación como código:** La documentación es tan importante como el código
 2. **Contexto sobre memoria:** No asumas que el próximo agente recuerda lo anterior
@@ -30,12 +30,12 @@ Esta guía te ayudará a entender la metodología de trabajo, estructura del pro
 
 ### Fase 1: Contexto Inicial (30 minutos)
 
-| Orden | Documento | Tiempo | Propósito |
-|-------|-----------|--------|-----------|
-| 1️⃣ | `ONBOARDING.md` (este documento) | 10 min | Entender la metodología |
-| 2️⃣ | `PROYECTO.md` | 10 min | Estado actual del proyecto y tareas |
-| 3️⃣ | `README.md` | 5 min | Setup técnico y comandos básicos |
-| 4️⃣ | `AGENTS.md` | 5 min | Reglas específicas para agentes |
+| Orden | Documento                        | Tiempo | Propósito                           |
+| ----- | -------------------------------- | ------ | ----------------------------------- |
+| 1️⃣    | `ONBOARDING.md` (este documento) | 10 min | Entender la metodología             |
+| 2️⃣    | `PROYECTO.md`                    | 10 min | Estado actual del proyecto y tareas |
+| 3️⃣    | `README.md`                      | 5 min  | Setup técnico y comandos básicos    |
+| 4️⃣    | `AGENTS.md`                      | 5 min  | Reglas específicas para agentes     |
 
 **Objetivo:** Tener contexto suficiente para empezar a trabajar.
 
@@ -43,12 +43,12 @@ Esta guía te ayudará a entender la metodología de trabajo, estructura del pro
 
 ### Fase 2: Documentación Técnica (45 minutos)
 
-| Orden | Documento | Tiempo | Propósito |
-|-------|-----------|--------|-----------|
-| 5️⃣ | `context/dossier_tecnico.md` | 15 min | Arquitectura y decisiones técnicas |
-| 6️⃣ | `context/SPEC-*.md` | 15 min | Especificaciones técnicas detalladas |
-| 7️⃣ | `Checkpoints/` (últimos 2-3) | 10 min | Qué se hizo recientemente |
-| 8️⃣ | `metodologia-integra/context/decisions/` | 5 min | ADRs existentes |
+| Orden | Documento                                | Tiempo | Propósito                            |
+| ----- | ---------------------------------------- | ------ | ------------------------------------ |
+| 5️⃣    | `context/dossier_tecnico.md`             | 15 min | Arquitectura y decisiones técnicas   |
+| 6️⃣    | `context/SPEC-*.md`                      | 15 min | Especificaciones técnicas detalladas |
+| 7️⃣    | `Checkpoints/` (últimos 2-3)             | 10 min | Qué se hizo recientemente            |
+| 8️⃣    | `metodologia-integra/context/decisions/` | 5 min  | ADRs existentes                      |
 
 **Objetivo:** Entender las decisiones arquitectónicas y contexto técnico.
 
@@ -56,12 +56,12 @@ Esta guía te ayudará a entender la metodología de trabajo, estructura del pro
 
 ### Fase 3: Metodología Profunda (30 minutos - opcional)
 
-| Orden | Documento | Tiempo | Propósito |
-|-------|-----------|--------|-----------|
-| 9️⃣ | `metodologia-integra/meta/sistema-priorizacion.md` | 10 min | Cómo decidir qué trabajar |
-| 🔟 | `metodologia-integra/meta/sistema-handoff.md` | 10 min | Cómo pasar trabajo a otro agente |
-| 1️⃣1️⃣ | `metodologia-integra/meta/versionado-semantico.md` | 5 min | Cómo versionar cambios |
-| 1️⃣2️⃣ | `metodologia-integra/meta/plantilla-checkpoint-enriquecido.md` | 5 min | Template de checkpoints |
+| Orden | Documento                                                      | Tiempo | Propósito                        |
+| ----- | -------------------------------------------------------------- | ------ | -------------------------------- |
+| 9️⃣    | `metodologia-integra/meta/sistema-priorizacion.md`             | 10 min | Cómo decidir qué trabajar        |
+| 🔟    | `metodologia-integra/meta/sistema-handoff.md`                  | 10 min | Cómo pasar trabajo a otro agente |
+| 1️⃣1️⃣  | `metodologia-integra/meta/versionado-semantico.md`             | 5 min  | Cómo versionar cambios           |
+| 1️⃣2️⃣  | `metodologia-integra/meta/plantilla-checkpoint-enriquecido.md` | 5 min  | Template de checkpoints          |
 
 **Objetivo:** Dominar el flujo de trabajo completo.
 
@@ -109,13 +109,13 @@ farianergy-app/
 
 ### Archivos Clave
 
-| Archivo | Propósito | Cuándo Leer |
-|---------|-----------|-------------|
-| `PROYECTO.md` | Estado actual, tareas, handoffs | **Siempre al empezar** |
-| `Checkpoints/CHK_*.md` | Historial de trabajo | Antes de continuar trabajo previo |
-| `context/dossier_tecnico.md` | Arquitectura y tech stack | Antes de decisiones técnicas |
-| `metodologia-integra/context/decisions/ADR-*.md` | Decisiones arquitectónicas | Cuando necesites contexto de decisiones |
-| `AGENTS.md` | Reglas de desarrollo | Antes de commits o PRs |
+| Archivo                                          | Propósito                       | Cuándo Leer                             |
+| ------------------------------------------------ | ------------------------------- | --------------------------------------- |
+| `PROYECTO.md`                                    | Estado actual, tareas, handoffs | **Siempre al empezar**                  |
+| `Checkpoints/CHK_*.md`                           | Historial de trabajo            | Antes de continuar trabajo previo       |
+| `context/dossier_tecnico.md`                     | Arquitectura y tech stack       | Antes de decisiones técnicas            |
+| `metodologia-integra/context/decisions/ADR-*.md` | Decisiones arquitectónicas      | Cuando necesites contexto de decisiones |
+| `AGENTS.md`                                      | Reglas de desarrollo            | Antes de commits o PRs                  |
 
 ---
 
@@ -124,6 +124,7 @@ farianergy-app/
 ### SOFIA - Arquitecta de Soluciones
 
 **Responsabilidades:**
+
 - 📐 Análisis de requisitos y diseño de arquitectura
 - 📝 Creación de especificaciones técnicas (`context/SPEC-*.md`)
 - 🏗️ Decisiones arquitectónicas (ADRs)
@@ -131,16 +132,19 @@ farianergy-app/
 - 🎯 División de épicas en tareas accionables
 
 **Herramientas Principales:**
+
 - ChatGPT o1-preview / o1-mini
 - Gemini 2.0 Flash Thinking
 
 **Output Típico:**
+
 - Specs técnicas completas
 - ADRs documentados
 - Tareas priorizadas en `PROYECTO.md`
 - Propuestas de arquitectura
 
 **Primera Tarea Sugerida:**
+
 - Leer `PROYECTO.md` y `context/dossier_tecnico.md`
 - Revisar ADRs existentes
 - Identificar gaps en specs o documentación
@@ -151,6 +155,7 @@ farianergy-app/
 ### CODEX - Implementador Backend
 
 **Responsabilidades:**
+
 - 🔧 Desarrollo de APIs (Next.js API Routes)
 - 🔥 Integración con Firebase (Firestore, Auth, Storage, Functions)
 - 💼 Implementación de lógica de negocio
@@ -158,17 +163,20 @@ farianergy-app/
 - ⚡ Optimización de queries y performance
 
 **Herramientas Principales:**
+
 - GitHub Copilot
 - Cursor / Continue.dev
 - Claude 3.5 Sonnet (para razonamiento complejo)
 
 **Output Típico:**
+
 - API routes en `apps/web/src/app/api/`
 - Business logic en `apps/web/src/lib/`
 - Tests en `*.test.ts`
 - Checkpoints con resultados de tests
 
 **Primera Tarea Sugerida:**
+
 - Ejecutar `pnpm install` y `pnpm run dev --filter @farianergy/web`
 - Revisar estructura de API routes existentes
 - Ejecutar tests: `pnpm turbo run test --filter @farianergy/web`
@@ -179,6 +187,7 @@ farianergy-app/
 ### GEMINI - Implementador Frontend
 
 **Responsabilidades:**
+
 - 🎨 Desarrollo de componentes React/Next.js
 - 🔌 Integración de UI con APIs
 - 💅 Styling con Tailwind CSS
@@ -186,17 +195,20 @@ farianergy-app/
 - 🧪 Testing de componentes
 
 **Herramientas Principales:**
+
 - Gemini 2.0 Flash (rápido para UI)
 - Claude 3.5 Sonnet (para lógica compleja)
 - Cursor / Continue.dev
 
 **Output Típico:**
+
 - Páginas en `apps/web/src/app/`
 - Componentes en `apps/web/src/components/`
 - Tests en `*.test.tsx`
 - Screenshots o demos de UI
 
 **Primera Tarea Sugerida:**
+
 - Ejecutar `pnpm run dev --filter @farianergy/web` y navegar la app
 - Revisar componentes existentes en `apps/web/src/components/`
 - Identificar componentes reusables para crear library
@@ -340,13 +352,16 @@ firebase emulators:start
 ### Código
 
 5. **Tests antes de commit**
+
    ```bash
    pnpm turbo run test lint
    ```
+
    - Todos los tests deben pasar
    - Lint sin errores
 
 6. **Commits convencionales**
+
    ```bash
    feat(equipos): add export to Excel
    fix(rentas): correct timezone calculation
@@ -382,6 +397,7 @@ firebase emulators:start
 Dependiendo de tu rol:
 
 ### Para SOFIA
+
 ```markdown
 Tarea: Revisar ADRs existentes y crear uno nuevo
 
@@ -393,18 +409,20 @@ Tarea: Revisar ADRs existentes y crear uno nuevo
 ```
 
 ### Para CODEX
+
 ```markdown
 Tarea: Implementar endpoint faltante
 
 1. Revisar PROYECTO.md, buscar tarea de API marcada 🔴
-2. Leer spec técnica relacionada en context/SPEC-*.md
+2. Leer spec técnica relacionada en context/SPEC-\*.md
 3. Implementar endpoint en apps/web/src/app/api/
-4. Escribir tests en *.test.ts
+4. Escribir tests en \*.test.ts
 5. Crear checkpoint con resultados
 6. Tiempo: ~2-3h
 ```
 
 ### Para GEMINI
+
 ```markdown
 Tarea: Mejorar componente existente
 
@@ -447,16 +465,16 @@ pnpm turbo run test:coverage
 
 ```typescript
 // apps/web/src/lib/calculations.test.ts
-import { describe, it, expect } from 'vitest';
-import { calculateTotal } from './calculations';
+import { describe, it, expect } from "vitest";
+import { calculateTotal } from "./calculations";
 
-describe('calculateTotal', () => {
-  it('should calculate total with discount', () => {
+describe("calculateTotal", () => {
+  it("should calculate total with discount", () => {
     const result = calculateTotal(1000, 10); // 10% discount
     expect(result).toBe(900);
   });
-  
-  it('should handle zero discount', () => {
+
+  it("should handle zero discount", () => {
     const result = calculateTotal(1000, 0);
     expect(result).toBe(1000);
   });
@@ -470,6 +488,7 @@ describe('calculateTotal', () => {
 ### Problema: `pnpm install` falla
 
 **Solución:**
+
 ```bash
 # Limpiar caché
 pnpm store prune
@@ -484,6 +503,7 @@ pnpm install
 ### Problema: Firebase error "Missing credentials"
 
 **Solución:**
+
 ```bash
 # Verificar que .env.local existe
 ls apps/web/.env.local
@@ -499,6 +519,7 @@ cat apps/web/.env.local | grep FIREBASE
 ### Problema: Tests fallan con "Cannot find module"
 
 **Solución:**
+
 ```bash
 # Rebuild
 pnpm turbo run build
@@ -512,6 +533,7 @@ pnpm install --frozen-lockfile
 ### Problema: Port 3000 ya en uso
 
 **Solución:**
+
 ```bash
 # Opción 1: Matar proceso en puerto 3000
 # Windows:
@@ -533,6 +555,7 @@ PORT=3001 pnpm run dev --filter @farianergy/web
 
 **Respuesta:**
 Cuando la decisión:
+
 - Afecta la arquitectura del sistema
 - Tiene trade-offs significativos
 - Requiere justificación para futuros desarrolladores
@@ -545,6 +568,7 @@ Ejemplos: Elección de DB, framework, patrón de autenticación, estrategia de d
 ### ¿Cuándo crear un checkpoint?
 
 **Respuesta:**
+
 - Al finalizar una tarea completa
 - Después de >2h de trabajo continuo
 - Antes de hacer handoff a otro agente
@@ -556,6 +580,7 @@ Ejemplos: Elección de DB, framework, patrón de autenticación, estrategia de d
 ### ¿Cómo decido qué tarea tomar?
 
 **Respuesta:**
+
 1. Ir a `PROYECTO.md`
 2. Buscar tareas con tu rol (SOFIA/CODEX/GEMINI)
 3. Filtrar por prioridad: 🔴 > 🟡 > 🟢
@@ -570,6 +595,7 @@ Ver `metodologia-integra/meta/sistema-priorizacion.md` para algoritmo detallado.
 ### ¿Qué hago si encuentro un bloqueador?
 
 **Respuesta:**
+
 1. Documentarlo inmediatamente en `PROYECTO.md`
 2. Clasificarlo (Técnico, Información, Recurso, etc.)
 3. Especificar qué se necesita para desbloquearlo
@@ -585,6 +611,7 @@ Ver `metodologia-integra/meta/sistema-priorizacion.md` sección de bloqueadores.
 
 **Respuesta:**
 Sí, pero:
+
 1. Crear propuesta en forma de ADR
 2. Explicar por qué el cambio mejora el proceso
 3. Documentar impacto en flujo actual
@@ -598,6 +625,7 @@ La metodología debe evolucionar, pero de forma documentada.
 ### ¿Qué hago si la documentación está desactualizada?
 
 **Respuesta:**
+
 1. **Corrígela** (no solo reportes que está mal)
 2. Si es un error simple: Fix directamente
 3. Si requiere decisión: Crear issue o discutir
@@ -636,6 +664,7 @@ La metodología debe evolucionar, pero de forma documentada.
 Marca cuando hayas completado cada paso:
 
 ### Setup Inicial
+
 - [ ] Node.js y pnpm instalados y verificados
 - [ ] Repositorio clonado
 - [ ] Dependencias instaladas (`pnpm install`)
@@ -643,6 +672,7 @@ Marca cuando hayas completado cada paso:
 - [ ] App corriendo en desarrollo (`pnpm run dev`)
 
 ### Documentación Leída
+
 - [ ] ONBOARDING.md (este documento)
 - [ ] PROYECTO.md (estado actual)
 - [ ] README.md (setup técnico)
@@ -650,6 +680,7 @@ Marca cuando hayas completado cada paso:
 - [ ] context/dossier_tecnico.md (arquitectura)
 
 ### Familiarización
+
 - [ ] Estructura del proyecto explorada
 - [ ] Últimos 2-3 checkpoints revisados
 - [ ] ADRs existentes leídos
@@ -657,6 +688,7 @@ Marca cuando hayas completado cada paso:
 - [ ] Tests ejecutados exitosamente
 
 ### Primera Contribución
+
 - [ ] Primera tarea identificada en PROYECTO.md
 - [ ] Contexto necesario recopilado
 - [ ] Cambios implementados
@@ -693,7 +725,7 @@ Si tienes preguntas que esta guía no responde:
 **Versión:** 1.0.0  
 **Última Actualización:** 2025-11-08  
 **Mantenido por:** Metodología INTEGRA  
-**Autores:** SOFIA, CODEX, GEMINI  
+**Autores:** SOFIA, CODEX, GEMINI
 
 ---
 

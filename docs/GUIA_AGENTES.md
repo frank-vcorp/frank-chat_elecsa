@@ -1,6 +1,7 @@
 # 📱 Guía del Agente - Dashboard de Chat ELECSA
 
 ## 📋 Índice
+
 1. [Acceso al Sistema](#acceso-al-sistema)
 2. [Panel Principal](#panel-principal)
 3. [Lista de Conversaciones](#lista-de-conversaciones)
@@ -16,12 +17,14 @@
 ## Acceso al Sistema
 
 ### Primer Ingreso
+
 1. Accede a la URL del dashboard proporcionada por tu supervisor
 2. Ingresa con tu **email** y **contraseña temporal**
 3. El sistema te pedirá **cambiar tu contraseña** obligatoriamente
 4. Usa una contraseña segura de al menos 6 caracteres
 
 ### Inicio de Sesión Normal
+
 1. Ve a `/login`
 2. Ingresa tus credenciales
 3. Serás redirigido al dashboard de chat
@@ -48,12 +51,12 @@ Al ingresar verás dos áreas principales:
 
 ### Indicadores Visuales
 
-| Indicador | Significado |
-|-----------|-------------|
+| Indicador                 | Significado               |
+| ------------------------- | ------------------------- |
 | 🔴 Punto rojo parpadeante | Necesita atención urgente |
-| Badge numérico azul | Mensajes sin leer |
-| Badge verde con nombre | Agente asignado |
-| Badge teal con sucursal | Sucursal del cliente |
+| Badge numérico azul       | Mensajes sin leer         |
+| Badge verde con nombre    | Agente asignado           |
+| Badge teal con sucursal   | Sucursal del cliente      |
 
 ---
 
@@ -62,18 +65,23 @@ Al ingresar verás dos áreas principales:
 ### Filtros Disponibles
 
 #### Por Estado
+
 - **Todos**: Muestra todas las conversaciones
 - **Humanos**: Solo las atendidas por agentes
 - **IA**: Solo las que atiende Sofía
 
 #### Por Etiqueta
+
 Haz clic en las etiquetas para filtrar:
+
 - Nuevo, Interesado, Cotización, Seguimiento, Ganado, Perdido, Recurrente
 
 #### Por Búsqueda
+
 Usa la barra de búsqueda para encontrar por número de teléfono.
 
 ### Tu Sucursal
+
 - Solo verás conversaciones de **tu(s) sucursal(es) asignada(s)**
 - Las conversaciones "General" son visibles para todos
 - Los supervisores pueden ver todas las sucursales
@@ -100,6 +108,7 @@ Usa la barra de búsqueda para encontrar por número de teléfono.
 ### Respuestas Rápidas
 
 Haz clic en el ícono ⚡ para ver respuestas predefinidas:
+
 - 👋 Saludo inicial
 - ⏰ Pedir tiempo
 - ✅ Confirmar acción
@@ -110,22 +119,24 @@ Haz clic en el ícono ⚡ para ver respuestas predefinidas:
 ## Sistema de Etiquetas
 
 ### ¿Para Qué Sirven?
+
 Las etiquetas ayudan a:
+
 - Clasificar el estado de cada cliente
 - Generar reportes de ventas
 - Dar seguimiento a oportunidades
 
 ### Etiquetas Disponibles
 
-| Etiqueta | Cuándo Usar | Color |
-|----------|-------------|-------|
-| **Nuevo** | Cliente que contacta por primera vez | 🔵 Azul |
-| **Interesado** | Mostró interés en productos | 🟠 Naranja |
-| **Cotización** | Solicitó precios o cotización formal | 🟣 Morado |
+| Etiqueta        | Cuándo Usar                           | Color       |
+| --------------- | ------------------------------------- | ----------- |
+| **Nuevo**       | Cliente que contacta por primera vez  | 🔵 Azul     |
+| **Interesado**  | Mostró interés en productos           | 🟠 Naranja  |
+| **Cotización**  | Solicitó precios o cotización formal  | 🟣 Morado   |
 | **Seguimiento** | Requiere llamada o contacto posterior | 🟡 Amarillo |
-| **Ganado** | Realizó compra o confirmó pedido | 🟢 Verde |
-| **Perdido** | No concretó la venta | 🔴 Rojo |
-| **Recurrente** | Cliente frecuente | 🔵 Cian |
+| **Ganado**      | Realizó compra o confirmó pedido      | 🟢 Verde    |
+| **Perdido**     | No concretó la venta                  | 🔴 Rojo     |
+| **Recurrente**  | Cliente frecuente                     | 🔵 Cian     |
 
 ### Cómo Etiquetar
 
@@ -146,9 +157,11 @@ Las etiquetas ayudan a:
 ## Notas Internas
 
 ### ¿Qué Son?
+
 Las notas son **comentarios privados** entre agentes. El cliente **nunca las ve**.
 
 ### Usos Comunes
+
 - Anotar detalles importantes del cliente
 - Dejar instrucciones para otro turno
 - Registrar acuerdos o promesas hechas
@@ -175,6 +188,7 @@ Las notas son **comentarios privados** entre agentes. El cliente **nunca las ve*
 ## Plantillas de Respuesta
 
 ### ¿Qué Son?
+
 Mensajes predefinidos para situaciones comunes. Ahorran tiempo y mantienen consistencia.
 
 ### Cómo Usar
@@ -186,13 +200,13 @@ Mensajes predefinidos para situaciones comunes. Ahorran tiempo y mantienen consi
 
 ### Plantillas Recomendadas
 
-| Situación | Plantilla Sugerida |
-|-----------|-------------------|
-| Primer contacto | Saludo corporativo |
-| Pedir información | Solicitud de datos |
-| Confirmar pedido | Confirmación de orden |
-| Tiempos de entrega | Información de envío |
-| Despedida | Agradecimiento y cierre |
+| Situación          | Plantilla Sugerida      |
+| ------------------ | ----------------------- |
+| Primer contacto    | Saludo corporativo      |
+| Pedir información  | Solicitud de datos      |
+| Confirmar pedido   | Confirmación de orden   |
+| Tiempos de entrega | Información de envío    |
+| Despedida          | Agradecimiento y cierre |
 
 > 💡 Los administradores pueden crear nuevas plantillas en `/admin/templates`
 
@@ -201,6 +215,7 @@ Mensajes predefinidos para situaciones comunes. Ahorran tiempo y mantienen consi
 ## Cerrar Conversaciones
 
 ### Cuándo Cerrar
+
 - ✅ El cliente confirmó que no necesita más ayuda
 - ✅ Se completó la venta
 - ✅ El cliente no responde después de 24-48 horas
@@ -214,6 +229,7 @@ Mensajes predefinidos para situaciones comunes. Ahorran tiempo y mantienen consi
 4. La conversación pasa al historial de reportes
 
 ### Después del Cierre
+
 - La conversación aparece en `/admin/reports`
 - El resumen de IA queda guardado
 - Si el cliente escribe de nuevo, se abre una nueva conversación
@@ -224,11 +240,11 @@ Mensajes predefinidos para situaciones comunes. Ahorran tiempo y mantienen consi
 
 ### ⏱️ Tiempos de Respuesta
 
-| Prioridad | Tiempo Máximo | Indicador |
-|-----------|---------------|-----------|
-| Urgente (🔴) | < 5 minutos | Punto rojo parpadeante |
-| Normal | < 15 minutos | Sin indicador especial |
-| Seguimiento | < 24 horas | Etiqueta "Seguimiento" |
+| Prioridad    | Tiempo Máximo | Indicador              |
+| ------------ | ------------- | ---------------------- |
+| Urgente (🔴) | < 5 minutos   | Punto rojo parpadeante |
+| Normal       | < 15 minutos  | Sin indicador especial |
+| Seguimiento  | < 24 horas    | Etiqueta "Seguimiento" |
 
 ### 💬 Comunicación Efectiva
 
@@ -266,6 +282,7 @@ Mensajes predefinidos para situaciones comunes. Ahorran tiempo y mantienen consi
 ### 🔄 Devolver a la IA
 
 Si la conversación ya no requiere atención humana:
+
 1. Haz clic en **"Retomar IA"**
 2. Sofía continuará atendiendo automáticamente
 3. Útil para consultas simples que llegaron por error
@@ -275,14 +292,17 @@ Si la conversación ya no requiere atención humana:
 ## 🆘 Soporte
 
 ### Problemas Técnicos
+
 - Contacta al administrador del sistema
 - Reporta errores con capturas de pantalla
 
 ### Dudas Operativas
+
 - Consulta con tu supervisor de sucursal
 - Revisa la sección de productos en `/admin/products`
 
 ### Cambio de Contraseña
+
 - Ve al dashboard y haz clic en **"Mi Contraseña"**
 - O solicita al administrador/supervisor
 
@@ -291,6 +311,7 @@ Si la conversación ya no requiere atención humana:
 ## 📊 Tu Desempeño
 
 Las métricas que se registran incluyen:
+
 - Conversaciones atendidas
 - Tiempo promedio de respuesta
 - Conversaciones cerradas como "Ganado"
@@ -300,5 +321,5 @@ Las métricas que se registran incluyen:
 
 ---
 
-*Última actualización: Enero 2026*
-*Versión: 1.0*
+_Última actualización: Enero 2026_
+_Versión: 1.0_

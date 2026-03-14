@@ -10,20 +10,21 @@
 
 El sistema **Frank Chat ELECSA** está **funcionalmente completo** y listo para producción con algunas correcciones de seguridad recomendadas.
 
-| Categoría | Estado | Detalles |
-|-----------|--------|----------|
-| Compilación | ✅ | Build exitoso, 0 errores TypeScript |
-| Funcionalidad Core | ✅ | Webhook, IA, escalación, multi-sucursal |
-| Autenticación | ✅ | Firebase Auth + roles + cambio obligatorio |
-| UI Dashboard | ✅ | Login, chat, gestión agentes, templates |
-| Documentación | ✅ | Guía completa de agentes, env template |
-| **Seguridad API** | ⚠️ | **Endpoints admin/debug sin protección** |
+| Categoría          | Estado | Detalles                                   |
+| ------------------ | ------ | ------------------------------------------ |
+| Compilación        | ✅     | Build exitoso, 0 errores TypeScript        |
+| Funcionalidad Core | ✅     | Webhook, IA, escalación, multi-sucursal    |
+| Autenticación      | ✅     | Firebase Auth + roles + cambio obligatorio |
+| UI Dashboard       | ✅     | Login, chat, gestión agentes, templates    |
+| Documentación      | ✅     | Guía completa de agentes, env template     |
+| **Seguridad API**  | ⚠️     | **Endpoints admin/debug sin protección**   |
 
 ---
 
 ## ✅ Verificaciones Completadas
 
 ### 1. Compilación y Build
+
 ```
 ✓ TypeScript: Sin errores
 ✓ ESLint: Sin errores de código (solo warnings de config)
@@ -32,6 +33,7 @@ El sistema **Frank Chat ELECSA** está **funcionalmente completo** y listo para 
 ```
 
 ### 2. Configuración de Entorno
+
 ```
 ✓ .env en .gitignore
 ✓ Template de variables disponible
@@ -42,6 +44,7 @@ El sistema **Frank Chat ELECSA** está **funcionalmente completo** y listo para 
 ### 3. Flujos Críticos
 
 #### Webhook de Twilio (`/api/twilio/webhook`)
+
 - ✅ Recibe mensajes entrantes
 - ✅ Crea/actualiza contactos
 - ✅ Gestiona conversaciones
@@ -51,17 +54,20 @@ El sistema **Frank Chat ELECSA** está **funcionalmente completo** y listo para 
 - ✅ Maneja estados sin sucursal
 
 #### Sistema de Roles
+
 - ✅ `agent`: Ve solo su(s) sucursal(es)
 - ✅ `supervisor`: Ve todas las sucursales
 - ✅ `admin`: Acceso total + gestión de agentes
 
 #### Autenticación
+
 - ✅ Login con Firebase Auth
 - ✅ Verificación de agentes activos
 - ✅ Cambio obligatorio de contraseña en primer login
 - ✅ Logout automático si agente desactivado
 
 ### 4. Dashboard
+
 ```
 ✓ Login funcional
 ✓ Lista de conversaciones con filtros
@@ -74,6 +80,7 @@ El sistema **Frank Chat ELECSA** está **funcionalmente completo** y listo para 
 ```
 
 ### 5. Documentación
+
 ```
 ✓ GUIA_AGENTES.md (305 líneas) - Completa
 ✓ env-example-template.txt - Actualizado
@@ -88,13 +95,13 @@ El sistema **Frank Chat ELECSA** está **funcionalmente completo** y listo para 
 
 Los siguientes endpoints están **expuestos públicamente** sin verificación de sesión:
 
-| Endpoint | Riesgo | Acción Recomendada |
-|----------|--------|-------------------|
-| `/api/admin/clearAll` | 🔴 ALTO | Elimina TODAS las conversaciones |
-| `/api/admin/clearAllRecursive` | 🔴 ALTO | Elimina TODO incluyendo logs |
-| `/api/debug` | 🟡 MEDIO | Expone estado de variables env |
-| `/api/debug-*` | 🟡 MEDIO | Acceso a datos internos |
-| `/api/cron/close-inactive` | 🟢 BAJO | Cierra conversaciones inactivas |
+| Endpoint                       | Riesgo   | Acción Recomendada               |
+| ------------------------------ | -------- | -------------------------------- |
+| `/api/admin/clearAll`          | 🔴 ALTO  | Elimina TODAS las conversaciones |
+| `/api/admin/clearAllRecursive` | 🔴 ALTO  | Elimina TODO incluyendo logs     |
+| `/api/debug`                   | 🟡 MEDIO | Expone estado de variables env   |
+| `/api/debug-*`                 | 🟡 MEDIO | Acceso a datos internos          |
+| `/api/cron/close-inactive`     | 🟢 BAJO  | Cierra conversaciones inactivas  |
 
 **Solución recomendada:**
 
@@ -104,17 +111,18 @@ Los siguientes endpoints están **expuestos públicamente** sin verificación de
 ```typescript
 // Ejemplo de protección con API Key
 export async function POST(request: NextRequest) {
-    const apiKey = request.headers.get('x-admin-api-key');
-    if (apiKey !== process.env.ADMIN_API_KEY) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    // ... resto del código
+  const apiKey = request.headers.get("x-admin-api-key");
+  if (apiKey !== process.env.ADMIN_API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // ... resto del código
 }
 ```
 
 ### 🟡 MEDIO: Endpoints de Debug deberían deshabilitarse
 
 En producción, es recomendable:
+
 - Desactivar `/api/debug` que expone información sensible
 - Desactivar `/api/debug-conversations`, `/api/debug-messages`, etc.
 
@@ -136,6 +144,7 @@ Admin/Agents:    232 kB
 ## 🚀 Checklist Pre-Producción
 
 ### Obligatorio
+
 - [ ] Configurar variables de entorno en Vercel
   - `FIREBASE_PROJECT_ID`
   - `FIREBASE_CLIENT_EMAIL`
@@ -151,6 +160,7 @@ Admin/Agents:    232 kB
 - [ ] Crear al menos 1 admin en Firebase Auth
 
 ### Recomendado
+
 - [ ] Eliminar o proteger endpoints `/api/admin/*`
 - [ ] Eliminar o proteger endpoints `/api/debug*`
 - [ ] Configurar dominio personalizado
@@ -159,6 +169,7 @@ Admin/Agents:    232 kB
 - [ ] Agregar ADMIN_API_KEY para endpoints sensibles
 
 ### Opcional
+
 - [ ] Configurar alertas de Vercel para errores
 - [ ] Configurar backup de Firestore
 - [ ] Configurar monitoreo de costos OpenAI
@@ -174,10 +185,11 @@ Admin/Agents:    232 kB
 3. ⚠️ **APIs administrativas:** Requieren protección
 
 **Recomendación:** Proceder con el despliegue después de:
+
 1. Eliminar o proteger los endpoints `/api/admin/*` y `/api/debug*`
 2. Verificar todas las variables de entorno en Vercel
 3. Probar el webhook de Twilio con el nuevo URL
 
 ---
 
-*Generado por Frank Chat Audit System - v1.0*
+_Generado por Frank Chat Audit System - v1.0_

@@ -5,6 +5,7 @@ Esta plantilla contiene todos los artefactos necesarios para implementar la **Me
 ## Que es Integra Evolucionada
 
 Integra Evolucionada es una metodologia de desarrollo colaborativo entre humanos y sistemas de IA, optimizada para proyectos que utilizan:
+
 - Google Workspace (Docs, Sheets, Drive)
 - Firebase (Firestore, Auth, Cloud Functions)
 - Google Cloud Platform
@@ -20,24 +21,28 @@ Integra Evolucionada es una metodologia de desarrollo colaborativo entre humanos
 ## Roles de IA
 
 ### CODEX - Arquitecto de Soluciones
+
 - Gestiona el proyecto y estructura SPECs
 - Valida entregables y genera PROYECTO.md
 - Explica el porque de cada decision tecnica
 - Supervisa sincronizacion entre VS Code, Continue y GitHub
 
 ### SOFIA - Constructora Principal
+
 - Ejecuta, prueba, documenta y valida entregables tecnicos
 - Crea archivos y carpetas directamente en el workspace
 - Supervisa commits automaticos y verifica integridad del codigo
 - Puede solicitar mentoria a GEMINI
 
 ### GEMINI - Ingeniero Mentor
+
 - Propone optimizaciones y audita decisiones tecnicas
 - Verifica compatibilidad de dependencias y calidad del codigo
 - Aplica estrictamente las convenciones de `meta/SPEC-CODIGO.md`
 - Actua como mentor solo cuando se solicita explicitamente
 
 ### FRANK - Director de Proyecto (humano)
+
 - Supervisa, valida y aprueba entregables
 - Su aprobacion convierte una tarea en estado `[X] Aprobado`
 - No modifica estados en PROYECTO.md directamente
@@ -45,17 +50,20 @@ Integra Evolucionada es una metodologia de desarrollo colaborativo entre humanos
 ## 🆕 Novedades en v2.0
 
 ### Sistema de Gestión Avanzada
+
 - **Estados Granulares**: 8 estados para tracking preciso ([ ] [~] [/] [V] [R] [✓] [X] + [!] [?])
 - **Soft Gates**: 4 puertas de calidad obligatorias antes de completar tareas
 - **Priorización Inteligente**: Metadatos, dependencias y fórmulas de priorización
 - **Handoff entre Agentes**: Protocolo estructurado de comunicación
 
 ### Documentación Enriquecida
+
 - **Checkpoints con Métricas**: Templates con decisiones técnicas y KPIs
 - **ADR (Architecture Decision Records)**: Documentación de decisiones arquitectónicas
 - **Versionado Semántico**: MAJOR.MINOR.PATCH formalizado
 
 ### Herramientas y Automatización
+
 - **Dashboard Automático**: Script genera métricas visuales desde PROYECTO.md
 - **Continue.dev Config**: Configuración lista para usar
 - **Onboarding Guide**: Guía completa para nuevos agentes
@@ -69,6 +77,7 @@ Copia todo el contenido de `metodologia-integra/` a la raiz de tu nuevo proyecto
 ### 2. Adaptar Archivos de Plantilla
 
 En la carpeta `templates/`:
+
 - `PROYECTO.md.template` → Renombrar a `PROYECTO.md` y personalizar con tu backlog
 - `.gitignore.template` → Renombrar a `.gitignore`
 - `.env.example.template` → Renombrar a `.env.example` y agregar tus variables
@@ -101,7 +110,9 @@ tu-proyecto/
 ### 4. Configurar las IAs
 
 #### Para ChatGPT (CODEX/GEMINI)
+
 Carga el archivo `arquitectura_distribuida_v_1.md` como contexto inicial y proporciona:
+
 ```
 Rol: CODEX (Arquitecto de Soluciones)
 Objetivo: Gestionar el proyecto [NOMBRE] siguiendo Metodologia Integra Evolucionada
@@ -109,7 +120,9 @@ Contexto: [Breve descripcion del proyecto]
 ```
 
 #### Para Claude/Continue (SOFIA)
+
 En `.continue/config.json`, agrega:
+
 ```json
 {
   "systemMessage": "Actua como SOFIA, Constructora Principal del proyecto, siguiendo Metodologia Integra Evolucionada",
@@ -122,7 +135,9 @@ En `.continue/config.json`, agrega:
 ```
 
 #### Para Gemini Code Assist (GEMINI)
+
 Configura como mentor con acceso a:
+
 - `meta/SPEC-CODIGO.md` (convenciones)
 - `context/SPEC-SEGURIDAD.md`
 - `context/SPEC-TESTING.md`
@@ -163,20 +178,24 @@ metodologia-integra/
 - **Continue.dev**: Para contexto compartido entre agentes
 
 ### Editores y AI Coding Assistants
+
 - **VS Code** con extension **Continue** (SOFIA)
 - **Cursor** (alternativa con IA integrada)
 - **Gemini Code Assist** para Google Cloud Platform
 
 ### AI Chat Interfaces
+
 - **ChatGPT** (CODEX/GEMINI roles)
 - **Claude** (CODEX/SOFIA roles)
 - **Gemini Advanced** (GEMINI role, especialmente para ecosistema Google)
 
 ### Control de Versiones
+
 - **GitHub** (repositorios privados recomendados)
 - **GitLab** (alternativa)
 
 ### Proyecto y Documentacion
+
 - **Google Docs** para documentacion colaborativa
 - **Google Sheets** para datos tabulares y seguimiento
 - **Notion** (alternativa para documentacion)
@@ -193,26 +212,31 @@ metodologia-integra/
 ## Buenas Practicas
 
 ### 1. Checkpoints Regulares
+
 - Crea un checkpoint al final de cada sesion de trabajo
 - Usa `meta/plantilla_control.md` como base
 - Documenta decisiones tecnicas, riesgos y proximos pasos
 
 ### 2. SPECs Detallados
+
 - Tareas complejas (>4h estimadas) requieren un SPEC
 - Usa `meta/plantilla_SPEC.md`
 - Incluye criterios de aceptacion medibles
 
 ### 3. Seguridad Desde el Inicio
+
 - Nunca commitees archivos .env o .env.local
 - Revisa `context/SPEC-SEGURIDAD.md` antes de deployment
 - Ejecuta `pnpm audit` regularmente
 
 ### 4. Testing Continuo
+
 - Sigue `context/SPEC-TESTING.md`
 - Coverage minimo: 80% en logica de negocio
 - Tests E2E para flujos criticos
 
 ### 5. Codigo Limpio
+
 - Sigue `meta/SPEC-CODIGO.md` estrictamente
 - Codigo auto-documentado > comentarios
 - TypeScript con tipos explicitos en APIs publicas
@@ -222,6 +246,7 @@ metodologia-integra/
 Esta metodologia fue desarrollada por Frank Saavedra y el equipo de IAs: CODEX, SOFIA y GEMINI.
 
 Para reportar problemas o contribuir mejoras:
+
 1. Crea un issue en el repositorio de la plantilla
 2. Propone cambios via Pull Request
 3. Documenta casos de uso en `propuestas/`
@@ -229,36 +254,43 @@ Para reportar problemas o contribuir mejoras:
 ## 📚 Documentación Completa
 
 ### Archivos Principales
+
 - `arquitectura_distribuida_v_1.md` - Arquitectura completa del sistema
 - `ONBOARDING.md` - Guía de inicio para nuevos agentes
 
 ### Gestión de Tareas
+
 - `meta/sistema-estados.md` - Definición de 8 estados
 - `meta/soft-gates.md` - 4 puertas de calidad
 - `meta/sistema-priorizacion.md` - Priorización y metadatos
 - `meta/sistema-handoff.md` - Protocolo de comunicación
 
 ### Calidad y Estándares
+
 - `meta/SPEC-CODIGO.md` - Convenciones de código
 - `meta/criterios_calidad.md` - Criterios de calidad
 - `meta/plantilla_SPEC.md` - Template para SPECs
 
 ### Documentación de Decisiones
+
 - `context/decisions/README.md` - Sistema ADR
 - `context/decisions/ADR-TEMPLATE.md` - Template ADR
 - `context/decisions/ADR-001-ejemplo-uso-pnpm.md` - Ejemplo
 
 ### Checkpoints y Versionado
+
 - `meta/plantilla-checkpoint-enriquecido.md` - Template de checkpoint
 - `meta/versionado-semantico.md` - Reglas de versionado
 
 ### Automatización
+
 - `scripts/generate-dashboard.js` - Generador de dashboard
 - `templates/continuerc-template.json` - Config Continue.dev
 
 ## Changelog de la Metodologia
 
 ### v2.0 (2025-11-08)
+
 - Sistema de gestión avanzada: 8 estados granulares, soft gates, priorización inteligente
 - Protocolo de handoff estructurado entre agentes
 - Checkpoints enriquecidos con métricas y decisiones técnicas
@@ -269,12 +301,14 @@ Para reportar problemas o contribuir mejoras:
 - Guía completa de onboarding para nuevos agentes
 
 ### v1.2 (2025-11-08)
+
 - Agregada seccion VII: Estándares de Codigo y Calidad
 - Integracion de `meta/SPEC-CODIGO.md` como documento rector
 - Actualizados artefactos obligatorios (SPECs de Seguridad, Testing, Codigo)
 - GEMINI ahora aplica SPEC-CODIGO.md en cada revision
 
 ### v1.1 (original)
+
 - Version inicial de Arquitectura Distribuida - Sistema Integra Evolucionada
 
 ---

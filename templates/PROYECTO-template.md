@@ -1,12 +1,14 @@
 # PROYECTO: [Nombre del Proyecto] (Cliente: [Nombre del Cliente])
 
 ## Flujo de estados
+
 - [ ] Pendiente
 - [/] En Progreso
 - [✓] Hecho
-- [X] Aprobado
+- [x] Aprobado
 
 ## Backlog inicial
+
 - [ ] Bootstrap de estructura y artefactos
 - [ ] Definición de Esquema de Datos y Lógica de Negocio
   - [ ] Implementar interfaces y tipos de datos para todas las entidades principales
@@ -24,10 +26,12 @@
 - [ ] Revisión de criterios de calidad al inicio de cada sprint/entrega
 
 ## Actualización [YYYY-MM-DD]
+
 - [Describir cambios importantes del día/sprint]
 - [Tooling, decisiones arquitectónicas, etc.]
 
 ### Artefactos Generados (Metodología Integra)
+
 - [ ] `.aiexclude` - Optimización de contexto AI
 - [ ] `.env.example` - Variables de entorno documentadas
 - [ ] `.gitignore` - Protecciones de seguridad
@@ -40,6 +44,7 @@
 - [ ] `context/dossier_tecnico.md` - Bitácora técnica viva
 
 ## Backlog Fase 2: [Nombre de la Fase]
+
 - [ ] [Tarea 1]
   - [ ] Subtarea 1.1
   - [ ] Subtarea 1.2
@@ -48,8 +53,10 @@
   - [ ] Subtarea 2.2
 
 ## Actualización [YYYY-MM-DD]
+
 - [Describir hitos alcanzados]
 - [Métricas importantes]
 
 ## Notas y Referencias
+
 - [Links importantes, documentos de referencia, etc.]
