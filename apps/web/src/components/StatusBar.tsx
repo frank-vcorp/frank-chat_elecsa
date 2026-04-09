@@ -140,7 +140,7 @@ export default function StatusBar() {
 
   return (
     <div
-      className={`h-7 flex items-center justify-between px-3 text-white text-xs select-none transition-colors duration-300 ${
+      className={`flex flex-col gap-1 px-2 py-1 text-white text-[11px] select-none transition-colors duration-300 md:h-7 md:flex-row md:items-center md:justify-between md:px-3 md:py-0 md:text-xs ${
         stats.needsHuman > 0 && isFlashing
           ? "bg-red-600 animate-pulse"
           : stats.needsHuman > 0
@@ -149,11 +149,11 @@ export default function StatusBar() {
       }`}
     >
       {/* Lado izquierdo */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar md:gap-4">
         {/* Alerta - Necesitan humano */}
         {stats.needsHuman > 0 && (
           <div
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded font-medium ${
+            className={`flex shrink-0 items-center gap-1.5 px-2 py-1 rounded font-medium whitespace-nowrap ${
               isFlashing
                 ? "bg-white text-red-600 animate-bounce"
                 : "bg-red-500/80 text-white"
@@ -169,14 +169,14 @@ export default function StatusBar() {
         )}
 
         {/* Total conversaciones */}
-        <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+        <div className="flex shrink-0 items-center gap-1.5 hover:bg-white/10 px-2 py-1 rounded cursor-default whitespace-nowrap">
           <MessageSquare size={12} />
           <span>{stats.total} activas</span>
         </div>
 
         {/* Mensajes sin leer */}
         {stats.unreadTotal > 0 && (
-          <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+          <div className="flex shrink-0 items-center gap-1.5 hover:bg-white/10 px-2 py-1 rounded cursor-default whitespace-nowrap">
             <Mail size={12} />
             <span>{stats.unreadTotal} sin leer</span>
           </div>
@@ -184,21 +184,21 @@ export default function StatusBar() {
       </div>
 
       {/* Lado derecho */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar md:gap-4">
         {/* IA */}
-        <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+        <div className="flex shrink-0 items-center gap-1.5 hover:bg-white/10 px-2 py-1 rounded cursor-default whitespace-nowrap">
           <Bot size={12} />
           <span>{stats.assignedToAi} IA</span>
         </div>
 
         {/* Humanos */}
-        <div className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">
+        <div className="flex shrink-0 items-center gap-1.5 hover:bg-white/10 px-2 py-1 rounded cursor-default whitespace-nowrap">
           <Users size={12} />
           <span>{stats.assignedToHuman} humanos</span>
         </div>
 
         {/* Versión */}
-        <div className="text-white/70 border-l border-white/30 pl-3 ml-2">
+        <div className="hidden text-white/70 border-l border-white/30 pl-3 ml-2 md:block">
           Hecho con ❤️ por vCorp
         </div>
       </div>

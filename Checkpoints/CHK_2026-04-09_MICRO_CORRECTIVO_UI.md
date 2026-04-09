@@ -76,12 +76,27 @@ style={{ minWidth: 36, minHeight: 36 }}
 
 ---
 
+### Fix 4 — `apps/web/src/components/StatusBar.tsx` (footer móvil)
+**Problema:** El pie de página operativo amontonaba métricas y branding en una sola línea con altura fija, provocando solapamiento visual en pantallas pequeñas.
+
+**Corrección:**
+- El contenedor deja de usar una altura rígida en móvil y pasa a composición en dos franjas compactas.
+- Ambos grupos de métricas usan `overflow-x-auto no-scrollbar` para permitir desplazamiento horizontal sin romper el layout.
+- Los chips reciben `whitespace-nowrap` y `shrink-0` para evitar cortes y amontonamiento.
+- El branding secundario "Hecho con vCorp" se oculta en móvil y permanece visible en desktop.
+- Desktop conserva el patrón de barra compacta horizontal.
+
+**Archivos:** `apps/web/src/components/StatusBar.tsx`
+
+---
+
 ## Archivos Modificados
 | Archivo | Cambios |
 |---------|---------|
 | `apps/web/src/components/ChatWindow.tsx` | Fix 1 (Tags/Plantillas hover→click) + Fix 3a (safe area notas) + Fix 3b (affordance eliminar nota) |
 | `apps/web/src/app/dashboard/layout.tsx` | Fix 2 (header safe area patrón spacer) |
 | `apps/web/src/app/admin/layout.tsx` | Fix 2 (header safe area patrón spacer) |
+| `apps/web/src/components/StatusBar.tsx` | Fix 4 (footer móvil compacto, legible y sin amontonamiento) |
 
 ---
 
