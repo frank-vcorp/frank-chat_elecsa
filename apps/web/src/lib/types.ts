@@ -42,6 +42,9 @@ export interface Contact {
 
 export type ConversationStatus = "open" | "resolved" | "pending" | "closed";
 
+/** Fuente del nombre visible de la conversación. Prioridad: manual > whatsapp > phone */
+export type DisplayNameSource = "manual" | "whatsapp" | "phone";
+
 export interface Conversation {
   id: string;
   contactId: string;
@@ -55,6 +58,9 @@ export interface Conversation {
   tags?: string[];
   summary?: string;
   summarizedAt?: any;
+  // IMPL-20260409-01: Nombre visible de conversación (SPEC-ARCH-20260409-11)
+  displayName?: string;
+  displayNameSource?: DisplayNameSource;
 }
 
 export type SenderType = "agent" | "contact" | "system";

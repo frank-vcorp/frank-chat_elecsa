@@ -167,9 +167,10 @@ export default function ChatList({
       ) {
         const newConv = needsHumanConvs[0]; // La más reciente
         // playNotificationSound(); // ❌ Removido - centralizado en StatusBar (QA-20260128-01)
+        const name = newConv.displayName || newConv.contactId;
         sendNotification(
           "🔴 Nueva conversación requiere atención",
-          `${newConv.contactId} necesita ayuda${newConv.branch ? ` (${BRANCH_NAMES[newConv.branch]})` : ""}`,
+          `${name} necesita ayuda${newConv.branch ? ` (${BRANCH_NAMES[newConv.branch]})` : ""}`,
         );
       }
 
@@ -187,10 +188,15 @@ export default function ChatList({
     soundEnabled,
   ]);
 
+  /** IMPL-20260409-01: Resuelve el nombre visible con prioridad manual > whatsapp > phone */
+  const resolveDisplayName = (conv: Conversation): string =>
+    conv.displayName || conv.contactId;
+
   const filteredConversations = conversations.filter((c) => {
-    const matchesSearch = c.contactId
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const name = resolveDisplayName(c);
+    const matchesSearch =
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.contactId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTags =
       filterTags.length === 0 ||
       (c.tags && filterTags.every((t) => c.tags?.includes(t)));
@@ -456,7 +462,7 @@ export default function ChatList({
                     : "bg-gradient-to-br from-indigo-500 to-blue-600 shadow-indigo-900/20"
                 }`}
               >
-                {conv.contactId.substring(0, 2).toUpperCase()}
+                {resolveDisplayName(conv).substring(0, 2).toUpperCase()}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -464,7 +470,7 @@ export default function ChatList({
                   <h3
                     className={`text-sm font-semibold truncate ${selectedConversationId === conv.id ? "text-indigo-200" : "text-slate-200"}`}
                   >
-                    {conv.contactId}
+                    {resolveDisplayName(conv)}
                   </h3>
                   <span className="text-[10px] text-slate-500 flex-shrink-0 ml-2 font-medium">
                     {formatTime(conv.lastMessageAt)}
@@ -479,12 +485,14 @@ export default function ChatList({
                         : "text-slate-500"
                     }`}
                   >
-                    {/* We can show the last message preview here if available in the future, for now showing date */}
-                    {conv.lastMessageAt?.toDate().toLocaleDateString("es-MX", {
-                      day: "numeric",
-                      month: "short",
-                      timeZone: "America/Mexico_City",
-                    })}
+                    {/* IMPL-20260409-01: Mostrar número como secundario cuando existe displayName */}
+                    {conv.displayName && conv.displayName !== conv.contactId
+                      ? conv.contactId
+                      : conv.lastMessageAt?.toDate().toLocaleDateString("es-MX", {
+                          day: "numeric",
+                          month: "short",
+                          timeZone: "America/Mexico_City",
+                        })}
                   </p>
 
                   {conv.unreadCount > 0 && (

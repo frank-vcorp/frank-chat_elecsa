@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
       console.log("[Webhook] Creating new conversation");
       const newConvRef = conversationsRef.doc();
       conversationId = newConvRef.id;
+      // IMPL-20260409-01: Poblar displayName desde WhatsApp si existe (SPEC-ARCH-20260409-11)
       const newConversation: Conversation = {
         id: conversationId,
         contactId: phoneNumber,
@@ -149,18 +150,29 @@ export async function POST(request: NextRequest) {
         lastMessage: body,
         lastMessageAt: FieldValue.serverTimestamp() as any,
         unreadCount: 1,
+        ...(profileName
+          ? { displayName: profileName, displayNameSource: "whatsapp" }
+          : {}),
       };
       await newConvRef.set(newConversation);
     } else {
       console.log("[Webhook] Updating existing conversation");
       const convDoc = activeConvQuery.docs[0];
       conversationId = convDoc.id;
+      // IMPL-20260409-11-B: Backfill displayName si la conversación existente aún no tiene nombre visible
+      const existingData = convDoc.data();
+      const backfillName: Record<string, unknown> = {};
+      if (!existingData.displayName && profileName) {
+        backfillName.displayName = profileName;
+        backfillName.displayNameSource = "whatsapp";
+      }
       await convDoc.ref.update({
         lastMessage: body,
         lastMessageAt: FieldValue.serverTimestamp(),
         unreadCount: FieldValue.increment(1),
         // Ensure the conversation stays assigned to whoever it was assigned to (AI, human, or branch)
         assignedTo: convDoc.data().assignedTo || "ai",
+        ...backfillName,
       });
     }
 
