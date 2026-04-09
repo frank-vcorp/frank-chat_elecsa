@@ -234,7 +234,7 @@ export default function ProductsPage() {
             {contextDocs.map((doc) => (
               <li
                 key={doc.id}
-                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 hover:bg-gray-50 transition-colors gap-3"
               >
                 <div className="flex items-center gap-3">
                   <div

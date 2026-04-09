@@ -353,12 +353,12 @@ export default function AgentsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Gestión de Agentes</h2>
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
+        <h2 className="text-xl md:text-2xl font-bold">Gestión de Agentes</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 md:px-4 rounded hover:bg-blue-700 text-sm"
           >
             <UserPlus size={16} />
             Crear Agente
@@ -367,7 +367,7 @@ export default function AgentsPage() {
             <button
               onClick={handleInitializeSofia}
               disabled={initializing}
-              className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+              className="flex items-center gap-2 bg-purple-600 text-white px-3 py-2 md:px-4 rounded hover:bg-purple-700 disabled:opacity-50 text-sm"
             >
               <Bot size={16} />
               {initializing ? "Inicializando..." : "Inicializar Sofía"}
@@ -376,9 +376,10 @@ export default function AgentsPage() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-200px)] gap-6">
-        {/* Agent List */}
-        <div className="w-1/3 bg-white rounded shadow p-4 overflow-auto">
+      {/* Layout responsive: columna en móvil, split en desktop */}
+      <div className="flex flex-col md:flex-row md:h-[calc(100vh-200px)] gap-4 md:gap-6">
+        {/* Agent List — w-full en móvil, w-1/3 en desktop */}
+        <div className="w-full md:w-1/3 bg-white rounded shadow p-4 overflow-auto max-h-56 md:max-h-none">
           <h3 className="text-lg font-semibold mb-4">
             Agentes ({agents.length})
           </h3>
@@ -538,7 +539,7 @@ export default function AgentsPage() {
               {/* Detalles del agente humano */}
               {selectedAgent.type === "human" && (
                 <div className="space-y-4 mb-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-gray-50 p-3 rounded">
                       <label className="block text-xs font-medium text-gray-500 mb-1">
                         Email

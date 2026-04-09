@@ -83,6 +83,14 @@
 - [ ] Pendiente: Crear agente de prueba (Ana Díaz → Querétaro)
 - [✓] Checkpoint: `Checkpoints/CHK_2025-01-15_BRANCH_ROUTING.md`
 
+## Actualización ARQUITECTURA (2026-04-09)
+
+- [/] Rediseño UI autenticada mobile-first para PWA
+  - [✓] SPEC creada: `context/SPECs/SPEC-ARCH-20260409-02-ui-pwa-mobile-first.md`
+  - [/] Implementación UI responsive completada y pendiente de validación visual final en dispositivo/navegador
+  - [✓] Interconsultas consideradas: Deby + Gemini
+  - [✓] Checkpoints creados: `Checkpoints/CHK_2026-04-09_SPRINT1_SHELL.md`, `Checkpoints/CHK_2026-04-09_SPRINT2_DASHBOARD.md`, `Checkpoints/CHK_2026-04-09_SPRINT3_ADMIN.md`, `Checkpoints/CHK_2026-04-09_CIERRE.md`
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)

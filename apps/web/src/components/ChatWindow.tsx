@@ -450,7 +450,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   return (
     <div className="flex flex-col h-full bg-slate-950 relative font-sans">
       {/* Header with Glassmorphism */}
-      <div className="bg-slate-900/80 backdrop-blur-md px-6 py-4 border-b border-slate-800 flex justify-between items-center shadow-sm z-10 sticky top-0">
+      <div className="bg-slate-900/80 backdrop-blur-md px-4 md:px-6 py-3 md:py-4 border-b border-slate-800 flex justify-between items-center shadow-sm z-10 sticky top-0 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
             {conversation.contactId.substring(0, 2).toUpperCase()}
@@ -503,9 +503,18 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         </div>
       </div>
 
-      {/* Notes Panel (Glassy & Animated) */}
+      {/* Notes Panel — bottom sheet en móvil, overlay en desktop — CA-4, CA-5 */}
       {showNotes && (
-        <div className="absolute right-4 top-[80px] bottom-4 w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 shadow-2xl z-20 flex flex-col animate-in slide-in-from-right-10 fade-in duration-300 rounded-2xl overflow-hidden">
+        <div className="
+          fixed md:absolute
+          inset-x-0 bottom-0 md:inset-x-auto
+          md:right-4 md:top-[80px] md:bottom-4 md:w-80
+          h-[65vh] md:h-auto
+          bg-slate-900/95 backdrop-blur-xl border border-slate-700/50
+          shadow-2xl z-20 flex flex-col
+          animate-in slide-in-from-bottom-10 md:slide-in-from-right-10 fade-in duration-300
+          rounded-t-2xl md:rounded-2xl overflow-hidden
+        ">
           <div className="p-4 border-b border-slate-700/50 bg-slate-800/30">
             <h3 className="font-semibold text-slate-100 flex items-center gap-2">
               <StickyNote size={16} className="text-amber-500" />
@@ -574,9 +583,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         </div>
       )}
 
-      {/* Toolbar (Human Agents Only) */}
+      {/* Toolbar (Human Agents Only) — CA-5 */}
       {(() => conversation.assignedTo !== "ai")() && (
-        <div className="bg-slate-900/50 backdrop-blur-sm px-6 py-3 flex items-center gap-3 border-b border-slate-800 flex-wrap">
+        <div className="bg-slate-900/50 backdrop-blur-sm px-3 md:px-6 py-2.5 flex items-center gap-2 md:gap-3 border-b border-slate-800 overflow-x-auto no-scrollbar flex-shrink-0">
           {/* Attachments */}
           <label
             className="cursor-pointer text-slate-400 hover:text-indigo-400 transition-colors p-2 hover:bg-slate-800 rounded-lg"
@@ -887,8 +896,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area (Mejorado) */}
-      <div className="p-4 bg-slate-950 border-t border-slate-800/50">
+      {/* Input Area — CA-4: visible con teclado virtual, safe area PWA */}
+      <div className="p-3 md:p-4 bg-slate-950 border-t border-slate-800/50 pb-safe flex-shrink-0">
         {/* Quick Replies Panel */}
         {showQuickReplies && (
           <div className="mb-3 bg-slate-900 rounded-xl border border-slate-700 p-3 animate-in slide-in-from-bottom-2 duration-200">

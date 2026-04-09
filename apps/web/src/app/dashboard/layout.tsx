@@ -31,6 +31,7 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -164,15 +165,49 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
+    <div className="flex h-screen h-[100dvh] bg-gray-50 overflow-hidden relative">
+      {/* Overlay móvil — cierra drawer al tocar fuera */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar / Drawer responsive */}
       <aside
-        className={`${
-          sidebarOpen ? "w-64" : "w-20"
-        } bg-gradient-to-b from-gray-900 to-gray-800 text-white transition-all duration-300 flex flex-col shadow-xl`}
+        className={`
+          fixed inset-y-0 left-0 z-40 w-64 flex flex-col
+          bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-xl
+          transition-transform duration-300
+          ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+          md:relative md:inset-y-auto md:left-auto md:z-auto
+          md:translate-x-0
+          ${sidebarOpen ? "md:w-64" : "md:w-16"}
+          md:transition-all
+        `}
       >
-        {/* Logo & Toggle */}
-        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+        {/* Logo & Toggle — Móvil */}
+        <div className="p-4 border-b border-gray-700 flex items-center justify-between min-h-[64px] pt-[calc(1rem+var(--sat))] md:hidden">
+          <div className="flex items-center gap-2">
+            <img
+              src="https://elecsa.com.mx/sites/default/files/LOGO-ELECSA%20mr.png"
+              alt="Elecsa Logo"
+              className="h-8 object-contain bg-white rounded px-1"
+            />
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-1 hover:bg-gray-700 rounded"
+            aria-label="Cerrar menú"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Logo & Toggle — Desktop */}
+        <div className="hidden md:flex p-4 border-b border-gray-700 items-center justify-between min-h-[64px]">
           {sidebarOpen ? (
             <>
               <div className="flex items-center gap-2">
@@ -185,6 +220,7 @@ export default function DashboardLayout({
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="p-1 hover:bg-gray-700 rounded"
+                aria-label="Colapsar sidebar"
               >
                 <X size={20} />
               </button>
@@ -193,6 +229,7 @@ export default function DashboardLayout({
             <button
               onClick={() => setSidebarOpen(true)}
               className="p-1 hover:bg-gray-700 rounded mx-auto"
+              aria-label="Expandir sidebar"
             >
               <Menu size={20} />
             </button>
@@ -200,7 +237,7 @@ export default function DashboardLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -209,16 +246,18 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
                   isActive
                     ? "bg-blue-600 text-white shadow-lg"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
-                } ${!sidebarOpen && "justify-center"}`}
+                } ${!sidebarOpen ? "md:justify-center" : ""}`}
               >
-                <Icon size={20} />
-                {sidebarOpen && (
-                  <span className="font-medium">{item.name}</span>
-                )}
+                <Icon size={20} className="flex-shrink-0" />
+                {/* En móvil siempre visible; en desktop según sidebarOpen */}
+                <span className={`font-medium ${sidebarOpen ? "" : "md:hidden"}`}>
+                  {item.name}
+                </span>
               </Link>
             );
           })}
@@ -226,33 +265,35 @@ export default function DashboardLayout({
 
         {/* User Profile */}
         <div className="p-4 border-t border-gray-700">
-          {sidebarOpen ? (
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center font-bold">
-                {user?.email?.[0].toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {user?.displayName || "Usuario"}
-                </p>
-                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center font-bold mx-auto mb-3">
+          {/* Perfil completo: siempre en móvil, en desktop solo si expandido */}
+          <div className={`flex items-center gap-3 mb-3 ${sidebarOpen ? "" : "md:hidden"}`}>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center font-bold flex-shrink-0">
               {user?.email?.[0].toUpperCase()}
             </div>
-          )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {user?.displayName || "Usuario"}
+              </p>
+              <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+            </div>
+          </div>
+          {/* Avatar solo: desktop colapsado */}
+          <div
+            className={`${sidebarOpen ? "hidden" : "hidden md:flex"} w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full items-center justify-center font-bold mx-auto mb-3`}
+          >
+            {user?.email?.[0].toUpperCase()}
+          </div>
+
           <button
             onClick={() => auth.signOut()}
             className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition-colors ${
-              !sidebarOpen && "justify-center"
+              !sidebarOpen ? "md:justify-center" : ""
             }`}
           >
             <LogOut size={18} />
-            {sidebarOpen && (
-              <span className="text-sm font-medium">Cerrar Sesión</span>
-            )}
+            <span className={`text-sm font-medium ${sidebarOpen ? "" : "md:hidden"}`}>
+              Cerrar Sesión
+            </span>
           </button>
           <button
             onClick={() => {
@@ -260,13 +301,13 @@ export default function DashboardLayout({
               if (user) fetchCurrentPassword(user.uid);
             }}
             className={`flex items-center gap-2 w-full px-3 py-2 mt-2 rounded-lg bg-amber-600 hover:bg-amber-700 transition-colors ${
-              !sidebarOpen && "justify-center"
+              !sidebarOpen ? "md:justify-center" : ""
             }`}
           >
             <Key size={18} />
-            {sidebarOpen && (
-              <span className="text-sm font-medium">Mi Contraseña</span>
-            )}
+            <span className={`text-sm font-medium ${sidebarOpen ? "" : "md:hidden"}`}>
+              Mi Contraseña
+            </span>
           </button>
           {sidebarOpen && (
             <div className="mt-4 text-center text-[10px] text-gray-500">
@@ -276,8 +317,30 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
+      {/* Contenedor principal */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {/* Top bar móvil */}
+        <header
+          className="md:hidden flex items-center gap-3 h-14 px-4 bg-gray-900 text-white border-b border-gray-700 flex-shrink-0"
+          style={{ paddingTop: "var(--sat)" }}
+        >
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+            aria-label="Abrir menú de navegación"
+          >
+            <Menu size={22} />
+          </button>
+          <img
+            src="https://elecsa.com.mx/sites/default/files/LOGO-ELECSA%20mr.png"
+            alt="Elecsa Logo"
+            className="h-7 object-contain bg-white rounded px-1"
+          />
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
+      </div>
 
       {/* Password Modal for current user */}
       {showPasswordModal && (

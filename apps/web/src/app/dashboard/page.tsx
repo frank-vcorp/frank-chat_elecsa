@@ -4,12 +4,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import ChatList from "@/components/ChatList";
 import ChatWindow from "@/components/ChatWindow";
 import StatusBar from "@/components/StatusBar";
-import { MessageSquareText, X } from "lucide-react";
+import { MessageSquareText, X, ArrowLeft } from "lucide-react";
 
 /**
- * Dashboard Principal con panel redimensionable
- * @description Lista de conversaciones expandible + chat con resize
- * @author IMPL-20250128-01
+ * Dashboard Principal responsive (mobile-first)
+ * @description Single-panel en móvil; split view con resize en desktop.
+ * @author IMPL-20260409-02 — SPEC-ARCH-20260409-02
  */
 export default function DashboardPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -17,13 +17,22 @@ export default function DashboardPage() {
   >();
   const [listWidth, setListWidth] = useState(384); // w-96 = 384px
   const [isResizing, setIsResizing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Ancho mínimo y máximo de la lista
   const MIN_LIST_WIDTH = 280;
   const MAX_LIST_WIDTH = 600;
 
-  // Manejar resize con mouse
+  // Detección de viewport para activar modo móvil (< 768px = md breakpoint)
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Manejar resize con mouse (solo desktop)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
@@ -32,10 +41,8 @@ export default function DashboardPage() {
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isResizing || !containerRef.current) return;
-
       const containerRect = containerRef.current.getBoundingClientRect();
       const newWidth = e.clientX - containerRect.left;
-
       if (newWidth >= MIN_LIST_WIDTH && newWidth <= MAX_LIST_WIDTH) {
         setListWidth(newWidth);
       }
@@ -47,7 +54,6 @@ export default function DashboardPage() {
     setIsResizing(false);
   }, []);
 
-  // Event listeners para resize
   useEffect(() => {
     if (isResizing) {
       document.addEventListener("mousemove", handleMouseMove);
@@ -55,7 +61,6 @@ export default function DashboardPage() {
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
     }
-
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
@@ -64,65 +69,99 @@ export default function DashboardPage() {
     };
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
-  // Cerrar conversación
   const handleCloseConversation = useCallback(() => {
     setSelectedConversationId(undefined);
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-slate-950">
-      {/* Main Content */}
-      <div ref={containerRef} className="flex flex-1 overflow-hidden">
-        {/* Chat List - Se expande cuando no hay conversación seleccionada */}
-        <div
-          className="flex flex-col bg-gray-50 border-r border-gray-700 transition-all duration-200"
-          style={{
-            width: selectedConversationId ? listWidth : "100%",
-            minWidth: selectedConversationId ? MIN_LIST_WIDTH : "100%",
-          }}
-        >
-          <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <MessageSquareText size={20} className="text-blue-600" />
-              Conversaciones
-            </h2>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <ChatList
-              onSelectConversation={setSelectedConversationId}
-              selectedConversationId={selectedConversationId}
-            />
-          </div>
-        </div>
+    <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
 
-        {/* Resize Handle - Solo visible cuando hay conversación */}
-        {selectedConversationId && (
-          <div
-            className="w-1 bg-gray-700 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
-            onMouseDown={handleMouseDown}
-            title="Arrastra para redimensionar"
-          />
-        )}
-
-        {/* Chat Window - Solo visible cuando hay conversación seleccionada */}
-        {selectedConversationId && (
-          <div className="flex-1 flex flex-col bg-slate-950 min-w-0">
-            {/* Botón cerrar conversación */}
-            <div className="absolute top-2 right-2 z-10">
-              <button
-                onClick={handleCloseConversation}
-                className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
-                title="Cerrar conversación"
-              >
-                <X size={18} />
-              </button>
+      {/* ── MÓVIL: panel único ─────────────────────────────── */}
+      {isMobile ? (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {selectedConversationId ? (
+            <>
+              {/* Barra de regreso — CA-5 */}
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 border-b border-slate-700 flex-shrink-0">
+                <button
+                  onClick={handleCloseConversation}
+                  className="p-2 -ml-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Volver a lista de conversaciones"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <span className="text-sm font-medium text-slate-200">
+                  Conversaciones
+                </span>
+              </div>
+              {/* ChatWindow ocupa todo el ancho — solo un mount activo */}
+              <div className="flex-1 overflow-hidden">
+                <ChatWindow conversationId={selectedConversationId} />
+              </div>
+            </>
+          ) : (
+            /* Lista de conversaciones full-width */
+            <div className="flex-1 overflow-hidden">
+              <ChatList
+                onSelectConversation={setSelectedConversationId}
+                selectedConversationId={selectedConversationId}
+              />
             </div>
-            <ChatWindow conversationId={selectedConversationId} />
+          )}
+        </div>
+      ) : (
+        /* ── DESKTOP: split view con resize ────────────────── */
+        <div ref={containerRef} className="flex flex-1 overflow-hidden">
+          {/* Chat List */}
+          <div
+            className="flex flex-col bg-gray-50 border-r border-gray-700 transition-all duration-200 flex-shrink-0"
+            style={{
+              width: selectedConversationId ? listWidth : "100%",
+              minWidth: selectedConversationId ? MIN_LIST_WIDTH : "100%",
+            }}
+          >
+            <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <MessageSquareText size={20} className="text-blue-600" />
+                Conversaciones
+              </h2>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ChatList
+                onSelectConversation={setSelectedConversationId}
+                selectedConversationId={selectedConversationId}
+              />
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Status Bar - Footer estilo VS Code */}
+          {/* Resize Handle */}
+          {selectedConversationId && (
+            <div
+              className="w-1 bg-gray-700 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
+              onMouseDown={handleMouseDown}
+              title="Arrastra para redimensionar"
+            />
+          )}
+
+          {/* Chat Window */}
+          {selectedConversationId && (
+            <div className="flex-1 flex flex-col bg-slate-950 min-w-0 relative">
+              <div className="absolute top-2 right-2 z-10">
+                <button
+                  onClick={handleCloseConversation}
+                  className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                  title="Cerrar conversación"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <ChatWindow conversationId={selectedConversationId} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Status Bar — CA-10 */}
       <StatusBar />
     </div>
   );
