@@ -319,23 +319,24 @@ export default function DashboardLayout({
 
       {/* Contenedor principal */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Top bar móvil */}
-        <header
-          className="md:hidden flex items-center gap-3 h-14 px-4 bg-gray-900 text-white border-b border-gray-700 flex-shrink-0"
-          style={{ paddingTop: "var(--sat)" }}
-        >
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
-            aria-label="Abrir menú de navegación"
-          >
-            <Menu size={22} />
-          </button>
-          <img
-            src="https://elecsa.com.mx/sites/default/files/LOGO-ELECSA%20mr.png"
-            alt="Elecsa Logo"
-            className="h-7 object-contain bg-white rounded px-1"
-          />
+        {/* Top bar móvil — safe area separada del contenido para evitar compresión con notch */}
+        <header className="md:hidden flex flex-col flex-shrink-0 bg-gray-900 text-white border-b border-gray-700">
+          {/* Espaciador safe area — el fondo del notch se colorea sin comprimir el contenido */}
+          <div style={{ height: "var(--sat)" }} aria-hidden="true" />
+          <div className="flex items-center gap-3 h-14 px-4">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              aria-label="Abrir menú de navegación"
+            >
+              <Menu size={22} />
+            </button>
+            <img
+              src="https://elecsa.com.mx/sites/default/files/LOGO-ELECSA%20mr.png"
+              alt="Elecsa Logo"
+              className="h-7 object-contain bg-white rounded px-1"
+            />
+          </div>
         </header>
 
         {/* Main Content */}

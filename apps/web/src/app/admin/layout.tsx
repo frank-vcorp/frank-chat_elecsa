@@ -140,21 +140,22 @@ export default function AdminLayout({
 
       {/* Contenedor principal */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Top bar móvil */}
-        <header
-          className="md:hidden flex items-center gap-3 h-14 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex-shrink-0"
-          style={{ paddingTop: "var(--sat)" }}
-        >
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-lg hover:bg-white/20 transition-colors"
-            aria-label="Abrir menú de administración"
-          >
-            <Menu size={22} />
-          </button>
-          <div className="flex items-center gap-2">
-            <Settings size={20} />
-            <span className="font-bold text-lg">Admin Panel</span>
+        {/* Top bar móvil — safe area separada del contenido para evitar compresión con notch */}
+        <header className="md:hidden flex flex-col flex-shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          {/* Espaciador safe area — el fondo del notch se colorea sin comprimir el contenido */}
+          <div style={{ height: "var(--sat)" }} aria-hidden="true" />
+          <div className="flex items-center gap-3 h-14 px-4">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+              aria-label="Abrir menú de administración"
+            >
+              <Menu size={22} />
+            </button>
+            <div className="flex items-center gap-2">
+              <Settings size={20} />
+              <span className="font-bold text-lg">Admin Panel</span>
+            </div>
           </div>
         </header>
 

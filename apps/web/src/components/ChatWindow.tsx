@@ -83,9 +83,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [notes, setNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState("");
 
-  // Templates State
+  // Templates & Tags menu State
   const [templates, setTemplates] = useState<any[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showTagsMenu, setShowTagsMenu] = useState(false);
 
   // Fetch Templates
   useEffect(() => {
@@ -551,7 +552,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                     </div>
                     <button
                       onClick={() => handleDeleteNote(note.id)}
-                      className="text-slate-600 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                      className="text-slate-500 hover:text-rose-400 active:text-rose-400 transition-colors opacity-60 hover:opacity-100 p-2 -my-1 -mr-1 rounded-lg touch-manipulation"
+                      style={{ minWidth: 36, minHeight: 36 }}
                       title="Eliminar nota"
                       aria-label="Eliminar nota"
                     >
@@ -563,7 +565,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             )}
           </div>
 
-          <div className="p-4 border-t border-slate-700/50 bg-slate-800/50">
+          <div className="p-4 border-t border-slate-700/50 bg-slate-800/50"
+            style={{ paddingBottom: "max(1rem, calc(1rem + var(--sab, 0px)))" }}
+          >
             <textarea
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
@@ -604,18 +608,26 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
           <div className="h-5 w-px bg-slate-800 mx-1"></div>
 
-          {/* Tags Dropdown */}
-          <div className="relative group">
+          {/* Tags Dropdown — controlado por click (funciona en touch y desktop) */}
+          <div className="relative">
             <button
-              className="flex items-center gap-2 text-xs font-medium bg-slate-800 text-slate-300 px-3 py-2 rounded-lg hover:bg-slate-700 hover:text-white transition-all border border-transparent hover:border-slate-600"
+              onClick={() => { setShowTagsMenu(v => !v); setShowTemplates(false); }}
+              className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all border ${
+                showTagsMenu
+                  ? "bg-slate-700 text-white border-slate-600"
+                  : "bg-slate-800 text-slate-300 border-transparent hover:bg-slate-700 hover:text-white hover:border-slate-600"
+              }`}
               aria-label="Menú de etiquetas"
+              aria-expanded={showTagsMenu}
+              aria-haspopup="true"
             >
               <Tag size={14} />
               {conversation.tags && conversation.tags.length > 0
                 ? `${conversation.tags.length} Etiquetas`
                 : "Etiquetar"}
             </button>
-            <div className="absolute top-full left-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 hidden group-hover:block p-1.5 animate-in fade-in zoom-in-95 duration-200">
+            {showTagsMenu && (
+            <div className="absolute top-full left-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 p-1.5 animate-in fade-in zoom-in-95 duration-200">
               {[
                 { label: "Nuevo", color: "bg-blue-500", id: "new" },
                 {
@@ -651,7 +663,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       body: JSON.stringify({ conversationId, tags: newTags }),
                     });
                   }}
-                  className={`w-full text-left px-3 py-2.5 text-xs rounded-lg flex items-center justify-between mb-0.5 transition-colors ${
+                  className={`w-full text-left px-3 py-2.5 text-xs rounded-lg flex items-center justify-between mb-0.5 transition-colors touch-manipulation ${
                     (conversation.tags || []).includes(tag.label)
                       ? "bg-slate-800 text-white font-medium"
                       : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
@@ -670,18 +682,27 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 </button>
               ))}
             </div>
+            )}
           </div>
 
-          {/* Templates Dropdown */}
-          <div className="relative group">
+          {/* Templates Dropdown — controlado por click (funciona en touch y desktop) */}
+          <div className="relative">
             <button
-              className="flex items-center gap-2 text-xs font-medium bg-slate-800 text-slate-300 px-3 py-2 rounded-lg hover:bg-slate-700 hover:text-white transition-all border border-transparent hover:border-slate-600"
+              onClick={() => { setShowTemplates(v => !v); setShowTagsMenu(false); }}
+              className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all border ${
+                showTemplates
+                  ? "bg-slate-700 text-white border-slate-600"
+                  : "bg-slate-800 text-slate-300 border-transparent hover:bg-slate-700 hover:text-white hover:border-slate-600"
+              }`}
               aria-label="Plantillas de respuesta"
+              aria-expanded={showTemplates}
+              aria-haspopup="true"
             >
               <FileText size={14} />
               Plantillas
             </button>
-            <div className="absolute top-full left-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 hidden group-hover:block p-1.5 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200">
+            {showTemplates && (
+            <div className="absolute top-full left-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 p-1.5 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200">
               {templates.length === 0 ? (
                 <div className="p-4 text-xs text-slate-500 text-center">
                   No hay plantillas disponibles
@@ -690,20 +711,21 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 templates.map((t) => (
                   <button
                     key={t.id}
-                    onClick={() => setNewMessage(t.content)}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white mb-0.5 group transition-colors"
+                    onClick={() => { setNewMessage(t.content); setShowTemplates(false); }}
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white mb-0.5 transition-colors touch-manipulation"
                     title={t.content}
                   >
-                    <div className="font-medium text-indigo-300 group-hover:text-indigo-200 mb-0.5">
+                    <div className="font-medium text-indigo-300 mb-0.5">
                       {t.title}
                     </div>
-                    <div className="text-[10px] text-slate-500 group-hover:text-slate-400 truncate">
+                    <div className="text-[10px] text-slate-500 truncate">
                       {t.content}
                     </div>
                   </button>
                 ))
               )}
             </div>
+            )}
           </div>
 
           {/* Active Tags Display */}
