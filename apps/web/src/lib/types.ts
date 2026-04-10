@@ -57,10 +57,12 @@ export interface Conversation {
   needsHuman?: boolean;
   tags?: string[];
   summary?: string;
-  summarizedAt?: any;
+  summarizedAt?: Timestamp;
   // IMPL-20260409-01: Nombre visible de conversación (SPEC-ARCH-20260409-11)
   displayName?: string;
   displayNameSource?: DisplayNameSource;
+  // IMPL-20260409-02: Fecha real de cierre (SPEC-ARCH-20260409-15)
+  closedAt?: Timestamp;
 }
 
 export type SenderType = "agent" | "contact" | "system";

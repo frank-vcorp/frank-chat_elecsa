@@ -96,6 +96,13 @@
   - [/] Alcance aprobado: Fase 1 y Fase 2
   - [ ] Pendiente: implementación y checkpoint
 
+- [~] Reconstrucción de Reportes v2
+  - [✓] SPEC creada: `context/SPECs/SPEC-ARCH-20260409-15-reportes-v2.md`
+  - [✓] Interconsultas consideradas: Deby + Gemini
+  - [/] Implementación técnica completada y pendiente de validación runtime final
+  - [✓] Checkpoint creado: `Checkpoints/CHK_2026-04-09_IMPL-20260409-02_reportes-v2.md`
+  - [✓] Índices documentados: `firestore.indexes.json`
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
