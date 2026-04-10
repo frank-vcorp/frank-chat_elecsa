@@ -40,14 +40,19 @@ function escapeCSV(val: string): string {
   return str;
 }
 
+function isClosedConversation(data: Record<string, unknown>): boolean {
+  return data.status === "closed";
+}
+
 /**
  * GET /api/admin/reports/export
  *
  * Mismos query params que /api/admin/reports (sin page / pageSize).
  * Devuelve CSV con BOM UTF-8 para compatibilidad con Excel.
  *
- * Índice Firestore requerido (igual que /api/admin/reports):
- *   Collection: conversations | status ASC | closedAt DESC
+ * Hotfix FIX-20260410-01:
+ * Se evita depender del índice compuesto en producción consultando por closedAt
+ * y filtrando status="closed" en memoria.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -58,7 +63,6 @@ export async function GET(request: NextRequest) {
 
     let q = adminDb
       .collection("conversations")
-      .where("status", "==", "closed")
       .orderBy("closedAt", "desc");
 
     if (dateFrom) {
@@ -99,6 +103,8 @@ export async function GET(request: NextRequest) {
         assignedTo: (d.assignedTo as string) ?? "",
       };
     });
+
+    rows = rows.filter((_, index) => isClosedConversation(docs[index].data()));
 
     // Mismo filtro de texto que en el reporte — CSV debe ser coherente con tabla
     if (search) {

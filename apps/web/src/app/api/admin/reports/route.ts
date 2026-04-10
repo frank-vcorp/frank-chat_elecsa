@@ -67,6 +67,10 @@ function mapDoc(id: string, data: Record<string, unknown>): ReportConversation {
   };
 }
 
+function isClosedConversation(data: Record<string, unknown>): boolean {
+  return data.status === "closed";
+}
+
 function computeKPIs(docs: Record<string, unknown>[]): ReportKPIs {
   const byDay: Record<string, number> = {};
   let withSummary = 0;
@@ -100,8 +104,10 @@ function computeKPIs(docs: Record<string, unknown>[]): ReportKPIs {
  *   page      número de página 0-indexado (optional, default 0)
  *   pageSize  registros por página 1–100 (optional, default 25)
  *
- * Índice Firestore requerido (CREAR EN CONSOLA si no existe):
- *   Collection: conversations | status ASC | closedAt DESC
+ * Hotfix FIX-20260410-01:
+ * Se evita depender de un índice compuesto en producción consultando por closedAt
+ * y filtrando status="closed" en memoria. Esto corrige el 500 mientras se despliega
+ * la infraestructura de índices definitiva.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -116,10 +122,10 @@ export async function GET(request: NextRequest) {
       100,
     );
 
-    // Build Firestore query — closedAt es el pivote obligatorio (guardrail SPEC)
+    // Build Firestore query — closedAt sigue siendo el pivote obligatorio.
+    // El filtro por status se resuelve en memoria para no depender del índice compuesto.
     let q = adminDb
       .collection("conversations")
-      .where("status", "==", "closed")
       .orderBy("closedAt", "desc");
 
     if (dateFrom) {
@@ -150,6 +156,8 @@ export async function GET(request: NextRequest) {
       raw: doc.data() as Record<string, unknown>,
       mapped: mapDoc(doc.id, doc.data() as Record<string, unknown>),
     }));
+
+    rows = rows.filter((row) => isClosedConversation(row.raw));
 
     // Filtro de texto server-side en memoria (Firestore no soporta full-text nativo)
     if (search) {
