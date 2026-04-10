@@ -241,6 +241,7 @@ export default function ReportsPage() {
   const [data, setData] = useState<ReportsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [didApply, setDidApply] = useState(false);
 
   const fetchData = useCallback(
     async (filters: typeof applied, p: number) => {
@@ -277,6 +278,7 @@ export default function ReportsPage() {
 
   const handleApply = () => {
     setPage(0);
+    setDidApply(true);
     setApplied({ dateFrom, dateTo, search });
   };
 
@@ -355,11 +357,18 @@ export default function ReportsPage() {
             </div>
             <button
               onClick={handleApply}
-              className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              disabled={loading}
+              className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Aplicar
+              {loading ? "Aplicando..." : "Aplicar"}
             </button>
           </div>
+          {didApply && !loading && !error && (
+            <p className="mt-3 text-xs text-gray-500">
+              Filtros aplicados: {applied.dateFrom} a {applied.dateTo}
+              {applied.search ? `, búsqueda "${applied.search}"` : ""}.
+            </p>
+          )}
         </div>
 
         {/* KPIs */}
@@ -411,6 +420,10 @@ export default function ReportsPage() {
         {loading && !data ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-500">
             Cargando reportes...
+          </div>
+        ) : loading && data ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-500">
+            Aplicando filtros...
           </div>
         ) : error ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-red-500">

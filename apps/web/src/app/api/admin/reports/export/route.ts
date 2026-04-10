@@ -2,7 +2,6 @@
 // IMPL-20260409-02: Exportación CSV coherente con filtros (SPEC-ARCH-20260409-15)
 import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import { Timestamp } from "firebase-admin/firestore";
 // Timestamp se usa para Timestamp.fromDate() en las queries de Firestore
 
 const MAX_EXPORT = 5000;
@@ -18,6 +17,10 @@ function toISO(val: unknown): string | null {
   if (isTimestampLike(val)) return val.toDate().toISOString();
   if (val instanceof Date) return val.toISOString();
   return null;
+}
+
+function getEffectiveClosedAt(data: Record<string, unknown>): string | null {
+  return toISO(data.closedAt) || toISO(data.lastMessageAt);
 }
 
 function formatDate(iso: string | null): string {
@@ -50,9 +53,10 @@ function isClosedConversation(data: Record<string, unknown>): boolean {
  * Mismos query params que /api/admin/reports (sin page / pageSize).
  * Devuelve CSV con BOM UTF-8 para compatibilidad con Excel.
  *
- * Hotfix FIX-20260410-01:
- * Se evita depender del índice compuesto en producción consultando por closedAt
- * y filtrando status="closed" en memoria.
+ * Hotfix FIX-20260410-02:
+ * Se consulta por status="closed" y se resuelve la fecha efectiva del reporte como
+ * closedAt || lastMessageAt, cubriendo documentos legacy y evitando dependencia
+ * inmediata del índice compuesto.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -61,25 +65,14 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get("dateTo");
     const search = searchParams.get("search")?.trim().toLowerCase() ?? "";
 
-    let q = adminDb
+    const fromIso = dateFrom ? new Date(`${dateFrom}T00:00:00.000Z`).toISOString() : null;
+    const toIso = dateTo ? new Date(`${dateTo}T23:59:59.999Z`).toISOString() : null;
+
+    const snapshot = await adminDb
       .collection("conversations")
-      .orderBy("closedAt", "desc");
-
-    if (dateFrom) {
-      const from = new Date(`${dateFrom}T00:00:00.000Z`);
-      if (!isNaN(from.getTime())) {
-        q = q.where("closedAt", ">=", Timestamp.fromDate(from));
-      }
-    }
-
-    if (dateTo) {
-      const to = new Date(`${dateTo}T23:59:59.999Z`);
-      if (!isNaN(to.getTime())) {
-        q = q.where("closedAt", "<=", Timestamp.fromDate(to));
-      }
-    }
-
-    const snapshot = await q.limit(MAX_EXPORT).get();
+      .where("status", "==", "closed")
+      .limit(MAX_EXPORT)
+      .get();
 
     interface FsDoc { id: string; data(): Record<string, unknown>; }
     const docs = snapshot.docs as unknown as FsDoc[];
@@ -95,7 +88,7 @@ export async function GET(request: NextRequest) {
         id: doc.id,
         clientName: (d.displayName as string) || (d.contactId as string) || doc.id,
         contactId: (d.contactId as string) ?? "",
-        closedAt: toISO(d.closedAt),
+        closedAt: getEffectiveClosedAt(d),
         tags: Array.isArray(d.tags) ? (d.tags as string[]).join("; ") : "",
         summary: typeof d.summary === "string" ? d.summary : "",
         summarizedAt: toISO(d.summarizedAt),
@@ -106,6 +99,13 @@ export async function GET(request: NextRequest) {
 
     rows = rows.filter((_, index) => isClosedConversation(docs[index].data()));
 
+    rows = rows.filter((row) => {
+      if (!row.closedAt) return false;
+      if (fromIso && row.closedAt < fromIso) return false;
+      if (toIso && row.closedAt > toIso) return false;
+      return true;
+    });
+
     // Mismo filtro de texto que en el reporte — CSV debe ser coherente con tabla
     if (search) {
       rows = rows.filter(
@@ -114,6 +114,8 @@ export async function GET(request: NextRequest) {
           r.contactId.toLowerCase().includes(search),
       );
     }
+
+    rows.sort((a, b) => (b.closedAt ?? "").localeCompare(a.closedAt ?? ""));
 
     const headers = [
       "ID",

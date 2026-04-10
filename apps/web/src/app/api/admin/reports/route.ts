@@ -2,7 +2,6 @@
 // IMPL-20260409-02: Reportes v2 - lectura histórica server-side (SPEC-ARCH-20260409-15)
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import { Timestamp } from "firebase-admin/firestore";
 
 const MAX_FETCH = 1000;
 const DEFAULT_PAGE_SIZE = 25;
@@ -14,6 +13,8 @@ export interface ReportConversation {
   contactId: string;
   /** ISO string de closedAt — pivot de fecha de cierre */
   closedAt: string | null;
+  /** ISO string de fecha efectiva del reporte: closedAt || lastMessageAt */
+  effectiveClosedAt: string | null;
   tags: string[];
   summary: string | null;
   summarizedAt: string | null;
@@ -51,12 +52,17 @@ function toISO(val: unknown): string | null {
   return null;
 }
 
+function getEffectiveClosedAt(data: Record<string, unknown>): string | null {
+  return toISO(data.closedAt) || toISO(data.lastMessageAt);
+}
+
 function mapDoc(id: string, data: Record<string, unknown>): ReportConversation {
   return {
     id,
     clientName: (data.displayName as string | undefined) || (data.contactId as string) || id,
     contactId: (data.contactId as string) || "",
     closedAt: toISO(data.closedAt),
+    effectiveClosedAt: getEffectiveClosedAt(data),
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
     summary: typeof data.summary === "string" && data.summary.trim().length > 0
       ? data.summary
@@ -79,7 +85,7 @@ function computeKPIs(docs: Record<string, unknown>[]): ReportKPIs {
     if (typeof d.summary === "string" && d.summary.trim().length > 0) {
       withSummary++;
     }
-    const isoDate = toISO(d.closedAt);
+    const isoDate = getEffectiveClosedAt(d);
     if (isoDate) {
       const day = isoDate.slice(0, 10);
       byDay[day] = (byDay[day] ?? 0) + 1;
@@ -104,10 +110,10 @@ function computeKPIs(docs: Record<string, unknown>[]): ReportKPIs {
  *   page      número de página 0-indexado (optional, default 0)
  *   pageSize  registros por página 1–100 (optional, default 25)
  *
- * Hotfix FIX-20260410-01:
- * Se evita depender de un índice compuesto en producción consultando por closedAt
- * y filtrando status="closed" en memoria. Esto corrige el 500 mientras se despliega
- * la infraestructura de índices definitiva.
+ * Hotfix FIX-20260410-02:
+ * Se consulta por status="closed" y se resuelve la fecha efectiva del reporte como
+ * closedAt || lastMessageAt. Esto evita depender del índice compuesto y además cubre
+ * conversaciones legacy cerradas sin closedAt persistido.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -122,30 +128,14 @@ export async function GET(request: NextRequest) {
       100,
     );
 
-    // Build Firestore query — closedAt sigue siendo el pivote obligatorio.
-    // El filtro por status se resuelve en memoria para no depender del índice compuesto.
-    let q = adminDb
+    const fromIso = dateFrom ? new Date(`${dateFrom}T00:00:00.000Z`).toISOString() : null;
+    const toIso = dateTo ? new Date(`${dateTo}T23:59:59.999Z`).toISOString() : null;
+
+    const snapshot = await adminDb
       .collection("conversations")
-      .orderBy("closedAt", "desc");
-
-    if (dateFrom) {
-      // Inicio del día en UTC
-      const from = new Date(`${dateFrom}T00:00:00.000Z`);
-      if (!isNaN(from.getTime())) {
-        q = q.where("closedAt", ">=", Timestamp.fromDate(from));
-      }
-    }
-
-    if (dateTo) {
-      // Fin del día en UTC
-      const to = new Date(`${dateTo}T23:59:59.999Z`);
-      if (!isNaN(to.getTime())) {
-        q = q.where("closedAt", "<=", Timestamp.fromDate(to));
-      }
-    }
-
-    // Fetch (capped at MAX_FETCH para proteger rendimiento)
-    const snapshot = await q.limit(MAX_FETCH).get();
+      .where("status", "==", "closed")
+      .limit(MAX_FETCH)
+      .get();
 
     interface FsDoc { id: string; data(): Record<string, unknown>; }
     const docs = snapshot.docs as unknown as FsDoc[];
@@ -159,6 +149,14 @@ export async function GET(request: NextRequest) {
 
     rows = rows.filter((row) => isClosedConversation(row.raw));
 
+    rows = rows.filter((row) => {
+      const effective = row.mapped.effectiveClosedAt;
+      if (!effective) return false;
+      if (fromIso && effective < fromIso) return false;
+      if (toIso && effective > toIso) return false;
+      return true;
+    });
+
     // Filtro de texto server-side en memoria (Firestore no soporta full-text nativo)
     if (search) {
       rows = rows.filter(
@@ -167,6 +165,12 @@ export async function GET(request: NextRequest) {
           r.mapped.contactId.toLowerCase().includes(search),
       );
     }
+
+    rows.sort((a, b) => {
+      const left = a.mapped.effectiveClosedAt ?? "";
+      const right = b.mapped.effectiveClosedAt ?? "";
+      return right.localeCompare(left);
+    });
 
     const total = rows.length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
