@@ -103,6 +103,12 @@
   - [✓] Checkpoint creado: `Checkpoints/CHK_2026-04-09_IMPL-20260409-02_reportes-v2.md`
   - [✓] Índices documentados: `firestore.indexes.json`
 
+- [~] Dashboard analítico de reportes
+  - [✓] SPEC creada: `context/SPECs/SPEC-ARCH-20260410-03-dashboard-analitico-reportes.md`
+  - [✓] Interconsultas consideradas: Deby + Gemini
+  - [/] Implementación realizada por SOFIA y pendiente de validación visual/runtime
+  - [✓] Checkpoint creado: `Checkpoints/CHK_2026-04-10_IMPL-20260410-03_DASHBOARD-ANALITICO-REPORTES.md`
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)

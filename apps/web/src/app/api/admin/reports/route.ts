@@ -28,6 +28,10 @@ export interface ReportKPIs {
   withoutSummary: number;
   /** YYYY-MM-DD → cantidad de cierres ese día */
   byDay: Record<string, number>;
+  /** Sucursal → cantidad de cierres del período */
+  byBranch: Record<string, number>;
+  /** Top etiquetas del período: [etiqueta, count][] ordenado desc */
+  topTags: [string, number][];
 }
 
 export interface ReportsResponse {
@@ -79,6 +83,8 @@ function isClosedConversation(data: Record<string, unknown>): boolean {
 
 function computeKPIs(docs: Record<string, unknown>[]): ReportKPIs {
   const byDay: Record<string, number> = {};
+  const byBranch: Record<string, number> = {};
+  const tagCounts: Record<string, number> = {};
   let withSummary = 0;
 
   for (const d of docs) {
@@ -90,13 +96,28 @@ function computeKPIs(docs: Record<string, unknown>[]): ReportKPIs {
       const day = isoDate.slice(0, 10);
       byDay[day] = (byDay[day] ?? 0) + 1;
     }
+    const branch = typeof d.branch === "string" && d.branch ? d.branch : "sin_sucursal";
+    byBranch[branch] = (byBranch[branch] ?? 0) + 1;
+    if (Array.isArray(d.tags)) {
+      for (const tag of d.tags as string[]) {
+        if (typeof tag === "string" && tag.trim()) {
+          tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+        }
+      }
+    }
   }
+
+  const topTags: [string, number][] = Object.entries(tagCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8);
 
   return {
     totalClosed: docs.length,
     withSummary,
     withoutSummary: docs.length - withSummary,
     byDay,
+    byBranch,
+    topTags,
   };
 }
 
