@@ -747,6 +747,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                     } else {
                       setNoteHint(null);
                     }
+                    setShowTagsMenu(false);
                   }}
                   className={`w-full text-left px-3 py-2.5 text-xs rounded-lg flex items-center justify-between mb-0.5 transition-colors touch-manipulation ${
                     (conversation.tags || []).includes(tag.label)
