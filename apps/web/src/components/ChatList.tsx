@@ -252,7 +252,14 @@ export default function ChatList({
   const formatTime = (timestamp: any) => {
     if (!timestamp) return "";
     const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleString("es-MX", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Mexico_City",
+    });
   };
 
   // Solo admin puede eliminar conversaciones
@@ -488,9 +495,12 @@ export default function ChatList({
                     {/* IMPL-20260409-01: Mostrar número como secundario cuando existe displayName */}
                     {conv.displayName && conv.displayName !== conv.contactId
                       ? conv.contactId
-                      : conv.lastMessageAt?.toDate().toLocaleDateString("es-MX", {
-                          day: "numeric",
-                          month: "short",
+                      : conv.lastMessageAt?.toDate().toLocaleString("es-MX", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
                           timeZone: "America/Mexico_City",
                         })}
                   </p>
