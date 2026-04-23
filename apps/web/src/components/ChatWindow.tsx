@@ -382,6 +382,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           conversationId,
           content: newNote,
           authorId: auth.currentUser?.uid || "unknown",
+          authorName: auth.currentUser?.displayName || auth.currentUser?.email || "Agente",
         }),
       });
       setNewNote("");
@@ -617,7 +618,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       </p>
                       <div className="flex justify-between items-center mt-3 text-[10px] text-slate-500 font-medium">
                         <span className="bg-slate-900/50 px-1.5 py-0.5 rounded text-slate-400">
-                          {note.authorId}
+                          {note.authorName || note.authorId}
                         </span>
                         <span>{note.createdAt?.toDate().toLocaleString()}</span>
                       </div>
