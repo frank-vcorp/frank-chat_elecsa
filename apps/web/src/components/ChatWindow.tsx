@@ -582,10 +582,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         <div className="
           fixed md:absolute
           inset-x-0 bottom-0 md:inset-x-auto
-          md:right-4 md:top-[80px] md:bottom-4 md:w-80
+          md:right-4 md:top-[60px] md:bottom-4 md:w-80
           h-[65vh] md:h-auto
           bg-slate-900/95 backdrop-blur-xl border border-slate-700/50
-          shadow-2xl z-20 flex flex-col
+          shadow-2xl z-30 flex flex-col
           animate-in slide-in-from-bottom-10 md:slide-in-from-right-10 fade-in duration-300
           rounded-t-2xl md:rounded-2xl overflow-hidden
         ">
