@@ -681,11 +681,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       )}
 
       {/* Toolbar (Human Agents Only) — CA-5 */}
-      {/* ARCH-20260423-02: overflow-x-auto removido del contenedor externo para que los dropdowns
-          no queden recortados. CSS no permite overflow-x:auto + overflow-y:visible simultáneos.
-          Las "Active Tags" ya tienen su propio overflow-x-auto interno. */}
+      {/* ARCH-20260423-02: overflow-x-auto removido + relative z-20 añadido.
+          backdrop-blur-sm crea stacking context sin z-index → mensajes (posteriores en DOM)
+          pintaban encima del dropdown. relative z-20 eleva el stacking context del toolbar. */}
       {(() => conversation.assignedTo !== "ai")() && (
-        <div className="bg-slate-900/50 backdrop-blur-sm px-3 md:px-6 py-2.5 flex items-center gap-2 md:gap-3 border-b border-slate-800 flex-shrink-0">
+        <div className="relative z-20 bg-slate-900/50 backdrop-blur-sm px-3 md:px-6 py-2.5 flex items-center gap-2 md:gap-3 border-b border-slate-800 flex-shrink-0">
           {/* Attachments */}
           <label
             className="cursor-pointer text-slate-400 hover:text-indigo-400 transition-colors p-2 hover:bg-slate-800 rounded-lg"
