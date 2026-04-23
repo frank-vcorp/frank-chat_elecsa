@@ -109,6 +109,26 @@
   - [/] Implementación realizada por SOFIA y pendiente de validación visual/runtime
   - [✓] Checkpoint creado: `Checkpoints/CHK_2026-04-10_IMPL-20260410-03_DASHBOARD-ANALITICO-REPORTES.md`
 
+## Actualización INTEGRA / SOFIA (2026-04-22/23) — Fixes Routing + FCM Push
+
+- [✓] Fix routing: SKU con guiones (456-789 ↔ 456789) — `ARCH-20260422-01`
+  - [✓] `productSearch.ts`: campo `skuNormalized` en índice MiniSearch + fallback en búsqueda
+  - [✓] Commit: `27c34b7`
+
+- [✓] Fix routing: desvío de sucursal cuando ciudad llega tarde — `ARCH-20260422-02`
+  - [✓] Early Warning System corre antes del early-return por `!isAssignedToAi`
+  - [✓] `handOffToHuman()` ya no se invoca sin ciudad detectada (IA sigue activa)
+  - [✓] Commit: `27c34b7`
+
+- [✓] Notificaciones Push FCM a agentes en iPhone/Android — `ARCH-20260423-01`
+  - [✓] `public/firebase-messaging-sw.js`: service worker background push
+  - [✓] `firebase.ts`: `requestFCMToken()` con VAPID key
+  - [✓] `api/notifications/register-token`: endpoint POST autenticado
+  - [✓] `settings/page.tsx`: botón "Activar notificaciones en este dispositivo"
+  - [✓] `aiProvider.ts`: `handOffToHuman()` envía push FCM a agentes de la sucursal
+  - [✓] Commit: `3b0819c`
+  - [ ] **Pendiente (manual)**: agregar `NEXT_PUBLIC_FIREBASE_VAPID_KEY` en Vercel env vars
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
