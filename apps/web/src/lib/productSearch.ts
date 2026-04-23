@@ -9,6 +9,9 @@ const db = getFirestore();
 interface ProductDocument {
   id: string; // SKU será el ID
   sku: string;
+  /** SKU sin guiones, puntos ni espacios para búsqueda normalizada.
+   * Ej: "456-789" → "456789". FIX: ARCH-20260422-01 */
+  skuNormalized: string;
   description: string;
   price: number | string;
   currency: string;
@@ -77,7 +80,7 @@ export async function initializeSearchIndex(): Promise<
     );
 
     const miniSearch = new MiniSearch<ProductDocument>({
-      fields: ["sku", "description", "supplier", "category", "family"], // Campos en los que buscaremos
+      fields: ["sku", "skuNormalized", "description", "supplier", "category", "family"], // Campos en los que buscaremos
       storeFields: [
         "sku",
         "description",
@@ -90,7 +93,7 @@ export async function initializeSearchIndex(): Promise<
         "status",
       ], // Campos a retornar
       searchOptions: {
-        boost: { sku: 2 }, // El SKU exacto tiene prioridad
+        boost: { sku: 2, skuNormalized: 3 }, // skuNormalized con boost mayor: match sin guiones tiene alta prioridad
         fuzzy: 0.2, // Tolerancia a fallos ortográficos leves ("Tladro" -> "Taladro")
         prefix: true, // Soporta autocompletado parcial ("Talad" -> "Taladro")
       },
@@ -122,6 +125,9 @@ export async function initializeSearchIndex(): Promise<
         docs.push({
           id: data.sku,
           sku: data.sku,
+          // FIX ARCH-20260422-01: Índice alternativo sin separadores para que
+          // búsquedas como "456789" encuentren SKUs almacenados como "456-789"
+          skuNormalized: (data.sku as string).replace(/[-._\s]/g, ""),
           description: data.description || "",
           price: data.price || 0,
           currency: data.currency || "MXN",
@@ -191,10 +197,22 @@ export async function searchLocalProducts(
     if (!normalizedQuery) return "Consulta vacía.";
 
     // Búsqueda ultrarrápida (RAM)
-    const results = index.search(normalizedQuery, {
+    let results = index.search(normalizedQuery, {
       // Ajustamos la lógica fuzzy para combinaciones de SKU (que en general de ser cortos mejor no sean fuzzy)
       fuzzy: normalizedQuery.length > 4 ? 0.2 : false,
     });
+
+    // FIX ARCH-20260422-01: Si no hay resultados, intentar búsqueda con query
+    // normalizado (sin guiones/puntos/espacios). Cubre el caso donde el usuario
+    // escribe "456-789" y el SKU en BD es "456789", o viceversa.
+    if (results.length === 0) {
+      const strippedQuery = normalizedQuery.replace(/[-._\s]/g, "");
+      if (strippedQuery !== normalizedQuery && strippedQuery.length > 0) {
+        results = index.search(strippedQuery, {
+          fuzzy: strippedQuery.length > 4 ? 0.2 : false,
+        });
+      }
+    }
 
     if (results.length === 0) {
       return `No se encontraron productos coincidentes para "${query}". Intenta con otros términos.`;

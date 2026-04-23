@@ -202,6 +202,36 @@ export async function POST(request: NextRequest) {
     ).data();
     const isAssignedToAi = currentConv?.assignedTo === "ai";
 
+    // ------------------------------------------------------------------
+    // EARLY WARNING SYSTEM: Detectar ciudad y asignar sucursal INMEDIATAMENTE
+    // FIX ARCH-20260422-02: Ejecutar ANTES del early-return por !isAssignedToAi.
+    // Caso: Sofía escaló sin ciudad conocida → branch="general". En el siguiente
+    // mensaje el cliente dice su ciudad, pero el webhook retornaba antes de detectarla.
+    // Ahora actualizamos el branch incluso cuando la conversación ya está en mano humana.
+    // ------------------------------------------------------------------
+    const earlyCity = extractCityMention(body);
+    const earlyBranch = earlyCity ? detectBranchByCity(earlyCity) : null;
+
+    if (earlyBranch && currentConv?.branch !== earlyBranch) {
+      console.log(
+        `[Webhook] Early Warning: City '${earlyCity}' detected. Assigning to branch '${earlyBranch}'.`,
+      );
+      const conversationRef = adminDb
+        .collection("conversations")
+        .doc(conversationId);
+
+      if (isAssignedToAi) {
+        // IA activa: marcar needsHuman para que suene la alarma 🚨
+        await conversationRef.update({
+          branch: earlyBranch,
+          needsHuman: true,
+        });
+      } else {
+        // Conversación ya en mano humana: solo corregir el branch sin tocar needsHuman
+        await conversationRef.update({ branch: earlyBranch });
+      }
+    }
+
     if (!isAssignedToAi) {
       console.log(
         `[Webhook] Conversation assigned to ${currentConv?.assignedTo}, skipping AI response.`,
@@ -213,33 +243,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("[Webhook] Triggering AI response");
-
-    // ------------------------------------------------------------------
-    // EARLY WARNING SYSTEM: Detectar ciudad y asignar sucursal INMEDIATAMENTE
-    // ------------------------------------------------------------------
-    // Esto permite que la alarma suene en la sucursal correcta AUNQUE la IA siga platicando.
-    // El agente humano puede ver la charla en tiempo real y decidir cuándo intervenir.
-    const earlyCity = extractCityMention(body);
-    const earlyBranch = earlyCity ? detectBranchByCity(earlyCity) : null;
-
-    if (earlyBranch && currentConv?.branch !== earlyBranch) {
-      console.log(
-        `[Webhook] Early Warning: City '${earlyCity}' detected. Assigning to branch '${earlyBranch}' immediately.`,
-      );
-
-      // Actualizar solo el branch, SIN marcar needsHuman (a menos que ya lo estuviera)
-      const conversationRef = adminDb
-        .collection("conversations")
-        .doc(conversationId);
-
-      // IMPORTANTE: Marcamos needsHuman: true para que suene la ALARMA y parpadee el SEMÁFORO 🚨
-      // PERO NO CAMBIAMOS assignedTo, así que la IA sigue platicando.
-      await conversationRef.update({
-        branch: earlyBranch,
-        needsHuman: true, // ¡DING! + 🔴 Flash
-        // assignedTo: 'ai' (implicito, no lo tocamos)
-      });
-    }
 
     try {
       const sofiaReply = await getSofiaResponse(
@@ -324,9 +327,6 @@ export async function POST(request: NextRequest) {
             console.log(
               `[Webhook] Estado sin sucursal detectado: ${estadoSinSucursal}`,
             );
-            console.log(
-              `[Webhook] Estado sin sucursal detectado: ${estadoSinSucursal}`,
-            );
 
             // Enviar mensaje con opciones (directo de aiProvider)
             await sendWhatsAppMessage(phoneNumber, estadoSinSucursal, to);
@@ -344,19 +344,25 @@ export async function POST(request: NextRequest) {
               status: "sent",
             } as Message);
 
-            // IMPORTANTE: NO asignamos a humano todavía.
-            // Mantenemos la conversación en AI para que Sofía procese la elección del cliente.
-            // El cliente responderá con una ciudad (ej. "Puebla") y en el siguiente turno
-            // detectBranchByCity lo atrapará y ejecutará el handoff correcto.
+            // NO asignamos a humano: IA sigue activa esperando que el cliente elija ciudad.
             console.log(
               "[Webhook] Waiting for user branch selection (AI remains active)",
             );
+          } else if (!branch) {
+            // FIX ARCH-20260422-02: Sofía escaló pero no se detectó ciudad todavía
+            // (el cliente aún no la dijo). Mantener IA activa para que atrape la ciudad
+            // en el siguiente mensaje y ejecute el handoff a la sucursal correcta.
+            // NO llamar handOffToHuman() sin sucursal: resultaría en branch="general"
+            // y la conversación flotaría sin agente asignado.
+            console.log(
+              "[Webhook] Escalation detected but no city yet — keeping AI active to capture city in next turn.",
+            );
           } else {
-            // Flujo normal: asignar a sucursal detectada o general
+            // Ciudad y sucursal conocidas: handoff completo a la sucursal correcta.
             await handOffToHuman(
               conversationId,
-              `Sofia escaló la conversación. Ciudad detectada: ${detectedCity || "no detectada"}`,
-              detectedCity || undefined,
+              `Sofia escaló la conversación. Ciudad detectada: ${detectedCity}`,
+              detectedCity!,
             );
           }
         }
