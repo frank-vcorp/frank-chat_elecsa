@@ -8,6 +8,7 @@ import {
   where,
   doc,
   orderBy,
+  getDocs,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
@@ -89,6 +90,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState("");
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+
+  // Cargar mapa uid→name de agentes para resolver authorId en notas antiguas
+  useEffect(() => {
+    getDocs(collection(db, "agents")).then((snap) => {
+      const map: Record<string, string> = {};
+      snap.forEach((d) => { map[d.id] = (d.data().name as string) || d.id; });
+      setAgentNames(map);
+    }).catch(() => {});
+  }, []);
 
   // Tags menu State
   const [showTagsMenu, setShowTagsMenu] = useState(false);
@@ -618,7 +629,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       </p>
                       <div className="flex justify-between items-center mt-3 text-[10px] text-slate-500 font-medium">
                         <span className="bg-slate-900/50 px-1.5 py-0.5 rounded text-slate-400">
-                          {note.authorName || note.authorId}
+                          {note.authorName || agentNames[note.authorId] || note.authorId}
                         </span>
                         <span>{note.createdAt?.toDate().toLocaleString()}</span>
                       </div>
