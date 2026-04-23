@@ -91,10 +91,10 @@
   - [✓] Interconsultas consideradas: Deby + Gemini
   - [✓] Checkpoints creados: `Checkpoints/CHK_2026-04-09_SPRINT1_SHELL.md`, `Checkpoints/CHK_2026-04-09_SPRINT2_DASHBOARD.md`, `Checkpoints/CHK_2026-04-09_SPRINT3_ADMIN.md`, `Checkpoints/CHK_2026-04-09_CIERRE.md`
 
-- [/] Nombres visibles de conversación (WhatsApp + edición manual)
+- [x] Nombres visibles de conversación (WhatsApp + edición manual)
   - [✓] SPEC creada: `context/SPECs/SPEC-ARCH-20260409-11-conversation-display-name.md`
-  - [/] Alcance aprobado: Fase 1 y Fase 2
-  - [ ] Pendiente: implementación y checkpoint
+  - [✓] Fase 1: nombre de WhatsApp visible en UI (webhook guarda `displayName`)
+  - [✓] Fase 2: edición manual del nombre desde cabecera del chat (validado en producción 2026-04-23)
 
 - [~] Reconstrucción de Reportes v2
   - [✓] SPEC creada: `context/SPECs/SPEC-ARCH-20260409-15-reportes-v2.md`
