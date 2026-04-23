@@ -8,7 +8,6 @@ import {
   where,
   doc,
   orderBy,
-  getDocs,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
@@ -92,13 +91,14 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [newNote, setNewNote] = useState("");
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
-  // Cargar mapa uid→name de agentes para resolver authorId en notas antiguas
+  // Mapa uid→name reactivo: se actualiza si se añaden/editan agentes
   useEffect(() => {
-    getDocs(collection(db, "agents")).then((snap) => {
+    const unsub = onSnapshot(collection(db, "agents"), (snap) => {
       const map: Record<string, string> = {};
       snap.forEach((d) => { map[d.id] = (d.data().name as string) || d.id; });
       setAgentNames(map);
-    }).catch(() => {});
+    });
+    return () => unsub();
   }, []);
 
   // Tags menu State
