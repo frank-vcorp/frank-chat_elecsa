@@ -1,6 +1,7 @@
 // src/lib/aiProvider.ts
 import "@/lib/firebase-admin"; // Ensure Firebase Admin is initialized before getFirestore()
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai"; // Se mantiene para funciones secundarias (resúmenes)
 
@@ -704,6 +705,65 @@ export async function handOffToHuman(
   console.log(
     `[handOffToHuman] Conversation ${conversationId} assigned to branch: ${branch || "general"}`,
   );
+
+  // --- Notificaciones Push FCM a agentes de la sucursal --- ARCH-20260423-01
+  // Buscar agentes activos de esa sucursal que tengan tokens FCM registrados
+  try {
+    const targetBranch = branch || "general";
+    const agentsSnap = await db
+      .collection("agents")
+      .where("active", "==", true)
+      .get();
+
+    const tokens: string[] = [];
+    agentsSnap.forEach((doc) => {
+      const data = doc.data();
+      const agentBranches: string[] = data.branches || (data.branch ? [data.branch] : []);
+      const isMatch =
+        targetBranch === "general" ||
+        agentBranches.includes(targetBranch) ||
+        agentBranches.includes("general") ||
+        data.role === "supervisor" ||
+        data.role === "admin";
+
+      if (isMatch && Array.isArray(data.fcmTokens)) {
+        tokens.push(...data.fcmTokens);
+      }
+    });
+
+    if (tokens.length === 0) {
+      console.log(`[FCM] No hay tokens registrados para sucursal ${targetBranch}.`);
+      return;
+    }
+
+    const branchConfig = BRANCHES_CONFIG[targetBranch as keyof typeof BRANCHES_CONFIG];
+    const branchName = branchConfig?.displayName || targetBranch;
+
+    const messaging = getMessaging();
+    await messaging.sendEachForMulticast({
+      tokens,
+      notification: {
+        title: `🔔 Nueva conversación — ${branchName}`,
+        body: detectedCity
+          ? `Cliente de ${detectedCity} solicita atención. Entra al dashboard.`
+          : "Un cliente solicita atención humana. Entra al dashboard.",
+      },
+      data: {
+        conversationId,
+        branch: targetBranch,
+      },
+      webpush: {
+        fcmOptions: {
+          link: `https://frank-chat-elecsa.vercel.app/dashboard`,
+        },
+      },
+    });
+
+    console.log(`[FCM] Push enviado a ${tokens.length} dispositivo(s) de sucursal ${targetBranch}.`);
+  } catch (fcmError) {
+    // No interrumpir el handoff si FCM falla
+    console.error("[FCM] Error enviando push (no crítico):", fcmError);
+  }
 }
 
 /** Helper to create / update a product (used by admin UI) */

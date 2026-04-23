@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getMessaging, getToken, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "mock-key",
@@ -18,3 +19,37 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+/**
+ * Solicita permiso de notificaciones push y devuelve el token FCM del dispositivo.
+ * @intervention ARCH-20260423-01
+ * Retorna null si el navegador no soporta FCM o el usuario deniega el permiso.
+ */
+export async function requestFCMToken(): Promise<string | null> {
+  try {
+    const supported = await isSupported();
+    if (!supported) {
+      console.warn("[FCM] Notificaciones push no soportadas en este navegador.");
+      return null;
+    }
+
+    const messaging = getMessaging(app);
+    const token = await getToken(messaging, {
+      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js"
+      ),
+    });
+
+    if (!token) {
+      console.warn("[FCM] No se pudo obtener el token — permiso denegado.");
+      return null;
+    }
+
+    console.log("[FCM] Token obtenido:", token.slice(0, 20) + "...");
+    return token;
+  } catch (error) {
+    console.error("[FCM] Error obteniendo token:", error);
+    return null;
+  }
+}

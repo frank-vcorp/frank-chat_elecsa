@@ -1,15 +1,54 @@
 "use client";
 
+import { useState } from "react";
 import {
   Settings,
   CheckCircle,
-  XCircle,
   Shield,
   Database,
   Cpu,
+  Bell,
+  BellOff,
+  Loader2,
 } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { requestFCMToken } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const [pushStatus, setPushStatus] = useState<
+    "idle" | "loading" | "success" | "denied" | "unsupported"
+  >("idle");
+
+  const handleEnablePush = async () => {
+    setPushStatus("loading");
+    try {
+      const token = await requestFCMToken();
+      if (!token) {
+        setPushStatus("denied");
+        return;
+      }
+
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) { setPushStatus("denied"); return; }
+
+      const res = await fetch("/api/notifications/register-token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      setPushStatus(res.ok ? "success" : "denied");
+    } catch (e) {
+      console.error("[Push] Error:", e);
+      setPushStatus("unsupported");
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-8">
@@ -124,6 +163,68 @@ export default function SettingsPage() {
             </div>
             <p className="mt-6 text-xs text-gray-400">
               * Para modificar estos datos, contacta a soporte de vCorp.
+            </p>
+          </div>
+        </div>
+
+        {/* Notificaciones Push — ARCH-20260423-01 */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+              <Bell size={18} className="text-teal-600" />
+              Notificaciones Push
+            </h2>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-gray-600 mb-4">
+              Activa las notificaciones para recibir alertas en tu iPhone o
+              Android cuando llegue una conversación a tu sucursal, aunque la
+              app esté cerrada.
+            </p>
+
+            {pushStatus === "success" && (
+              <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4 text-sm">
+                <CheckCircle size={16} />
+                ¡Listo! Recibirás notificaciones en este dispositivo.
+              </div>
+            )}
+            {pushStatus === "denied" && (
+              <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm">
+                <BellOff size={16} />
+                Permiso denegado. Ve a Configuración del iPhone → Safari/Chrome
+                → Notificaciones y actívalas manualmente.
+              </div>
+            )}
+            {pushStatus === "unsupported" && (
+              <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 text-sm">
+                <BellOff size={16} />
+                Tu navegador no soporta notificaciones push. Asegúrate de usar
+                Safari en iPhone y tener la app agregada al Home Screen.
+              </div>
+            )}
+
+            <button
+              onClick={handleEnablePush}
+              disabled={pushStatus === "loading" || pushStatus === "success"}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {pushStatus === "loading" ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : pushStatus === "success" ? (
+                <CheckCircle size={16} />
+              ) : (
+                <Bell size={16} />
+              )}
+              {pushStatus === "success"
+                ? "Notificaciones activas"
+                : pushStatus === "loading"
+                  ? "Activando..."
+                  : "Activar notificaciones en este dispositivo"}
+            </button>
+
+            <p className="mt-3 text-xs text-gray-400">
+              Cada dispositivo (iPhone, computadora) debe activarlo por
+              separado. El token se guarda de forma segura en tu perfil.
             </p>
           </div>
         </div>
