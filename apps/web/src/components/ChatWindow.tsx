@@ -90,31 +90,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [notes, setNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState("");
 
-  // Templates & Tags menu State
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [showTemplates, setShowTemplates] = useState(false);
+  // Tags menu State
   const [showTagsMenu, setShowTagsMenu] = useState(false);
-
-  // Fetch Templates
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const res = await fetch("/api/templates");
-        if (res.ok) {
-          const data = await res.json();
-          const items = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.templates)
-              ? data.templates
-              : [];
-          setTemplates(items);
-        }
-      } catch (e) {
-        console.error("Error fetching templates", e);
-      }
-    };
-    fetchTemplates();
-  }, []);
+  const [noteHint, setNoteHint] = useState<string | null>(null);
+  const noteHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch Notes
   useEffect(() => {
@@ -707,7 +686,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           {/* Tags Dropdown — controlado por click (funciona en touch y desktop) */}
           <div className="relative">
             <button
-              onClick={() => { setShowTagsMenu(v => !v); setShowTemplates(false); }}
+              onClick={() => setShowTagsMenu(v => !v)}
               className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all border ${
                 showTagsMenu
                   ? "bg-slate-700 text-white border-slate-600"
@@ -758,6 +737,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ conversationId, tags: newTags }),
                     });
+
+                    const HINT_TAGS = ["Seguimiento", "Cotización", "Perdido"];
+                    const isAdding = !currentTags.includes(tag.label);
+                    if (isAdding && HINT_TAGS.includes(tag.label)) {
+                      if (noteHintTimerRef.current) clearTimeout(noteHintTimerRef.current);
+                      setNoteHint(tag.label);
+                      noteHintTimerRef.current = setTimeout(() => setNoteHint(null), 6000);
+                    } else {
+                      setNoteHint(null);
+                    }
                   }}
                   className={`w-full text-left px-3 py-2.5 text-xs rounded-lg flex items-center justify-between mb-0.5 transition-colors touch-manipulation ${
                     (conversation.tags || []).includes(tag.label)
@@ -777,49 +766,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                   )}
                 </button>
               ))}
-            </div>
-            )}
-          </div>
-
-          {/* Templates Dropdown — controlado por click (funciona en touch y desktop) */}
-          <div className="relative">
-            <button
-              onClick={() => { setShowTemplates(v => !v); setShowTagsMenu(false); }}
-              className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all border ${
-                showTemplates
-                  ? "bg-slate-700 text-white border-slate-600"
-                  : "bg-slate-800 text-slate-300 border-transparent hover:bg-slate-700 hover:text-white hover:border-slate-600"
-              }`}
-              aria-label="Plantillas de respuesta"
-              aria-expanded={showTemplates}
-              aria-haspopup="true"
-            >
-              <FileText size={14} />
-              Plantillas
-            </button>
-            {showTemplates && (
-            <div className="absolute top-full left-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 p-1.5 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200">
-              {templates.length === 0 ? (
-                <div className="p-4 text-xs text-slate-500 text-center">
-                  No hay plantillas disponibles
-                </div>
-              ) : (
-                templates.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => { setNewMessage(t.content); setShowTemplates(false); }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white mb-0.5 transition-colors touch-manipulation"
-                    title={t.content}
-                  >
-                    <div className="font-medium text-indigo-300 mb-0.5">
-                      {t.title}
-                    </div>
-                    <div className="text-[10px] text-slate-500 truncate">
-                      {t.content}
-                    </div>
-                  </button>
-                ))
-              )}
             </div>
             )}
           </div>
@@ -880,6 +826,31 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 Reabrir
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Note Hint Banner — IMPL-20260423-04 */}
+      {noteHint && (
+        <div className="animate-in slide-in-from-top-2 fade-in duration-300 flex items-center justify-between gap-3 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-300">
+          <span className="flex items-center gap-2">
+            <StickyNote size={13} className="shrink-0" />
+            Etiqueta <strong className="text-amber-200">"{noteHint}"</strong> aplicada — ¿Registrar una nota de seguimiento?
+          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => { setShowNotes(true); setNoteHint(null); if (noteHintTimerRef.current) clearTimeout(noteHintTimerRef.current); }}
+              className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-medium transition-colors"
+            >
+              Abrir notas
+            </button>
+            <button
+              onClick={() => { setNoteHint(null); if (noteHintTimerRef.current) clearTimeout(noteHintTimerRef.current); }}
+              className="p-1 rounded-lg hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-300 transition-colors"
+              aria-label="Cerrar sugerencia"
+            >
+              <X size={13} />
+            </button>
           </div>
         </div>
       )}
@@ -1123,14 +1094,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               title="Respuestas rápidas"
             >
               <Zap size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowTemplates(!showTemplates)}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
-              title="Plantillas"
-            >
-              <FileText size={16} />
             </button>
             <label
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
