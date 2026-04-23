@@ -1000,7 +1000,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                   className={`flex items-center gap-1 mt-1.5 ${isMe ? "justify-end text-indigo-200/70" : "justify-start text-slate-500"}`}
                 >
                   <span className="text-[10px] font-medium">
-                    {msg.createdAt?.toDate().toLocaleTimeString("es-MX", {
+                    {msg.createdAt?.toDate().toLocaleString("es-MX", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
                       hour: "2-digit",
                       minute: "2-digit",
                       timeZone: "America/Mexico_City",
