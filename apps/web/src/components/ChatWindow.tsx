@@ -278,6 +278,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
   const handleTakeConversation = async () => {
     if (!conversationId || !user) return;
+    // Actualización optimista: quitar alarma inmediatamente en UI
+    setConversation((prev) =>
+      prev ? { ...prev, needsHuman: false, assignedTo: user.uid, assignedToName: agent?.name || user.email || "Agente" } as any : null
+    );
     try {
       await fetch("/api/conversation/assign", {
         method: "POST",
