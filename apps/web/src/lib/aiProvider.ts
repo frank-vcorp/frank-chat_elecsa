@@ -4,6 +4,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai"; // Se mantiene para funciones secundarias (resúmenes)
+import { sendWhatsAppMessage } from "@/lib/twilio";
 
 const db = getFirestore();
 
@@ -690,6 +691,13 @@ export async function handOffToHuman(
   conversationId: string,
   reason: string,
   detectedCity?: string,
+  contactInfo?: {
+    phone: string;
+    name?: string;
+    lastMessage?: string;
+    mediaUrl?: string;
+    mediaMimeType?: string;
+  },
 ) {
   const convRef = db.doc(`conversations/${conversationId}`);
 
@@ -771,6 +779,77 @@ export async function handOffToHuman(
   } catch (fcmError) {
     // No interrumpir el handoff si FCM falla
     console.error("[FCM] Error enviando push (no crítico):", fcmError);
+  }
+
+  // --- Notificación WhatsApp a agentes de la sucursal --- ARCH-20260427-05
+  // Solo si se provee contactInfo (viene del webhook de Twilio)
+  if (contactInfo) {
+    try {
+      const targetBranchWA = branch || "general";
+      const agentsSnapWA = await db
+        .collection("agents")
+        .where("active", "==", true)
+        .where("type", "==", "human")
+        .get();
+
+      const branchConfigWA = BRANCHES_CONFIG[targetBranchWA as keyof typeof BRANCHES_CONFIG];
+      const branchNameWA = branchConfigWA?.displayName || targetBranchWA;
+
+      const clientPhone = contactInfo.phone.replace("whatsapp:", "");
+      const clientName = contactInfo.name || clientPhone;
+      const lastMsg = contactInfo.lastMessage
+        ? `\n💬 Último mensaje: "${contactInfo.lastMessage.slice(0, 120)}"`
+        : "";
+      const hasMedia = !!contactInfo.mediaUrl;
+      const mediaNote = hasMedia
+        ? `\n📎 El cliente adjuntó ${contactInfo.mediaMimeType?.startsWith("image/") ? "una imagen" : "un documento"} para cotizar.`
+        : "";
+
+      const notifyText =
+        `🔔 *Cliente nuevo en espera — ${branchNameWA}*\n\n` +
+        `👤 Nombre: ${clientName}\n` +
+        `📱 Tel: ${clientPhone}${lastMsg}${mediaNote}\n\n` +
+        `Escríbele directamente o atiéndelo en el chat:\n` +
+        `https://frank-chat-elecsa.vercel.app/dashboard`;
+
+      const notifiedAgents: string[] = [];
+      for (const agentDoc of agentsSnapWA.docs) {
+        const data = agentDoc.data();
+        const agentBranches: string[] = data.branches || (data.branch ? [data.branch] : []);
+        const isMatch =
+          targetBranchWA === "general" ||
+          agentBranches.includes(targetBranchWA) ||
+          agentBranches.includes("general") ||
+          data.role === "supervisor" ||
+          data.role === "admin";
+
+        if (!isMatch || !data.whatsapp) continue;
+
+        // Enviar texto principal
+        await sendWhatsAppMessage(data.whatsapp, notifyText);
+
+        // Si hay media, reenviarla al agente para que pueda cotizar
+        if (hasMedia && contactInfo.mediaUrl) {
+          await sendWhatsAppMessage(
+            data.whatsapp,
+            `📎 Archivo del cliente ${clientName} (${clientPhone}):`,
+            undefined,
+            contactInfo.mediaUrl,
+          );
+        }
+
+        notifiedAgents.push(data.whatsapp);
+      }
+
+      if (notifiedAgents.length > 0) {
+        console.log(`[WA-Notify] Notificación enviada a ${notifiedAgents.length} agente(s) de ${branchNameWA}`);
+      } else {
+        console.log(`[WA-Notify] No hay agentes con WhatsApp registrado para sucursal ${branchNameWA}`);
+      }
+    } catch (waError) {
+      // No interrumpir el handoff si la notificación WA falla
+      console.error("[WA-Notify] Error enviando notificación WhatsApp (no crítico):", waError);
+    }
   }
 }
 

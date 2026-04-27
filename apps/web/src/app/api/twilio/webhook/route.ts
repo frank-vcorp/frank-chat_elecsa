@@ -382,6 +382,13 @@ export async function POST(request: NextRequest) {
               conversationId,
               `Sofia escaló la conversación. Ciudad detectada: ${detectedCity}`,
               detectedCity!,
+              {
+                phone: phoneNumber,
+                name: profileName || undefined,
+                lastMessage: body || undefined,
+                mediaUrl: mediaUrl || undefined,
+                mediaMimeType: mediaContentType || undefined,
+              },
             );
           }
         }
