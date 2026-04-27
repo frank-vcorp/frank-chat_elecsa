@@ -174,39 +174,12 @@ export async function getSofiaResponse(
       };
     });
 
-  // Agregar el mensaje actual al final, con soporte de visión (IMPL-20260427-02)
+  // Agregar el mensaje actual al final (IMPL-20260427-02)
+  // Para imágenes y documentos: Sofía acusa recibo y escala al humano para cotización
   if (mediaInfo && mediaInfo.mimeType.startsWith("image/")) {
-    try {
-      const credentials = Buffer.from(
-        `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
-      ).toString("base64");
-      const imgRes = await fetch(mediaInfo.url, {
-        headers: { Authorization: `Basic ${credentials}` },
-      });
-      if (imgRes.ok) {
-        const arrayBuffer = await imgRes.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString("base64");
-        const userContent: any[] = [
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: mediaInfo.mimeType as any,
-              data: base64,
-            },
-          },
-        ];
-        if (message) userContent.push({ type: "text", text: message });
-        else userContent.push({ type: "text", text: "El cliente envió esta imagen. Descríbela brevemente y pregunta en qué puedes ayudar." });
-        history.push({ role: "user", content: userContent as any });
-      } else {
-        history.push({ role: "user", content: `[El cliente envió una imagen pero no pudo cargarse. Puedes decirle que la recibiste y pedir que describa lo que necesita.]${message ? ` El cliente también escribió: ${message}` : ""}` });
-      }
-    } catch {
-      history.push({ role: "user", content: `[El cliente envió una imagen. Indícale que la recibiste y pide que describa su consulta.]${message ? ` Mensaje: ${message}` : ""}` });
-    }
-  } else if (mediaInfo && mediaInfo.mimeType === "application/pdf") {
-    history.push({ role: "user", content: `[El cliente envió un documento PDF. El agente humano podrá revisarlo. Puedes decirle al cliente que recibiste su documento y que lo revisarán para darle seguimiento.]${message ? ` El cliente también escribió: ${message}` : ""}` });
+    history.push({ role: "user", content: `[El cliente envió una imagen adjunta. El agente humano la revisará para cotizar. Dile al cliente que recibiste su imagen y que un asesor la revisará para darle un precio.]${message ? ` El cliente también escribió: ${message}` : ""}` });
+  } else if (mediaInfo) {
+    history.push({ role: "user", content: `[El cliente envió un archivo adjunto (${mediaInfo.mimeType}). El agente humano lo revisará. Dile al cliente que recibiste su archivo y que un asesor lo revisará para darle seguimiento.]${message ? ` El cliente también escribió: ${message}` : ""}` });
   } else {
     history.push({ role: "user", content: message });
   }

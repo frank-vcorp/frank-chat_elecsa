@@ -53,6 +53,7 @@ export default function AdminLayout({
   const navItems = [
     { href: "/admin/products", label: "Productos", icon: Package },
     { href: "/admin/agents", label: "Agentes IA", icon: Bot },
+    { href: "/admin/sofia-test", label: "Probar Sofía", icon: Bot },
     { href: "/admin/settings", label: "Configuración", icon: Settings },
     { href: "/admin/logs", label: "Logs del Sistema", icon: Activity },
   ];
