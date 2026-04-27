@@ -41,6 +41,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const { isAdmin, user, agent } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
+
+  // Obtener idToken de Firebase para el proxy de media de Twilio
+  useEffect(() => {
+    auth.currentUser?.getIdToken().then(setIdToken).catch(() => {});
+  }, [user]);
   const [newMessage, setNewMessage] = useState("");
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [sending, setSending] = useState(false);
@@ -918,6 +924,13 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         {messages.map((msg) => {
           const isMe =
             msg.senderType === "agent" || msg.senderType === "system";
+
+          // Construir URL del proxy para archivos de Twilio
+          const mediaProxyUrl =
+            msg.mediaUrl && idToken
+              ? `/api/media/proxy?url=${encodeURIComponent(msg.mediaUrl)}&token=${encodeURIComponent(idToken)}`
+              : msg.mediaUrl;
+
           return (
             <div
               key={msg.id}
@@ -935,12 +948,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                   <div className="mb-2">
                     {msg.contentType === "image" ? (
                       <a
-                        href={msg.mediaUrl}
+                        href={mediaProxyUrl ?? undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
                         <img
-                          src={msg.mediaUrl}
+                          src={mediaProxyUrl ?? undefined}
                           alt="Imagen adjunta"
                           className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                           style={{ maxHeight: "300px" }}
@@ -948,14 +961,14 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       </a>
                     ) : msg.contentType === "video" ? (
                       <video
-                        src={msg.mediaUrl}
+                        src={mediaProxyUrl ?? undefined}
                         controls
                         className="max-w-full rounded-lg"
                         style={{ maxHeight: "300px" }}
                       />
                     ) : msg.contentType === "document" ? (
                       <a
-                        href={msg.mediaUrl}
+                        href={mediaProxyUrl ?? undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50 hover:bg-indigo-700/70" : "bg-slate-700/50 hover:bg-slate-700/70"} transition-colors`}
@@ -970,7 +983,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       </a>
                     ) : (
                       <a
-                        href={msg.mediaUrl}
+                        href={mediaProxyUrl ?? undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50 hover:bg-indigo-700/70" : "bg-slate-700/50 hover:bg-slate-700/70"} transition-colors`}
