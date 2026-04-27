@@ -855,6 +855,7 @@ export async function handOffToHuman(
         `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa.vercel.app/dashboard`;
 
       const notifiedAgents: string[] = [];
+      const notifiedAgentsInfo: { name: string; whatsapp: string }[] = [];
       for (const agentDoc of agentsSnapWA.docs) {
         const data = agentDoc.data();
         const agentBranches: string[] = data.branches || (data.branch ? [data.branch] : []);
@@ -881,10 +882,26 @@ export async function handOffToHuman(
         }
 
         notifiedAgents.push(data.whatsapp);
+        notifiedAgentsInfo.push({ name: data.name || data.whatsapp, whatsapp: data.whatsapp });
       }
 
       if (notifiedAgents.length > 0) {
         console.log(`[WA-Notify] Notificación enviada a ${notifiedAgents.length} agente(s) de ${branchNameWA}`);
+
+        // Dejar nota interna en el chat con los agentes notificados
+        const notifiedNames = notifiedAgentsInfo.map(
+          (a) => `${a.name} (${a.whatsapp})`
+        ).join(", ");
+        await db
+          .collection("conversations")
+          .doc(conversationId)
+          .collection("notes")
+          .add({
+            content: `📲 Canalizado por WhatsApp a: ${notifiedNames}`,
+            authorId: "sistema",
+            authorName: "Sistema",
+            createdAt: FieldValue.serverTimestamp(),
+          });
       } else {
         console.log(`[WA-Notify] No hay agentes con WhatsApp registrado para sucursal ${branchNameWA}`);
       }
