@@ -795,22 +795,64 @@ export async function handOffToHuman(
       const branchConfigWA = BRANCHES_CONFIG[targetBranchWA as keyof typeof BRANCHES_CONFIG];
       const branchNameWA = branchConfigWA?.displayName || targetBranchWA;
 
-      const clientPhone = contactInfo.phone.replace("whatsapp:", "");
-      const clientName = contactInfo.name || clientPhone;
-      const lastMsg = contactInfo.lastMessage
-        ? `\n💬 Último mensaje: "${contactInfo.lastMessage.slice(0, 120)}"`
-        : "";
+      // Número limpio para wa.me (sin +, sin whatsapp:)
+      const clientPhone = contactInfo.phone.replace("whatsapp:", "").replace(/\D/g, "");
+      const clientPhoneDisplay = contactInfo.phone.replace("whatsapp:", "");
+      const clientName = contactInfo.name || clientPhoneDisplay;
+      const waLink = `https://wa.me/${clientPhone}`;
+
+      // Generar resumen breve de la conversación con Claude
+      let resumen = contactInfo.lastMessage?.slice(0, 200) || "(sin mensaje de texto)";
+      try {
+        const histSnap = await db
+          .collection("messages")
+          .where("conversationId", "==", conversationId)
+          .orderBy("createdAt", "desc")
+          .limit(10)
+          .get();
+
+        if (!histSnap.empty) {
+          const histLines = histSnap.docs
+            .reverse()
+            .map((d) => {
+              const data = d.data();
+              const quien = data.senderType === "contact" ? "Cliente" : "Sofía";
+              return `${quien}: ${(data.content as string || "").slice(0, 200)}`;
+            })
+            .join("\n");
+
+          const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+          const resp = await anthropic.messages.create({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 120,
+            messages: [
+              {
+                role: "user",
+                content:
+                  `Resume en UN párrafo corto (máximo 2 oraciones) qué necesita este cliente para que el agente sepa qué cotizar o atender. Sin saludos ni explicaciones:\n\n${histLines}`,
+              },
+            ],
+          });
+
+          const blk = resp.content[0];
+          if (blk.type === "text") resumen = blk.text.trim();
+        }
+      } catch {
+        // Fallback al último mensaje si Claude falla
+      }
+
       const hasMedia = !!contactInfo.mediaUrl;
       const mediaNote = hasMedia
-        ? `\n📎 El cliente adjuntó ${contactInfo.mediaMimeType?.startsWith("image/") ? "una imagen" : "un documento"} para cotizar.`
+        ? `\n📎 ${contactInfo.mediaMimeType?.startsWith("image/") ? "Imagen adjunta" : "Documento adjunto"} para cotizar.`
         : "";
 
       const notifyText =
-        `🔔 *Cliente nuevo en espera — ${branchNameWA}*\n\n` +
-        `👤 Nombre: ${clientName}\n` +
-        `📱 Tel: ${clientPhone}${lastMsg}${mediaNote}\n\n` +
-        `Escríbele directamente o atiéndelo en el chat:\n` +
-        `https://frank-chat-elecsa.vercel.app/dashboard`;
+        `🔔 *Cliente listo para atender — ${branchNameWA}*\n\n` +
+        `👤 *${clientName}*\n` +
+        `📱 ${clientPhoneDisplay}\n` +
+        `👉 Escríbele aquí: ${waLink}${mediaNote}\n\n` +
+        `📋 *Resumen:* ${resumen}\n\n` +
+        `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa.vercel.app/dashboard`;
 
       const notifiedAgents: string[] = [];
       for (const agentDoc of agentsSnapWA.docs) {
@@ -832,7 +874,7 @@ export async function handOffToHuman(
         if (hasMedia && contactInfo.mediaUrl) {
           await sendWhatsAppMessage(
             data.whatsapp,
-            `📎 Archivo del cliente ${clientName} (${clientPhone}):`,
+            `📎 Archivo del cliente ${clientName}:`,
             undefined,
             contactInfo.mediaUrl,
           );
