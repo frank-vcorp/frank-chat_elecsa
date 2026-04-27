@@ -139,6 +139,7 @@ export async function getSofiaResponse(
   message: string,
   conversationId: string,
   phoneNumber: string,
+  mediaInfo?: { url: string; mimeType: string } | null,
 ): Promise<string> {
   console.log(`[getSofiaResponse] Processing message: "${message}"`);
 
@@ -173,8 +174,42 @@ export async function getSofiaResponse(
       };
     });
 
-  // Agregar el mensaje actual al final
-  history.push({ role: "user", content: message });
+  // Agregar el mensaje actual al final, con soporte de visión (IMPL-20260427-02)
+  if (mediaInfo && mediaInfo.mimeType.startsWith("image/")) {
+    try {
+      const credentials = Buffer.from(
+        `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
+      ).toString("base64");
+      const imgRes = await fetch(mediaInfo.url, {
+        headers: { Authorization: `Basic ${credentials}` },
+      });
+      if (imgRes.ok) {
+        const arrayBuffer = await imgRes.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
+        const userContent: any[] = [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mediaInfo.mimeType as any,
+              data: base64,
+            },
+          },
+        ];
+        if (message) userContent.push({ type: "text", text: message });
+        else userContent.push({ type: "text", text: "El cliente envió esta imagen. Descríbela brevemente y pregunta en qué puedes ayudar." });
+        history.push({ role: "user", content: userContent as any });
+      } else {
+        history.push({ role: "user", content: `[El cliente envió una imagen pero no pudo cargarse. Puedes decirle que la recibiste y pedir que describa lo que necesita.]${message ? ` El cliente también escribió: ${message}` : ""}` });
+      }
+    } catch {
+      history.push({ role: "user", content: `[El cliente envió una imagen. Indícale que la recibiste y pide que describa su consulta.]${message ? ` Mensaje: ${message}` : ""}` });
+    }
+  } else if (mediaInfo && mediaInfo.mimeType === "application/pdf") {
+    history.push({ role: "user", content: `[El cliente envió un documento PDF. El agente humano podrá revisarlo. Puedes decirle al cliente que recibiste su documento y que lo revisarán para darle seguimiento.]${message ? ` El cliente también escribió: ${message}` : ""}` });
+  } else {
+    history.push({ role: "user", content: message });
+  }
 
   // 3. Construir prompt final: base + contexto + hora
   let finalPrompt = basePrompt;

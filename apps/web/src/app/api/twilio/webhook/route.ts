@@ -53,6 +53,18 @@ function extractCityMention(text: string): string | null {
 }
 
 /**
+ * Determina el contentType del mensaje basado en el MIME type de Twilio.
+ * @intervention IMPL-20260427-02
+ */
+function getContentType(mime: string | null): "text" | "image" | "document" | "video" {
+  if (!mime) return "text";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime === "application/pdf" || mime.startsWith("application/")) return "document";
+  return "text";
+}
+
+/**
  * Twilio webhook endpoint for incoming WhatsApp messages.
  * Logs every request to the `system_logs` Firestore collection and processes
  * contacts, conversations, messages, and optional AI replies.
@@ -65,6 +77,11 @@ export async function POST(request: NextRequest) {
     const profileName = formData.get("ProfileName") as string;
     const messageStatus = formData.get("MessageStatus") as string;
     const to = formData.get("To") as string; // The number we sent the message to (our bot)
+
+    // Capture media fields — MUST be before validation (IMPL-20260427-02)
+    const numMedia = parseInt(formData.get("NumMedia") as string || "0", 10);
+    const mediaUrl = numMedia > 0 ? (formData.get("MediaUrl0") as string) : null;
+    const mediaContentType = numMedia > 0 ? (formData.get("MediaContentType0") as string) : null;
 
     // ----------------------------------------------------------------------
     // 0. Handle Status Callbacks (Sent, Delivered, Read)
@@ -91,7 +108,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Validate required fields
-    if (!from || !body) {
+    if (!from || (!body && numMedia === 0)) {
       console.error("[Webhook] Missing From or Body");
       await adminDb.collection("system_logs").add({
         type: "webhook_error",
@@ -186,8 +203,9 @@ export async function POST(request: NextRequest) {
       conversationId,
       senderId: phoneNumber,
       senderType: "contact",
-      content: body,
-      contentType: "text",
+      content: body || (mediaUrl ? `[Archivo adjunto: ${mediaContentType}]` : ""),
+      contentType: getContentType(mediaContentType),
+      ...(mediaUrl ? { mediaUrl, mediaMimeType: mediaContentType } : {}),
       createdAt: FieldValue.serverTimestamp() as any,
       status: "delivered",
     };
@@ -249,6 +267,7 @@ export async function POST(request: NextRequest) {
         body,
         conversationId,
         phoneNumber,
+        mediaUrl && mediaContentType ? { url: mediaUrl, mimeType: mediaContentType } : null,
       );
       if (sofiaReply) {
         // --- Social Robotics: delay humano + split de mensajes ---

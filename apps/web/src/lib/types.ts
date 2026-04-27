@@ -83,6 +83,7 @@ export interface Message {
   content: string;
   contentType: ContentType;
   mediaUrl?: string;
+  mediaMimeType?: string | null;
   createdAt: Timestamp;
   status: MessageStatus;
 }
