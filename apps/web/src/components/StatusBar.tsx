@@ -127,9 +127,13 @@ export default function StatusBar() {
 
     if (stats.needsHuman > 0) {
       interval = setInterval(() => {
-        playNotificationSound();
-        setIsFlashing(true);
-        setTimeout(() => setIsFlashing(false), 3000);
+        // Re-verificar dentro del callback para evitar sonar si ya se tomó la conversación
+        // entre el momento en que se creó el interval y cuando dispara
+        if (stats.needsHuman > 0) {
+          playNotificationSound();
+          setIsFlashing(true);
+          setTimeout(() => setIsFlashing(false), 3000);
+        }
       }, 30000); // Cada 30 segundos
     }
 
