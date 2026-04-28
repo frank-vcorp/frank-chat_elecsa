@@ -705,9 +705,10 @@ export async function handOffToHuman(
   const branch = detectedCity ? detectBranchByCity(detectedCity) : null;
 
   await convRef.update({
-    assignedTo: branch || "human", // Sucursal específica o "human" genérico
+    assignedTo: branch || "human", // Se sobreescribe con UID del agente específico más abajo
     needsHuman: true,
     branch: branch || "general", // Para filtrar en el dashboard
+    assignedToName: null, // Se actualizará cuando se encuentre el agente específico
   });
 
   await db.collection("alerts").add({

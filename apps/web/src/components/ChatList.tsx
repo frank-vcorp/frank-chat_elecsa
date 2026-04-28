@@ -555,12 +555,12 @@ export default function ChatList({
                   </div>
                 )}
 
-                {/* Assigned Agent Badge */}
-                {conv.assignedTo && conv.assignedTo !== "ai" && (
+                {/* Assigned Agent Badge — solo muestra si hay nombre específico */}
+                {conv.assignedTo && conv.assignedTo !== "ai" && conv.assignedToName && (
                   <div className="mt-1.5">
                     <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1 w-fit">
                       <User size={10} />
-                      {conv.assignedToName || (conv as any).assignedToName || "Agente"}
+                      {conv.assignedToName}
                     </span>
                   </div>
                 )}
