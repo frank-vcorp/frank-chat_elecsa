@@ -783,14 +783,17 @@ export async function handOffToHuman(
 
   // --- Notificación WhatsApp a agentes de la sucursal --- ARCH-20260427-05
   // Solo si se provee contactInfo (viene del webhook de Twilio)
+  console.log(`[WA-Notify] handOffToHuman llamado — conversationId=${conversationId} branch=${branch} contactInfo=${contactInfo ? "SÍ" : "NO"}`);
   if (contactInfo) {
     try {
       const targetBranchWA = branch || "general";
+      console.log(`[WA-Notify] targetBranchWA=${targetBranchWA}`);
       const agentsSnapWA = await db
         .collection("agents")
         .where("active", "==", true)
         .where("type", "==", "human")
         .get();
+      console.log(`[WA-Notify] Total agentes activos en Firestore: ${agentsSnapWA.size}`);
 
       const branchConfigWA = BRANCHES_CONFIG[targetBranchWA as keyof typeof BRANCHES_CONFIG];
       const branchNameWA = branchConfigWA?.displayName || targetBranchWA;
@@ -861,20 +864,24 @@ export async function handOffToHuman(
       const matchingAgents = agentsSnapWA.docs.filter((agentDoc) => {
         const data = agentDoc.data();
         const agentBranches: string[] = data.branches || (data.branch ? [data.branch] : []);
-        return (
+        const isMatch =
           targetBranchWA === "general" ||
           agentBranches.includes(targetBranchWA) ||
           agentBranches.includes("general") ||
           data.role === "supervisor" ||
-          data.role === "admin"
-        );
+          data.role === "admin";
+        console.log(`[WA-Notify] Agente ${data.name || data.email} — branches=${JSON.stringify(agentBranches)} role=${data.role} whatsapp=${data.whatsapp || "NO"} → match=${isMatch}`);
+        return isMatch;
       });
+      console.log(`[WA-Notify] matchingAgents para "${targetBranchWA}": ${matchingAgents.length}`);
 
       // Asignar la conversación al primer agente de la sucursal (con WA preferido)
       const primaryAgent =
         matchingAgents.find((d) => d.data().whatsapp && !["supervisor", "admin"].includes(d.data().role)) ||
         matchingAgents.find((d) => d.data().whatsapp) ||
         matchingAgents[0];
+
+      console.log(`[WA-Notify] primaryAgent=${primaryAgent ? (primaryAgent.data().name || primaryAgent.id) : "NINGUNO"}`);
 
       if (primaryAgent) {
         const pad = primaryAgent.data();
