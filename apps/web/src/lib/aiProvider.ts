@@ -889,21 +889,24 @@ export async function handOffToHuman(
         const data = agentDoc.data();
         if (!data.whatsapp) continue;
 
+        // Sanitizar número: eliminar espacios y asegurar formato E.164
+        const agentPhone = (data.whatsapp as string).replace(/\s+/g, "");
+
         // Enviar texto principal
-        await sendWhatsAppMessage(data.whatsapp, notifyText);
+        await sendWhatsAppMessage(agentPhone, notifyText);
 
         // Si hay media, reenviarla al agente para que pueda cotizar
         if (hasMedia && contactInfo.mediaUrl) {
           await sendWhatsAppMessage(
-            data.whatsapp,
+            agentPhone,
             `📎 Archivo del cliente ${clientName}:`,
             undefined,
             contactInfo.mediaUrl,
           );
         }
 
-        notifiedAgents.push(data.whatsapp);
-        notifiedAgentsInfo.push({ name: data.name || data.whatsapp, whatsapp: data.whatsapp });
+        notifiedAgents.push(agentPhone);
+        notifiedAgentsInfo.push({ name: data.name || agentPhone, whatsapp: agentPhone });
       }
 
       if (notifiedAgents.length > 0) {
