@@ -129,6 +129,23 @@
   - [✓] Commit: `3b0819c`
   - [ ] **Pendiente (manual)**: agregar `NEXT_PUBLIC_FIREBASE_VAPID_KEY` en Vercel env vars
 
+## Actualización INTEGRA (2026-04-28) — WhatsApp Template + Badges + Fixes
+
+- [✓] Integración plantilla aprobada Meta para notificaciones WA — `ARCH-20260428-01`
+  - [✓] `twilio.ts`: nueva función `sendWhatsAppTemplate()` con `contentSid` + `contentVariables`
+  - [✓] `aiProvider.ts`: usa plantilla si `TWILIO_WA_TEMPLATE_SID` definido, fallback texto libre
+  - [✓] Plantilla `elecsa_notificacion_agente` aprobada: `HX9681962ec5a7cfe9fbd9acf119235f5a`
+  - [✓] Commit: `1ff28aa`
+  - [ ] **Pendiente (manual)**: agregar `TWILIO_WA_TEMPLATE_SID` en Vercel env vars
+
+- [✓] Badge WhatsApp + nombre agente en ChatList — commit `11b23bf`
+- [✓] Fix FCM return prematuro bloqueaba notificación WA — commit `c7c01ae`
+- [✓] Proxy Firebase Storage + token refresh 50min — commits `48ef2c6`, `fd846e8`
+- [✓] Branch alias matching (id + displayName) — commit `76c7f83`
+- [✓] Supervisores excluidos del filtro WA (solo role=agent) — commit `6970544`
+- [✓] isMediaEscalation: imágenes siempre escalan — commit `3f019f3`
+- [✓] Checkpoint: `Checkpoints/CHK_2026-04-28_WA_TEMPLATE.md`
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
