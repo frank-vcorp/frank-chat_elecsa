@@ -80,6 +80,44 @@ export async function sendWhatsAppMessage(
 }
 
 /**
+ * Envía un mensaje de WhatsApp usando una plantilla aprobada por Meta.
+ * Necesario para contactar a usuarios que no han escrito en las últimas 24h.
+ */
+export async function sendWhatsAppTemplate(
+  to: string,
+  contentSid: string,
+  variables: Record<string, string>,
+  fromNumber?: string,
+) {
+  try {
+    if (!client) {
+      console.log("[Twilio] Credentials missing; skipping template send.", { to, contentSid });
+      return { sid: "mock-sid", status: "queued", to };
+    }
+
+    const num = whatsappNumber || "";
+    const envFrom = num.startsWith("whatsapp:") ? num : `whatsapp:${num}`;
+    const from = fromNumber
+      ? fromNumber.startsWith("whatsapp:") ? fromNumber : `whatsapp:${fromNumber}`
+      : envFrom;
+
+    console.log(`[Twilio] Sending template ${contentSid} from: ${from} to: ${to}`);
+
+    const message = await client.messages.create({
+      from,
+      to: `whatsapp:${to}`,
+      contentSid,
+      contentVariables: JSON.stringify(variables),
+    } as any);
+
+    return message;
+  } catch (error) {
+    console.error("[Twilio] Error sending WhatsApp template:", error);
+    throw error;
+  }
+}
+
+/**
  * Simula un delay humano antes de responder.
  * Un humano tarda ~3-5 segundos en escribir una respuesta corta.
  * Escala con el largo del mensaje para parecer más natural.

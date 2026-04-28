@@ -4,7 +4,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai"; // Se mantiene para funciones secundarias (resúmenes)
-import { sendWhatsAppMessage } from "@/lib/twilio";
+import { sendWhatsAppMessage, sendWhatsAppTemplate } from "@/lib/twilio";
 
 const db = getFirestore();
 
@@ -918,8 +918,20 @@ export async function handOffToHuman(
         // Sanitizar número: eliminar espacios y asegurar formato E.164
         const agentPhone = (data.whatsapp as string).replace(/\s+/g, "");
 
-        // Enviar texto principal
-        await sendWhatsAppMessage(agentPhone, notifyText);
+        const templateSid = process.env.TWILIO_WA_TEMPLATE_SID;
+        if (templateSid) {
+          // Usar plantilla aprobada por Meta (necesario para usuarios fuera de ventana 24h)
+          await sendWhatsAppTemplate(agentPhone, templateSid, {
+            "1": branchNameWA,
+            "2": clientName,
+            "3": clientPhoneDisplay,
+            "4": clientPhone, // sin + para wa.me
+            "5": resumen.slice(0, 400),
+          });
+        } else {
+          // Fallback a texto libre (solo funciona si el agente escribió en las últimas 24h)
+          await sendWhatsAppMessage(agentPhone, notifyText);
+        }
 
         // Si hay media, reenviarla al agente para que pueda cotizar
         if (hasMedia && contactInfo.mediaUrl) {
