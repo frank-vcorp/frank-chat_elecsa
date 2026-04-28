@@ -1,42 +1,43 @@
 // src/app/api/media/proxy/route.ts
-// Proxy autenticado para archivos de Twilio (imágenes, PDFs, videos).
-// Descarga el archivo con Basic Auth y lo sirve al navegador del agente.
-// Seguridad: solo permite URLs de dominios de Twilio y requiere sesión activa.
+// Proxy autenticado para archivos de Twilio y Firebase Storage.
+// Requiere sesión Firebase activa (token en query param).
+// Seguridad anti-SSRF: solo permite dominios de Twilio y Firebase Storage.
 // @intervention ARCH-20260427-04
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase-admin";
 
-// Dominios permitidos — solo Twilio (previene SSRF)
-const ALLOWED_HOSTS = [
+// Dominios permitidos (previene SSRF)
+const TWILIO_HOSTS = [
   "api.twilio.com",
   "media.twiliocdn.com",
   "mcs.us1.twilio.com",
 ];
 
-function isTwilioUrl(urlString: string): boolean {
+const FIREBASE_STORAGE_HOSTS = [
+  "firebasestorage.googleapis.com",
+  "storage.googleapis.com",
+];
+
+function isAllowedUrl(urlString: string): "twilio" | "firebase" | null {
   try {
     const parsed = new URL(urlString);
-    return (
-      parsed.protocol === "https:" &&
-      ALLOWED_HOSTS.some(
-        (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
-      )
-    );
+    if (parsed.protocol !== "https:") return null;
+    if (TWILIO_HOSTS.some((h) => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`)))
+      return "twilio";
+    if (FIREBASE_STORAGE_HOSTS.some((h) => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`)))
+      return "firebase";
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación via header Bearer o query param token
-    // (query param necesario para <img src> y <a href> donde no se pueden enviar headers)
     const authHeader = request.headers.get("Authorization");
     const queryToken = request.nextUrl.searchParams.get("token");
-
-    const token = authHeader?.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : queryToken;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : queryToken;
 
     if (!token) {
       return new NextResponse("No autorizado", { status: 401 });
@@ -50,21 +51,29 @@ export async function GET(request: NextRequest) {
       return new NextResponse("Falta parámetro url", { status: 400 });
     }
 
-    if (!isTwilioUrl(targetUrl)) {
+    const urlType = isAllowedUrl(targetUrl);
+    if (!urlType) {
       return new NextResponse("URL no permitida", { status: 403 });
     }
 
-    // Descargar con Basic Auth de Twilio
-    const sid = process.env.TWILIO_ACCOUNT_SID;
-    const token2 = process.env.TWILIO_AUTH_TOKEN;
-    if (!sid || !token2) {
-      return new NextResponse("Credenciales Twilio no configuradas", { status: 500 });
-    }
+    let upstream: Response;
 
-    const credentials = Buffer.from(`${sid}:${token2}`).toString("base64");
-    const upstream = await fetch(targetUrl, {
-      headers: { Authorization: `Basic ${credentials}` },
-    });
+    if (urlType === "twilio") {
+      // Descargar con Basic Auth de Twilio
+      const sid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      if (!sid || !authToken) {
+        return new NextResponse("Credenciales Twilio no configuradas", { status: 500 });
+      }
+      const credentials = Buffer.from(`${sid}:${authToken}`).toString("base64");
+      upstream = await fetch(targetUrl, {
+        headers: { Authorization: `Basic ${credentials}` },
+      });
+    } else {
+      // Firebase Storage — la URL ya incluye token de acceso público (?alt=media&token=...)
+      // El admin SDK tiene acceso sin credenciales adicionales
+      upstream = await fetch(targetUrl);
+    }
 
     if (!upstream.ok) {
       return new NextResponse(`Error al obtener archivo: ${upstream.status}`, {
@@ -79,11 +88,9 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": contentType,
-        // Permitir al navegador mostrar inline (imágenes) o descargar (PDF)
         "Content-Disposition": contentType.startsWith("image/")
           ? "inline"
           : `attachment; filename="archivo"`,
-        // Cache 1 hora — los archivos de Twilio no cambian
         "Cache-Control": "private, max-age=3600",
       },
     });

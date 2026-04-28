@@ -932,15 +932,17 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           const isMe =
             msg.senderType === "agent" || msg.senderType === "system";
 
-          // Construir URL del proxy solo para archivos de Twilio.
-          // Las URLs de Firebase Storage ya tienen token propio y no necesitan proxy.
-          const isTwilioMedia =
+          // Construir URL del proxy para Twilio y Firebase Storage.
+          // Ambos requieren autenticación — el proxy verifica el idToken de Firebase.
+          const needsProxy =
             msg.mediaUrl &&
             (msg.mediaUrl.includes("api.twilio.com") ||
               msg.mediaUrl.includes("twiliocdn.com") ||
-              msg.mediaUrl.includes("mcs.us1.twilio.com"));
+              msg.mediaUrl.includes("mcs.us1.twilio.com") ||
+              msg.mediaUrl.includes("firebasestorage.googleapis.com") ||
+              msg.mediaUrl.includes("storage.googleapis.com"));
           const mediaProxyUrl =
-            isTwilioMedia && idToken
+            needsProxy && idToken
               ? `/api/media/proxy?url=${encodeURIComponent(msg.mediaUrl!)}&token=${encodeURIComponent(idToken)}`
               : msg.mediaUrl;
 
