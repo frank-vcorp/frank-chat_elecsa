@@ -28,11 +28,17 @@ function detectEscalation(response: string): boolean {
     /te comunico con|te paso con/i, // Frases de handoff
     /comunic.*humano|conectar.*asesor/i,
     /escalando.*conversación/i,
-    /un asesor.*te (ayude|contactar|atender|llama|contacta)/i, // Aumentado: "te llama", "te contacta"
-    /en breve te (contactarán|llaman|llamaran)/i, // Aumentado: "te llaman"
-    /el equipo de.*te (llama|contacta)/i, // "El equipo de Querétaro te llama"
-    /te van a llamar/i, // Frase común
-    /urgencia|urgente|emergencia/i, // Palabras clave de usuario (Direct Red Light)
+    /un asesor.*te (ayude|contactar|atender|llama|contacta)/i,
+    /en breve te (contactarán|llaman|llamaran)/i,
+    /el equipo de.*te (llama|contacta)/i,
+    /te van a llamar/i,
+    /urgencia|urgente|emergencia/i,
+    // Frases de cotización/propuesta que Sofia usa cuando va a cerrar la venta
+    /propuesta formal/i,
+    /te (envío|envio|mando|paso|comparto) (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
+    /en unos momentos te (envío|envio|mando|paso|comparto)/i,
+    /ya tengo todo.*propuesta/i,
+    /cotización lista/i,
   ];
   return escalationPatterns.some((pattern) => pattern.test(response));
 }
