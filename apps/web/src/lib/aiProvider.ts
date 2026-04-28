@@ -701,8 +701,11 @@ export async function handOffToHuman(
 ) {
   const convRef = db.doc(`conversations/${conversationId}`);
 
-  // Detectar sucursal por ciudad si se proporciona
-  const branch = detectedCity ? detectBranchByCity(detectedCity) : null;
+  // Detectar sucursal: 1) por ciudad del mensaje, 2) fallback al branch ya guardado en la conv
+  const branchFromCity = detectedCity ? detectBranchByCity(detectedCity) : null;
+  const convSnap = await convRef.get();
+  const existingBranch = convSnap.data()?.branch;
+  const branch = branchFromCity || (existingBranch && existingBranch !== "general" ? existingBranch : null);
 
   await convRef.update({
     assignedTo: branch || "human", // Se sobreescribe con UID del agente específico más abajo

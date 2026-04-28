@@ -337,12 +337,18 @@ export async function POST(request: NextRequest) {
           );
 
           // Try to detect city from user's message or sofia's reply
+          // Fallback: usar el branch ya asignado a la conversación (Early Warning previo)
           const detectedCity =
             extractCityMention(body) || extractCityMention(sofiaReply);
-          const branch = detectedCity ? detectBranchByCity(detectedCity) : null;
+          const branchFromMessage = detectedCity ? detectBranchByCity(detectedCity) : null;
+          const branchFromConv = currentConv?.branch && currentConv.branch !== "general"
+            ? currentConv.branch
+            : null;
+          const branch = branchFromMessage || branchFromConv;
+          const effectiveCity = detectedCity || (branchFromConv ? `(sucursal: ${branchFromConv})` : null);
 
           console.log(
-            `[Webhook] Detected city: ${detectedCity}, Branch: ${branch}`,
+            `[Webhook] Detected city: ${detectedCity}, Branch from message: ${branchFromMessage}, Branch from conv: ${branchFromConv}, Effective branch: ${branch}`,
           );
 
           // Si detectamos un estado sin sucursal propia, enviar mensaje con opciones
@@ -373,20 +379,15 @@ export async function POST(request: NextRequest) {
               "[Webhook] Waiting for user branch selection (AI remains active)",
             );
           } else if (!branch) {
-            // FIX ARCH-20260422-02: Sofía escaló pero no se detectó ciudad todavía
-            // (el cliente aún no la dijo). Mantener IA activa para que atrape la ciudad
-            // en el siguiente mensaje y ejecute el handoff a la sucursal correcta.
-            // NO llamar handOffToHuman() sin sucursal: resultaría en branch="general"
-            // y la conversación flotaría sin agente asignado.
             console.log(
-              "[Webhook] Escalation detected but no city yet — keeping AI active to capture city in next turn.",
+              "[Webhook] Escalation detected but no city/branch yet — keeping AI active to capture city in next turn.",
             );
           } else {
-            // Ciudad y sucursal conocidas: handoff completo a la sucursal correcta.
+            // Ciudad o sucursal conocida: handoff completo.
             await handOffToHuman(
               conversationId,
-              `Sofia escaló la conversación. Ciudad detectada: ${detectedCity}`,
-              detectedCity!,
+              `Sofia escaló la conversación. Ciudad detectada: ${effectiveCity}`,
+              detectedCity || undefined,
               {
                 phone: phoneNumber,
                 name: profileName || undefined,
