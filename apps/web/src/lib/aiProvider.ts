@@ -756,33 +756,33 @@ export async function handOffToHuman(
 
     if (tokens.length === 0) {
       console.log(`[FCM] No hay tokens registrados para sucursal ${targetBranch}.`);
-      return;
-    }
+      // No hacer return — continuar con la notificación por WhatsApp
+    } else {
+      const branchConfig = BRANCHES_CONFIG[targetBranch as keyof typeof BRANCHES_CONFIG];
+      const branchName = branchConfig?.displayName || targetBranch;
 
-    const branchConfig = BRANCHES_CONFIG[targetBranch as keyof typeof BRANCHES_CONFIG];
-    const branchName = branchConfig?.displayName || targetBranch;
-
-    const messaging = getMessaging();
-    await messaging.sendEachForMulticast({
-      tokens,
-      notification: {
-        title: `🔔 Nueva conversación — ${branchName}`,
-        body: detectedCity
-          ? `Cliente de ${detectedCity} solicita atención. Entra al dashboard.`
-          : "Un cliente solicita atención humana. Entra al dashboard.",
-      },
-      data: {
-        conversationId,
-        branch: targetBranch,
-      },
-      webpush: {
-        fcmOptions: {
-          link: `https://frank-chat-elecsa.vercel.app/dashboard`,
+      const messaging = getMessaging();
+      await messaging.sendEachForMulticast({
+        tokens,
+        notification: {
+          title: `🔔 Nueva conversación — ${branchName}`,
+          body: detectedCity
+            ? `Cliente de ${detectedCity} solicita atención. Entra al dashboard.`
+            : "Un cliente solicita atención humana. Entra al dashboard.",
         },
-      },
-    });
+        data: {
+          conversationId,
+          branch: targetBranch,
+        },
+        webpush: {
+          fcmOptions: {
+            link: `https://frank-chat-elecsa.vercel.app/dashboard`,
+          },
+        },
+      });
 
-    console.log(`[FCM] Push enviado a ${tokens.length} dispositivo(s) de sucursal ${targetBranch}.`);
+      console.log(`[FCM] Push enviado a ${tokens.length} dispositivo(s) de sucursal ${targetBranch}.`);
+    }
   } catch (fcmError) {
     // No interrumpir el handoff si FCM falla
     console.error("[FCM] Error enviando push (no crítico):", fcmError);
