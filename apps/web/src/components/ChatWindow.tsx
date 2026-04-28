@@ -43,9 +43,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
 
-  // Obtener idToken de Firebase para el proxy de media de Twilio
+  // Obtener idToken de Firebase para el proxy de media de Twilio.
+  // Se refresca cada 50 min (tokens expiran en 60 min) para evitar expiración.
   useEffect(() => {
-    auth.currentUser?.getIdToken().then(setIdToken).catch(() => {});
+    if (!user) return;
+    const refresh = () => {
+      auth.currentUser?.getIdToken(true).then(setIdToken).catch(() => {});
+    };
+    refresh();
+    const interval = setInterval(refresh, 50 * 60 * 1000); // cada 50 min
+    return () => clearInterval(interval);
   }, [user]);
   const [newMessage, setNewMessage] = useState("");
   const [showQuickReplies, setShowQuickReplies] = useState(false);
