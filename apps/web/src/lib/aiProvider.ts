@@ -883,12 +883,12 @@ export async function handOffToHuman(
         const data = agentDoc.data();
         const agentBranches: string[] = (data.branches || (data.branch ? [data.branch] : []))
           .map((b: string) => b.toLowerCase());
+        // Supervisores y admins solo ven en dashboard, NO reciben WA
+        if (data.role === "supervisor" || data.role === "admin") return false;
         const isMatch =
           targetBranchWA === "general" ||
           agentBranches.some((b) => targetAliases.includes(b)) ||
-          agentBranches.includes("general") ||
-          data.role === "supervisor" ||
-          data.role === "admin";
+          agentBranches.includes("general");
         console.log(`[WA-Notify] Agente ${data.name || data.email} — branches=${JSON.stringify(agentBranches)} role=${data.role} whatsapp=${data.whatsapp || "NO"} targetAliases=${JSON.stringify(targetAliases)} → match=${isMatch}`);
         return isMatch;
       });
