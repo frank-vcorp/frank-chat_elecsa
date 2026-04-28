@@ -63,6 +63,9 @@ export interface Conversation {
   displayNameSource?: DisplayNameSource;
   // IMPL-20260409-02: Fecha real de cierre (SPEC-ARCH-20260409-15)
   closedAt?: Timestamp;
+  // ARCH-20260428-01: Agente asignado por nombre y badge WA
+  assignedToName?: string;
+  waCanalizado?: boolean;
 }
 
 export type SenderType = "agent" | "contact" | "system";

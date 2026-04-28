@@ -856,17 +856,38 @@ export async function handOffToHuman(
 
       const notifiedAgents: string[] = [];
       const notifiedAgentsInfo: { name: string; whatsapp: string }[] = [];
-      for (const agentDoc of agentsSnapWA.docs) {
+
+      // Filtrar agentes que corresponden a la sucursal
+      const matchingAgents = agentsSnapWA.docs.filter((agentDoc) => {
         const data = agentDoc.data();
         const agentBranches: string[] = data.branches || (data.branch ? [data.branch] : []);
-        const isMatch =
+        return (
           targetBranchWA === "general" ||
           agentBranches.includes(targetBranchWA) ||
           agentBranches.includes("general") ||
           data.role === "supervisor" ||
-          data.role === "admin";
+          data.role === "admin"
+        );
+      });
 
-        if (!isMatch || !data.whatsapp) continue;
+      // Asignar la conversación al primer agente de la sucursal (con WA preferido)
+      const primaryAgent =
+        matchingAgents.find((d) => d.data().whatsapp && !["supervisor", "admin"].includes(d.data().role)) ||
+        matchingAgents.find((d) => d.data().whatsapp) ||
+        matchingAgents[0];
+
+      if (primaryAgent) {
+        const pad = primaryAgent.data();
+        await db.collection("conversations").doc(conversationId).update({
+          assignedTo: primaryAgent.id,
+          assignedToName: pad.name || pad.email || "Agente",
+          waCanalizado: false, // Se actualiza a true después del envío WA
+        });
+      }
+
+      for (const agentDoc of matchingAgents) {
+        const data = agentDoc.data();
+        if (!data.whatsapp) continue;
 
         // Enviar texto principal
         await sendWhatsAppMessage(data.whatsapp, notifyText);
@@ -887,6 +908,11 @@ export async function handOffToHuman(
 
       if (notifiedAgents.length > 0) {
         console.log(`[WA-Notify] Notificación enviada a ${notifiedAgents.length} agente(s) de ${branchNameWA}`);
+
+        // Marcar la conversación como canalizada por WA
+        await db.collection("conversations").doc(conversationId).update({
+          waCanalizado: true,
+        });
 
         // Dejar nota interna en el chat con los agentes notificados
         const notifiedNames = notifiedAgentsInfo.map(

@@ -17,6 +17,7 @@ import {
   Volume2,
   VolumeX,
   Trash2,
+  Smartphone,
 } from "lucide-react";
 
 // Nombres legibles de sucursales
@@ -559,7 +560,17 @@ export default function ChatList({
                   <div className="mt-1.5">
                     <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1 w-fit">
                       <User size={10} />
-                      {(conv as any).assignedToName || "Agente"}
+                      {conv.assignedToName || (conv as any).assignedToName || "Agente"}
+                    </span>
+                  </div>
+                )}
+
+                {/* WhatsApp canalizado badge */}
+                {conv.waCanalizado && (
+                  <div className="mt-1">
+                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-green-600/15 text-green-400 border border-green-600/25 flex items-center gap-1 w-fit">
+                      <Smartphone size={10} />
+                      WhatsApp
                     </span>
                   </div>
                 )}
