@@ -732,12 +732,19 @@ export async function handOffToHuman(
       .get();
 
     const tokens: string[] = [];
+    const targetBranchConfig2 = BRANCHES_CONFIG[targetBranch as keyof typeof BRANCHES_CONFIG];
+    const targetAliasesFCM = [
+      targetBranch.toLowerCase(),
+      targetBranchConfig2?.displayName?.toLowerCase(),
+    ].filter(Boolean) as string[];
+
     agentsSnap.forEach((doc) => {
       const data = doc.data();
-      const agentBranches: string[] = data.branches || (data.branch ? [data.branch] : []);
+      const agentBranches: string[] = (data.branches || (data.branch ? [data.branch] : []))
+        .map((b: string) => b.toLowerCase());
       const isMatch =
         targetBranch === "general" ||
-        agentBranches.includes(targetBranch) ||
+        agentBranches.some((b) => targetAliasesFCM.includes(b)) ||
         agentBranches.includes("general") ||
         data.role === "supervisor" ||
         data.role === "admin";
@@ -861,16 +868,24 @@ export async function handOffToHuman(
       const notifiedAgentsInfo: { name: string; whatsapp: string }[] = [];
 
       // Filtrar agentes que corresponden a la sucursal
+      // Incluye alias: tanto el branchId ("slp") como el displayName ("San Luis Potosí")
+      const targetBranchConfig = BRANCHES_CONFIG[targetBranchWA as keyof typeof BRANCHES_CONFIG];
+      const targetAliases = [
+        targetBranchWA.toLowerCase(),
+        targetBranchConfig?.displayName?.toLowerCase(),
+      ].filter(Boolean) as string[];
+
       const matchingAgents = agentsSnapWA.docs.filter((agentDoc) => {
         const data = agentDoc.data();
-        const agentBranches: string[] = data.branches || (data.branch ? [data.branch] : []);
+        const agentBranches: string[] = (data.branches || (data.branch ? [data.branch] : []))
+          .map((b: string) => b.toLowerCase());
         const isMatch =
           targetBranchWA === "general" ||
-          agentBranches.includes(targetBranchWA) ||
+          agentBranches.some((b) => targetAliases.includes(b)) ||
           agentBranches.includes("general") ||
           data.role === "supervisor" ||
           data.role === "admin";
-        console.log(`[WA-Notify] Agente ${data.name || data.email} — branches=${JSON.stringify(agentBranches)} role=${data.role} whatsapp=${data.whatsapp || "NO"} → match=${isMatch}`);
+        console.log(`[WA-Notify] Agente ${data.name || data.email} — branches=${JSON.stringify(agentBranches)} role=${data.role} whatsapp=${data.whatsapp || "NO"} targetAliases=${JSON.stringify(targetAliases)} → match=${isMatch}`);
         return isMatch;
       });
       console.log(`[WA-Notify] matchingAgents para "${targetBranchWA}": ${matchingAgents.length}`);
