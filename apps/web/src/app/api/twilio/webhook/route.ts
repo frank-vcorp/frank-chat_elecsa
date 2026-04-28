@@ -324,17 +324,16 @@ export async function POST(request: NextRequest) {
         });
 
         // --------------------------------------------------------------
-        // 5.1 Detect escalation and route to correct branch
-        // --------------------------------------------------------------
-        // --------------------------------------------------------------
         // 5.1 Detect escalation (in User Input OR AI Response)
+        // Imágenes/docs siempre escalan: el agente humano debe cotizar.
         // --------------------------------------------------------------
         const isUserEscalating = detectEscalation(body);
         const isAiEscalating = detectEscalation(sofiaReply);
+        const isMediaEscalation = !!mediaUrl; // imagen/PDF siempre va a humano
 
-        if (isUserEscalating || isAiEscalating) {
+        if (isUserEscalating || isAiEscalating || isMediaEscalation) {
           console.log(
-            `[Webhook] Escalation detected (User: ${isUserEscalating}, AI: ${isAiEscalating})`,
+            `[Webhook] Escalation detected (User: ${isUserEscalating}, AI: ${isAiEscalating}, Media: ${isMediaEscalation})`,
           );
 
           // Try to detect city from user's message or sofia's reply
