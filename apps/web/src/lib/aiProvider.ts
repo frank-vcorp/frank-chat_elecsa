@@ -790,7 +790,7 @@ export async function handOffToHuman(
         },
         webpush: {
           fcmOptions: {
-            link: `https://frank-chat-elecsa.vercel.app/dashboard`,
+            link: `https://frank-chat-elecsa-web.vercel.app/dashboard`,
           },
         },
       });

@@ -38,8 +38,8 @@ self.addEventListener('notificationclick', (event) => {
 
   const convId = event.notification.data?.conversationId;
   const url = convId
-    ? `https://frank-chat-elecsa.vercel.app/dashboard?conv=${convId}`
-    : 'https://frank-chat-elecsa.vercel.app/dashboard';
+    ? `https://frank-chat-elecsa-web.vercel.app/dashboard?conv=${convId}`
+    : 'https://frank-chat-elecsa-web.vercel.app/dashboard';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
