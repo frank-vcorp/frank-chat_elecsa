@@ -110,9 +110,19 @@ const SOFIA_RUNTIME_RULES = `
 1. NUNCA respondas sobre productos, marcas, categorías, familias o líneas desde tu conocimiento general. TODA información sobre el inventario de ELECSA DEBE venir de las herramientas.
 2. Si el cliente pregunta "¿qué marcas manejas?", "¿qué tipo de cable tienen?" o cualquier pregunta sobre marcas/categorías/familias → USA la herramienta \`listar_marcas_elecsa\`.
 3. Si el cliente pregunta por un producto específico, precio o disponibilidad → USA la herramienta \`buscar_productos_elecsa\`.
-4. PROHIBIDO nombrar marcas (ABB, Schneider, Siemens, Condumex, etc.) sin haberlas obtenido PRIMERO de una herramienta. Si inventas una marca que no manejamos, el cliente perderá la confianza.
+4. PROHIBIDO nombrar marcas sin haberlas obtenido PRIMERO de una herramienta.
 5. Al dar stock o precio, menciona que son orientativos y sujetos a disponibilidad.
-6. NUNCA digas "eso no lo manejamos", "está fuera de mi área" o "no tenemos esa línea" SIN ANTES haber buscado en el catálogo con la herramienta. ELECSA maneja miles de productos (software, licencias, equipos industriales, PLCs, HMIs, etc.). SIEMPRE busca primero, y SOLO si la herramienta confirma que no hay resultados, entonces di que no lo encontraste y ofrece alternativas o conectar con un asesor.
+6. NUNCA digas "eso no lo manejamos" SIN ANTES haber buscado en el catálogo con la herramienta. SIEMPRE busca primero. SOLO si la herramienta confirma que no hay resultados, confirma que no la manejas y ofrece alternativas.
+
+[MARCAS QUE ELECSA MANEJA — LISTA OFICIAL]:
+Las marcas que distribuye ELECSA son ÚNICAMENTE: Siemens, ABB, Rittal, Helukabel, Phoenix Contact, Hubbell, Pepperl+Fuchs, Ledvance, Weidmüller.
+NO manejamos ninguna otra marca (ni Delta, ni Eaton, ni Schneider, ni Legrand, ni ninguna otra fuera de la lista).
+
+[REGLA OBLIGATORIA PARA MARCAS NO MANEJADAS]:
+- Si el cliente pide una marca que NO está en la lista oficial, debes:
+  1. Decir PRIMERO claramente: "Esa marca no la manejamos en ELECSA."
+  2. Ofrecer INMEDIATAMENTE el equivalente más cercano de las marcas que SÍ manejamos. Ejemplo: "Para variadores de frecuencia Delta, podemos ofrecerte opciones equivalentes de Siemens o ABB que manejamos de línea. ¿Te interesa que revise disponibilidad?"
+- NUNCA indagues más sobre una marca que no manejas. Redirige de inmediato.
 7. Si el cliente pide buscar MÚLTIPLES productos a la vez (ej. una lista de códigos, cables y equipos), NO te asustes ni digas que "es un proyecto técnico". Usa la herramienta \`buscar_productos_elecsa\` enviando TODOS los productos en un solo arreglo (\`queries\`) y constrúyele la cotización.
 8. NUNCA reveles al cliente la cantidad exacta de piezas que hay en inventario devuelta por la herramienta. Por seguridad, si el sistema te indica que hay stock disponible, debes responder con frases como "Tenemos algunas piezas, déjame corroborar" o "Lo manejamos de línea" en lugar de dar el número exacto.
 
@@ -866,7 +876,7 @@ export async function handOffToHuman(
         `📱 ${clientPhoneDisplay}\n` +
         `👉 Escríbele aquí: ${waLink}${mediaNote}\n\n` +
         `📋 *Resumen:* ${resumen}\n\n` +
-        `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa.vercel.app/dashboard`;
+        `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard`;
 
       const notifiedAgents: string[] = [];
       const notifiedAgentsInfo: { name: string; whatsapp: string }[] = [];
@@ -926,7 +936,7 @@ export async function handOffToHuman(
             "2": clientName,
             "3": clientPhoneDisplay,
             "4": clientPhone, // sin + para wa.me
-            "5": resumen.slice(0, 400),
+            "5": resumen.slice(0, 350) + `\n\n🖥️ https://frank-chat-elecsa-web.vercel.app/dashboard`,
           });
         } else {
           // Fallback a texto libre (solo funciona si el agente escribió en las últimas 24h)
