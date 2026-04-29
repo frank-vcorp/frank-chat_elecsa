@@ -146,6 +146,23 @@
 - [✓] isMediaEscalation: imágenes siempre escalan — commit `3f019f3`
 - [✓] Checkpoint: `Checkpoints/CHK_2026-04-28_WA_TEMPLATE.md`
 
+## Actualización INTEGRA (2026-04-29) — Prompt Sofía + URLs corregidas
+
+- [✓] Fix prompt Sofía: lista oficial de marcas ELECSA + regla de marca no manejada — `ARCH-20260429-01`
+  - [✓] `aiProvider.ts`: lista de 9 marcas como filtro de rechazo
+  - [✓] Regla: marca externa → decir que no la manejan + ofrecer equivalente inmediato
+  - [✓] Commit: `97f2748`
+
+- [✓] Fix URLs erróneas frank-chat-elecsa → frank-chat-elecsa-web — `ARCH-20260429-01`
+  - [✓] `firebase-messaging-sw.js` (2 ocurrencias)
+  - [✓] `aiProvider.ts` payload FCM
+  - [✓] Commit: `dae5447`
+
+- [✓] Refactor SOFIA_RUNTIME_RULES — Auditoría Deby FIX-20260429-01 — `ARCH-20260429-02`
+  - [✓] 6 inconsistencias resueltas (contradicción crítica Regla 6 vs. marcas, bypass herramienta, numeración rota, ejemplo violaba Regla 4, colisión desambiguación, doble fuente de verdad)
+  - [✓] Estructura REGLA A (marcas, sin herramienta) + REGLA B (productos, con herramienta)
+  - [✓] Commit: `cb63f96`
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
