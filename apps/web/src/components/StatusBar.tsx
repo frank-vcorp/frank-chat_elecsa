@@ -93,19 +93,9 @@ export default function StatusBar() {
       const hasNewUrgency = newStats.needsHuman > prevNeedsHumanRef.current;
       const hasNewChat = newStats.total > prevTotalRef.current;
 
-      // Debug Logs
-      console.log("[StatusBar] Update:", {
-        newTotal: newStats.total,
-        prevTotal: prevTotalRef.current,
-        hasNewChat,
-        hasNewUrgency,
-        prevTotalRefValue: prevTotalRef.current,
-      });
-
       // Solo sonar si NO es la carga inicial (evita ruido al refrescar)
       // Asumimos que la carga inicial tiene prevTotal = 0.
       if ((hasNewUrgency || hasNewChat) && prevTotalRef.current > 0) {
-        console.log("🔔 DING! Sound Triggered");
         playNotificationSound();
         setIsFlashing(true);
         setTimeout(() => setIsFlashing(false), 3000);
