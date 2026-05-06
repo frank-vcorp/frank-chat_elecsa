@@ -1024,9 +1024,17 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               msg.mediaUrl.includes("mcs.us1.twilio.com") ||
               msg.mediaUrl.includes("firebasestorage.googleapis.com") ||
               msg.mediaUrl.includes("storage.googleapis.com"));
+          /**
+           * @intervention FIX-20260506-03
+           * @source context/interconsultas/DICTAMEN_FIX-20260505-01.md
+           * Nunca exponer URLs protegidas de Twilio/Firebase directamente al navegador.
+           * Si el idToken todavía no está listo, bloqueamos el enlace para evitar el popup de auth.
+           */
           const mediaProxyUrl =
-            needsProxy && idToken
-              ? `/api/media/proxy?url=${encodeURIComponent(msg.mediaUrl!)}&token=${encodeURIComponent(idToken)}`
+            needsProxy
+              ? idToken
+                ? `/api/media/proxy?url=${encodeURIComponent(msg.mediaUrl!)}&token=${encodeURIComponent(idToken)}`
+                : null
               : msg.mediaUrl;
 
           return (
@@ -1045,50 +1053,89 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 {msg.mediaUrl && (
                   <div className="mb-2">
                     {msg.contentType === "image" ? (
-                      <a
-                        href={mediaProxyUrl ?? undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <img
-                          src={mediaProxyUrl ?? undefined}
-                          alt="Imagen adjunta"
-                          className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                      mediaProxyUrl ? (
+                        <a
+                          href={mediaProxyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={mediaProxyUrl}
+                            alt="Imagen adjunta"
+                            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            style={{ maxHeight: "300px" }}
+                          />
+                        </a>
+                      ) : (
+                        <div
+                          className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50" : "bg-slate-700/50"}`}
+                        >
+                          <Image size={20} />
+                          <span className="text-sm">Cargando imagen protegida...</span>
+                        </div>
+                      )
+                    ) : msg.contentType === "video" ? (
+                      mediaProxyUrl ? (
+                        <video
+                          src={mediaProxyUrl}
+                          controls
+                          className="max-w-full rounded-lg"
                           style={{ maxHeight: "300px" }}
                         />
-                      </a>
-                    ) : msg.contentType === "video" ? (
-                      <video
-                        src={mediaProxyUrl ?? undefined}
-                        controls
-                        className="max-w-full rounded-lg"
-                        style={{ maxHeight: "300px" }}
-                      />
+                      ) : (
+                        <div
+                          className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50" : "bg-slate-700/50"}`}
+                        >
+                          <File size={20} />
+                          <span className="text-sm">Cargando video protegido...</span>
+                        </div>
+                      )
                     ) : msg.contentType === "document" ? (
-                      <a
-                        href={mediaProxyUrl ?? undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50 hover:bg-indigo-700/70" : "bg-slate-700/50 hover:bg-slate-700/70"} transition-colors`}
-                      >
-                        <FileText
-                          size={24}
-                          className={isMe ? "text-indigo-200" : "text-red-400"}
-                        />
-                        <span className="text-sm underline">
-                          Ver documento PDF
-                        </span>
-                      </a>
+                      mediaProxyUrl ? (
+                        <a
+                          href={mediaProxyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50 hover:bg-indigo-700/70" : "bg-slate-700/50 hover:bg-slate-700/70"} transition-colors`}
+                        >
+                          <FileText
+                            size={24}
+                            className={isMe ? "text-indigo-200" : "text-red-400"}
+                          />
+                          <span className="text-sm underline">
+                            Ver documento PDF
+                          </span>
+                        </a>
+                      ) : (
+                        <div
+                          className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50" : "bg-slate-700/50"}`}
+                        >
+                          <FileText
+                            size={24}
+                            className={isMe ? "text-indigo-200" : "text-red-400"}
+                          />
+                          <span className="text-sm">Cargando documento protegido...</span>
+                        </div>
+                      )
                     ) : (
-                      <a
-                        href={mediaProxyUrl ?? undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50 hover:bg-indigo-700/70" : "bg-slate-700/50 hover:bg-slate-700/70"} transition-colors`}
-                      >
-                        <File size={24} />
-                        <span className="text-sm underline">Ver archivo</span>
-                      </a>
+                      mediaProxyUrl ? (
+                        <a
+                          href={mediaProxyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50 hover:bg-indigo-700/70" : "bg-slate-700/50 hover:bg-slate-700/70"} transition-colors`}
+                        >
+                          <File size={24} />
+                          <span className="text-sm underline">Ver archivo</span>
+                        </a>
+                      ) : (
+                        <div
+                          className={`flex items-center gap-2 p-3 rounded-lg ${isMe ? "bg-indigo-700/50" : "bg-slate-700/50"}`}
+                        >
+                          <File size={24} />
+                          <span className="text-sm">Cargando archivo protegido...</span>
+                        </div>
+                      )
                     )}
                   </div>
                 )}
