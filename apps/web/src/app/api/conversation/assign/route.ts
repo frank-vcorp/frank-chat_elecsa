@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
 
     if (agentId !== "ai") {
       updateData.needsHuman = false;
+      updateData.unreadCount = 0; // IMPL-20260506-03: limpiar badge al asignar a humano
       // Guardar nombre del agente para mostrar en UI
       if (agentName) {
         updateData.assignedToName = agentName;

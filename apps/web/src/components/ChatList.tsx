@@ -231,7 +231,8 @@ export default function ChatList({
       matchesBranch = false;
     }
 
-    return matchesSearch && matchesTags && matchesStatus && matchesBranch;
+    const notClosed = c.status !== "closed"; // IMPL-20260506-03: excluir cerradas del listado principal
+    return notClosed && matchesSearch && matchesTags && matchesStatus && matchesBranch;
   });
 
   const toggleTagFilter = (tag: string) => {

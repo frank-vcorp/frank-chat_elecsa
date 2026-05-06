@@ -29,11 +29,14 @@ export async function closeConversation(conversationId: string) {
   }
 
   // 3. Cerrar conversación SIEMPRE, con o sin resumen
+  // IMPL-20260506-03: limpiar needsHuman y unreadCount al cerrar
   await adminDb.collection("conversations").doc(conversationId).update({
     status: "closed",
     closedAt: new Date(),
     summary: summary,
     summarizedAt: new Date(),
+    needsHuman: false,
+    unreadCount: 0,
   });
 
   return summary;
