@@ -8,6 +8,7 @@ import {
   where,
   doc,
   orderBy,
+  getDocs,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
@@ -38,7 +39,7 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ conversationId }: ChatWindowProps) {
-  const { isAdmin, user, agent } = useAuth();
+  const { isAdmin, isSupervisor, user, agent } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
@@ -70,6 +71,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [nameInput, setNameInput] = useState("");
   const [savingName, setSavingName] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // IMPL-20260506-02: Estado para asignación manual (SPEC-ARCH-20260505-01)
+  const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [isAssigning, setIsAssigning] = useState(false);
 
   // Respuestas rápidas predefinidas
   const quickReplies = [
@@ -113,6 +119,26 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     });
     return () => unsub();
   }, []);
+
+  // IMPL-20260506-02: Cargar agentes humanos activos para asignación manual (SPEC-ARCH-20260505-01)
+  useEffect(() => {
+    if (!isSupervisor && !isAdmin) return;
+    const q = query(
+      collection(db, "agents"),
+      where("active", "==", true),
+      where("type", "==", "human"),
+    );
+    getDocs(q).then((snap) => {
+      const agents = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Agent));
+      const branch = conversation?.branch;
+      agents.sort((a, b) => {
+        const aMatch = a.branch === branch ? 0 : 1;
+        const bMatch = b.branch === branch ? 0 : 1;
+        return aMatch - bMatch;
+      });
+      setAvailableAgents(agents);
+    });
+  }, [isSupervisor, isAdmin, conversation?.branch]);
 
   // Tags menu State
   const [showTagsMenu, setShowTagsMenu] = useState(false);
@@ -307,6 +333,36 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       });
     } catch (error) {
       console.error("Failed to take conversation", error);
+    }
+  };
+
+  // IMPL-20260506-02: Asignación manual de conversación a agente específico (SPEC-ARCH-20260505-01)
+  const handleAssignToAgent = async () => {
+    if (!selectedAgentId || !conversationId) return;
+    const selectedAgent = availableAgents.find(a => a.id === selectedAgentId);
+    if (!selectedAgent) return;
+
+    setIsAssigning(true);
+    // Actualización optimista
+    setConversation(prev =>
+      prev ? { ...prev, needsHuman: false, assignedTo: selectedAgentId, assignedToName: selectedAgent.name } as any : null
+    );
+
+    try {
+      await fetch("/api/conversation/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          agentId: selectedAgentId,
+          agentName: selectedAgent.name,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to assign conversation", error);
+      // TODO: revertir estado optimista si falla
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -912,17 +968,44 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               </>
             )}
           </div>
-          <button
-            onClick={handleTakeConversation}
-            className={`text-xs px-4 py-1.5 rounded-lg shadow-md transition-all font-medium ${
-              conversation.needsHuman
-                ? "bg-rose-600 text-white hover:bg-rose-500"
-                : "bg-indigo-600 text-white hover:bg-indigo-500"
-            }`}
-            aria-label="Tomar control de la conversación"
-          >
-            Tomar Conversación
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleTakeConversation}
+              className={`text-xs px-4 py-1.5 rounded-lg shadow-md transition-all font-medium ${
+                conversation.needsHuman
+                  ? "bg-rose-600 text-white hover:bg-rose-500"
+                  : "bg-indigo-600 text-white hover:bg-indigo-500"
+              }`}
+              aria-label="Tomar control de la conversación"
+            >
+              Tomar Conversación
+            </button>
+            {/* Asignación manual — solo supervisor/admin */}
+            {(isSupervisor || isAdmin) && (
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedAgentId}
+                  onChange={(e) => setSelectedAgentId(e.target.value)}
+                  className="text-sm border rounded px-2 py-1 bg-white text-gray-700"
+                >
+                  <option value="">Asignar a agente...</option>
+                  {availableAgents.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                      {a.branch === conversation?.branch ? " ✓" : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAssignToAgent}
+                  disabled={!selectedAgentId || isAssigning}
+                  className="text-sm bg-teal-600 text-white px-3 py-1 rounded hover:bg-teal-700 disabled:opacity-50"
+                >
+                  {isAssigning ? "Asignando..." : "Asignar"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
