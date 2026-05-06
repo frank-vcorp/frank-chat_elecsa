@@ -379,8 +379,32 @@ export async function POST(request: NextRequest) {
               "[Webhook] Waiting for user branch selection (AI remains active)",
             );
           } else if (!branch) {
+            // IMPL-20260506-04: Sucursal desconocida → pedir confirmación explícita al cliente
+            // SPEC: SPEC-ARCH-20260506-03_confirmacion-sucursal-ambigua.md
             console.log(
-              "[Webhook] Escalation detected but no city/branch yet — keeping AI active to capture city in next turn.",
+              "[Webhook] Escalation detected but no city/branch — asking client to confirm branch.",
+            );
+            const branchConfirmMsg =
+              `Para canalizarte correctamente con un asesor, necesito confirmar tu zona. ` +
+              `¿Cuál de nuestras sucursales te queda mejor?\n\n${getBranchesListText()}\n\n` +
+              `Si prefieres, también puedes decirme tu ciudad o estado y yo te indico la sucursal más conveniente.`;
+
+            await sendWhatsAppMessage(phoneNumber, branchConfirmMsg, to);
+
+            const branchConfirmMsgRef = messagesRef.doc();
+            await branchConfirmMsgRef.set({
+              id: branchConfirmMsgRef.id,
+              conversationId,
+              senderId: "sofia",
+              senderType: "agent",
+              content: branchConfirmMsg,
+              contentType: "text",
+              createdAt: FieldValue.serverTimestamp() as any,
+              status: "sent",
+            } as Message);
+
+            console.log(
+              "[Webhook] Branch confirmation sent. AI remains active awaiting client response.",
             );
           } else {
             // Ciudad o sucursal conocida: handoff completo.
