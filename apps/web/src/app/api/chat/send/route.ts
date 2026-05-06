@@ -59,11 +59,17 @@ export async function POST(request: NextRequest) {
 
     await newMessageRef.set(newMessage);
 
+    const currentAssignedTo =
+      convData.assignedTo && convData.assignedTo !== "ai"
+        ? convData.assignedTo
+        : "human";
+
     // 5. Update Conversation
     await convRef.update({
       lastMessage: content || (mediaUrl ? "📎 Archivo adjunto" : ""),
       lastMessageAt: FieldValue.serverTimestamp(),
-      assignedTo: "agent", // Mark as handled by human
+      assignedTo: currentAssignedTo,
+      needsHuman: false,
       unreadCount: 0, // Reset unread count since we replied
     });
 
