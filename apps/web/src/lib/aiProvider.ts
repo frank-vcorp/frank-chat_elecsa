@@ -686,10 +686,7 @@ export function detectBranchByCity(cityText: string): string | null {
   for (const [branchId, config] of Object.entries(BRANCHES_CONFIG)) {
     for (const city of config.cities) {
       const normalizedCity = normalizeText(city);
-      if (
-        normalized.includes(normalizedCity) ||
-        normalizedCity.includes(normalized)
-      ) {
+      if (normalized.includes(normalizedCity)) {
         return branchId;
       }
     }
@@ -899,8 +896,7 @@ export async function handOffToHuman(
         if (data.role === "supervisor" || data.role === "admin") return false;
         const isMatch =
           targetBranchWA === "general" ||
-          agentBranches.some((b) => targetAliases.includes(b)) ||
-          agentBranches.includes("general");
+          agentBranches.some((b) => targetAliases.includes(b));
         console.log(`[WA-Notify] Agente ${data.name || data.email} — branches=${JSON.stringify(agentBranches)} role=${data.role} whatsapp=${data.whatsapp || "NO"} targetAliases=${JSON.stringify(targetAliases)} → match=${isMatch}`);
         return isMatch;
       });
@@ -930,6 +926,9 @@ export async function handOffToHuman(
         // Sanitizar número: eliminar espacios y asegurar formato E.164
         const agentPhone = (data.whatsapp as string).replace(/\s+/g, "");
 
+        // ⚠️ PRODUCCIÓN: Requiere TWILIO_WA_TEMPLATE_SID en variables de entorno de Vercel.
+        // Valor: HX9681962ec5a7cfe9fbd9acf119235f5a (plantilla aprobada por Meta)
+        // Sin esta variable, el sistema usa texto libre que solo funciona en ventana 24h.
         const templateSid = process.env.TWILIO_WA_TEMPLATE_SID;
         if (templateSid) {
           // Usar plantilla aprobada por Meta (necesario para usuarios fuera de ventana 24h)
