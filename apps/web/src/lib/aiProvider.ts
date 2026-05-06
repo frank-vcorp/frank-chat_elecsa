@@ -992,6 +992,136 @@ export async function handOffToHuman(
   }
 }
 
+/**
+ * Notifica por WhatsApp a un agente cuando se le asigna manualmente una conversación
+ * desde el dashboard. Reutiliza la misma plantilla aprobada que usa handOffToHuman.
+ * @intervention FIX-20260506-01
+ */
+export async function notifyAgentManualAssignment(
+  conversationId: string,
+  agentId: string,
+): Promise<{ sent: boolean; reason?: string }> {
+  try {
+    const agentSnap = await db.collection("agents").doc(agentId).get();
+    if (!agentSnap.exists) {
+      return { sent: false, reason: "agent_not_found" };
+    }
+    const agentData = agentSnap.data() || {};
+    const agentPhone = (agentData.whatsapp as string | undefined)?.replace(/\s+/g, "");
+    if (!agentPhone) {
+      console.log(`[WA-Notify-Manual] Agente ${agentId} no tiene WhatsApp registrado.`);
+      return { sent: false, reason: "agent_no_whatsapp" };
+    }
+
+    const convSnap = await db.collection("conversations").doc(conversationId).get();
+    if (!convSnap.exists) {
+      return { sent: false, reason: "conversation_not_found" };
+    }
+    const convData = convSnap.data() || {};
+    const contactId = convData.contactId as string;
+    const branchId = (convData.branch as string) || "general";
+
+    const branchConfig = BRANCHES_CONFIG[branchId as keyof typeof BRANCHES_CONFIG];
+    const branchName = branchConfig?.displayName || branchId;
+
+    // Datos del cliente
+    const contactSnap = contactId
+      ? await db.collection("contacts").doc(contactId).get()
+      : null;
+    const contactData = contactSnap?.data() || {};
+    const clientPhoneRaw = (contactData.phoneNumber as string) || contactId || "";
+    const clientPhoneDisplay = clientPhoneRaw.replace("whatsapp:", "");
+    const clientPhone = clientPhoneDisplay.replace(/\D/g, "");
+    const clientName =
+      (convData.displayName as string) ||
+      (contactData.name as string) ||
+      clientPhoneDisplay;
+
+    // Resumen breve: usar lastMessage; si hay tiempo, generar uno con Claude
+    let resumen =
+      (convData.lastMessage as string)?.slice(0, 200) || "(sin mensaje reciente)";
+    try {
+      const histSnap = await db
+        .collection("messages")
+        .where("conversationId", "==", conversationId)
+        .orderBy("createdAt", "desc")
+        .limit(8)
+        .get();
+      if (!histSnap.empty) {
+        const histLines = histSnap.docs
+          .reverse()
+          .map((d) => {
+            const data = d.data();
+            const quien = data.senderType === "contact" ? "Cliente" : "Sofía";
+            return `${quien}: ${(data.content as string || "").slice(0, 200)}`;
+          })
+          .join("\n");
+
+        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const resp = await anthropic.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 120,
+          messages: [
+            {
+              role: "user",
+              content:
+                `Resume en UN párrafo corto (máximo 2 oraciones) qué necesita este cliente para que el agente sepa qué cotizar o atender. Sin saludos ni explicaciones:\n\n${histLines}`,
+            },
+          ],
+        });
+        const blk = resp.content[0];
+        if (blk.type === "text") resumen = blk.text.trim();
+      }
+    } catch {
+      // fallback al lastMessage
+    }
+
+    const templateSid = process.env.TWILIO_WA_TEMPLATE_SID;
+    if (templateSid) {
+      await sendWhatsAppTemplate(agentPhone, templateSid, {
+        "1": branchName,
+        "2": clientName,
+        "3": clientPhoneDisplay,
+        "4": clientPhone,
+        "5": resumen.slice(0, 400),
+      });
+    } else {
+      const waLink = `https://wa.me/${clientPhone}`;
+      const notifyText =
+        `🔔 *Conversación asignada — ${branchName}*\n\n` +
+        `👤 *${clientName}*\n` +
+        `📱 ${clientPhoneDisplay}\n` +
+        `👉 Escríbele aquí: ${waLink}\n\n` +
+        `📋 *Resumen:* ${resumen}\n\n` +
+        `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard`;
+      await sendWhatsAppMessage(agentPhone, notifyText);
+    }
+
+    // Marcar canalizado y dejar nota interna
+    await db.collection("conversations").doc(conversationId).update({
+      waCanalizado: true,
+    });
+    await db
+      .collection("conversations")
+      .doc(conversationId)
+      .collection("notes")
+      .add({
+        content: `📲 Asignación manual notificada por WhatsApp a ${agentData.name || agentPhone} (${agentPhone})`,
+        authorId: "sistema",
+        authorName: "Sistema",
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+    console.log(
+      `[WA-Notify-Manual] Notificación enviada a ${agentData.name || agentPhone} (${agentPhone}) por asignación manual de ${conversationId}`,
+    );
+    return { sent: true };
+  } catch (error) {
+    console.error("[WA-Notify-Manual] Error notificando asignación manual:", error);
+    return { sent: false, reason: "error" };
+  }
+}
+
 /** Helper to create / update a product (used by admin UI) */
 export async function upsertProduct(product: any) {
   const prodRef = db.doc(`products/${product.sku}`);
