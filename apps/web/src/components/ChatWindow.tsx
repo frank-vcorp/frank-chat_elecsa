@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
-import { Message, Conversation } from "@/lib/types";
+import { Message, Conversation, Agent } from "@/lib/types";
 import { useAuth } from "@/lib/AuthContext";
 import {
   Send,

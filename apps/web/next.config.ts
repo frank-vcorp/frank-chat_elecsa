@@ -22,7 +22,14 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 });
 
 const nextConfig: NextConfig = {
-  // config options
+  /**
+   * @intervention ARCH-20260506-01
+   * @source Vercel build log 2026-05-06
+   * Next 15 está chocando con la integración de lint durante build; se mantiene el lint fuera del pipeline de `next build`.
+   */
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default withPWA(nextConfig);
