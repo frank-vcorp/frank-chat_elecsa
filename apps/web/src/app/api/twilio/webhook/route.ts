@@ -36,6 +36,8 @@ function detectEscalation(response: string): boolean {
     // Frases de cotización/propuesta que Sofia usa cuando va a cerrar la venta
     /propuesta formal/i,
     /te (envío|envio|mando|paso|comparto) (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
+    /te env[ií]a (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
+    /el equipo de.*te env[ií]a (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
     /en unos momentos te (envío|envio|mando|paso|comparto)/i,
     /ya tengo todo.*propuesta/i,
     /cotización lista/i,
