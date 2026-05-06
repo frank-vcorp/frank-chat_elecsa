@@ -41,6 +41,11 @@ function detectEscalation(response: string): boolean {
     /en unos momentos te (envío|envio|mando|paso|comparto)/i,
     /ya tengo todo.*propuesta/i,
     /cotización lista/i,
+    // Frases de "te conecto" / "déjame conectarte" — handoff explícito
+    /te conecto con (el |un )?(equipo|asesor|ejecutivo)/i,
+    /d[ée]jame conectarte (con|al|directamente)/i,
+    /conect[áa]ndote con (el |un )?(equipo|asesor|ejecutivo)/i,
+    /seguimiento (directo|personalizado|humano)/i,
   ];
   return escalationPatterns.some((pattern) => pattern.test(response));
 }
