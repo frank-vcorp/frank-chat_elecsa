@@ -387,6 +387,15 @@ Si recibes un aviso:
 3. toma la conversación si te corresponde
 4. revisa sucursal, notas y contexto antes de responder
 
+Si te resulta más ágil, puedes continuar la atención directamente por el WhatsApp del cliente usando los datos que te mandó Sofía.
+
+Pero aun así debes mantener el dashboard actualizado:
+
+1. toma la conversación en el chat antes o al iniciar el seguimiento
+2. evita que dos agentes atiendan al mismo cliente al mismo tiempo
+3. cuando el caso ya quedó atendido, marca la conversación como cerrada en el dashboard
+4. si dejaste un acuerdo, seguimiento o pendiente comercial, deja nota antes de cerrarla
+
 Si recibes un aviso de una sucursal que no te corresponde, repórtalo para que lo reasignen correctamente.
 
 No respondas por duplicado si ya ves otro agente asignado en el dashboard.
