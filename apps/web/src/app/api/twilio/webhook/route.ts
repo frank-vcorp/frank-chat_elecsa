@@ -251,23 +251,94 @@ export async function POST(request: NextRequest) {
     const earlyCity = extractCityMention(body);
     const earlyBranch = earlyCity ? detectBranchByCity(earlyCity) : null;
 
-    if (earlyBranch && currentConv?.branch !== earlyBranch) {
+    if (earlyBranch) {
       console.log(
-        `[Webhook] Early Warning: City '${earlyCity}' detected. Assigning to branch '${earlyBranch}'.`,
+        `[Webhook] Early Warning: City '${earlyCity}' detected → branch '${earlyBranch}'.`,
       );
       const conversationRef = adminDb
         .collection("conversations")
         .doc(conversationId);
 
+      // FIX-20260506-01: asignación de agente "a prueba de fallas".
+      // Si la IA ya estaba pidiendo la sucursal o ya había escalado, en cuanto
+      // el cliente menciona su ciudad ejecutamos el handoff completo —
+      // sin depender de que Sofía vuelva a generar una frase de escalación.
       if (isAssignedToAi) {
-        // IA activa: marcar needsHuman para que suene la alarma 🚨
-        await conversationRef.update({
-          branch: earlyBranch,
-          needsHuman: true,
-        });
+        // ¿El último mensaje de Sofía estaba pidiendo la sucursal o escalando?
+        let escalationContextActive = currentConv?.needsHuman === true;
+        try {
+          const lastMsgsSnap = await adminDb
+            .collection("messages")
+            .where("conversationId", "==", conversationId)
+            .orderBy("createdAt", "desc")
+            .limit(5)
+            .get();
+          const lastSofiaMsg = lastMsgsSnap.docs.find(
+            (d) => d.data().senderType === "agent",
+          );
+          const lastSofiaContent = (lastSofiaMsg?.data().content as string) || "";
+          const askedBranch =
+            /cu[áa]l de nuestras sucursales|necesito confirmar tu zona|cu[áa]l (sucursal|zona)/i.test(
+              lastSofiaContent,
+            );
+          const wasEscalating = detectEscalation(lastSofiaContent);
+          if (askedBranch || wasEscalating) {
+            escalationContextActive = true;
+          }
+          console.log(
+            `[Webhook] Early handoff context — needsHuman=${currentConv?.needsHuman} askedBranch=${askedBranch} wasEscalating=${wasEscalating}`,
+          );
+        } catch (e) {
+          console.warn("[Webhook] No se pudo leer último mensaje para handoff temprano:", e);
+        }
+
+        if (escalationContextActive) {
+          console.log(
+            `[Webhook] Early handoff: cliente confirmó '${earlyCity}' → asignando agente de '${earlyBranch}' sin esperar respuesta de Sofía.`,
+          );
+          await handOffToHuman(
+            conversationId,
+            `Cliente confirmó sucursal: ${earlyCity}`,
+            earlyCity,
+            {
+              phone: phoneNumber,
+              name: profileName || undefined,
+              lastMessage: body || undefined,
+              mediaUrl: mediaUrl || undefined,
+              mediaMimeType: mediaContentType || undefined,
+            },
+          );
+          // Cortamos aquí: el agente ya fue notificado, evitamos que Sofía siga "conectando".
+          return twilioAck();
+        }
+
+        // Sin contexto de escalación: solo corregir branch para futura referencia.
+        if (currentConv?.branch !== earlyBranch) {
+          await conversationRef.update({ branch: earlyBranch });
+        }
       } else {
-        // Conversación ya en mano humana: solo corregir el branch sin tocar needsHuman
-        await conversationRef.update({ branch: earlyBranch });
+        // Conversación ya en mano humana: corregir branch y reasignar agente si falta.
+        if (currentConv?.branch !== earlyBranch) {
+          await conversationRef.update({ branch: earlyBranch });
+        }
+        if (!currentConv?.assignedToName || currentConv?.assignedTo === "human") {
+          console.log(
+            `[Webhook] Conversación en humano sin agente concreto — re-ejecutando handoff para asignar agente de '${earlyBranch}'.`,
+          );
+          await handOffToHuman(
+            conversationId,
+            `Reasignación por ciudad detectada: ${earlyCity}`,
+            earlyCity,
+            {
+              phone: phoneNumber,
+              name: profileName || undefined,
+              lastMessage: body || undefined,
+              mediaUrl: mediaUrl || undefined,
+              mediaMimeType: mediaContentType || undefined,
+            },
+          );
+          return twilioAck();
+        }
       }
     }
 
