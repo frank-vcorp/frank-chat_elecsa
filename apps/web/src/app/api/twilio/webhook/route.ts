@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
           await handOffToHuman(
             conversationId,
             `Cliente confirmó sucursal: ${earlyCity}`,
-            earlyCity,
+            earlyCity || undefined,
             {
               phone: phoneNumber,
               name: profileName || undefined,
@@ -328,7 +328,7 @@ export async function POST(request: NextRequest) {
           await handOffToHuman(
             conversationId,
             `Reasignación por ciudad detectada: ${earlyCity}`,
-            earlyCity,
+            earlyCity || undefined,
             {
               phone: phoneNumber,
               name: profileName || undefined,
