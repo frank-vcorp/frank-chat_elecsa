@@ -163,6 +163,17 @@
   - [✓] Estructura REGLA A (marcas, sin herramienta) + REGLA B (productos, con herramienta)
   - [✓] Commit: `cb63f96`
 
+## Actualización CRONISTA (2026-05-06) — Cierre operativo handoff WA
+
+- [✓] Fix webhook Twilio `12300` con respuesta XML — `ARCH-20260506-01`
+- [✓] Restauración de payload de plantilla WA y envío a agentes
+- [✓] Mejora de detección de escalación con frases de cotización, `te conecto` y `déjame conectarte`
+- [✓] Asignación temprana por ciudad/sucursal en conversaciones ya escaladas
+- [✓] Notificación WhatsApp también en asignación manual
+- [✓] Limpieza de `needsHuman` al responder el agente
+- [✓] Actualización de `docs/GUIA_AGENTES.md` para permitir seguimiento por WhatsApp manteniendo el cierre en dashboard
+- [✓] Checkpoint de cierre consolidado: `Checkpoints/CHK_2026-05-06_CIERRE_OPERATIVO_FIX-20260506-01.md`
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
