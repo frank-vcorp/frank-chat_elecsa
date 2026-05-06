@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guia Visual - Dashboard de Agentes ELECSA</title>
+    <style>
+      :root {
+        --ink: #e8eefc;
+        --muted: #9ca9c7;
+        --line: rgba(151, 167, 202, 0.18);
+        --panel: #121a2e;
+        --panel-soft: #18233d;
+        --accent: #2d6bff;
+        --accent-soft: rgba(45, 107, 255, 0.14);
+        --ok: #18b47b;
+        --bg: #0a1020;
+        --card: #0f172b;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(45, 107, 255, 0.18), transparent 28%),
+          radial-gradient(circle at top right, rgba(24, 180, 123, 0.1), transparent 22%),
+          var(--bg);
+      }
+
+      .page {
+        width: min(1440px, calc(100vw - 32px));
+        margin: 24px auto 48px;
+        background: rgba(8, 13, 25, 0.34);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 20px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 18px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1.1;
+      }
+
+      .header p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        max-width: 720px;
+      }
+
+      .badge {
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        border: 1px solid rgba(45, 107, 255, 0.25);
+      }
+
+      .intro {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+      }
+
+      .hero-card,
+      .notes-card {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(24, 35, 61, 0.82), rgba(12, 19, 35, 0.96));
+        padding: 18px;
+      }
+
+      .hero-card h2,
+      .notes-header h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      .hero-card p,
+      .notes-header p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .shot-frame {
+        margin-top: 16px;
+        min-height: 420px;
+        border-radius: 16px;
+        border: 1px solid rgba(201, 212, 230, 0.12);
+        background: #09101f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .shot-frame img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+        object-fit: contain;
+        border-radius: 10px;
+      }
+
+      .shot-placeholder {
+        padding: 32px;
+        text-align: center;
+        color: #d7deee;
+      }
+
+      .shot-placeholder strong {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 18px;
+        color: white;
+      }
+
+      .quick-list {
+        margin: 18px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .quick-list li {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .quick-list strong {
+        color: var(--ink);
+      }
+
+      .notes-card {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .notes-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+      }
+
+      .notes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .note {
+        display: flex;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .note-number {
+        flex: 0 0 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        color: white;
+        font-size: 14px;
+        font-weight: 700;
+        margin-top: 2px;
+        box-shadow: 0 10px 20px rgba(45, 107, 255, 0.28);
+      }
+
+      .note h2 {
+        margin: 0 0 6px;
+        font-size: 15px;
+      }
+
+      .note p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .footer {
+        margin-top: auto;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .toolbar {
+        width: min(1440px, calc(100vw - 32px));
+        margin: 18px auto 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .toolbar button {
+        border: 0;
+        border-radius: 999px;
+        background: var(--accent);
+        color: white;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .toolbar button.secondary {
+        background: #2f3a52;
+      }
+
+      @media (max-width: 1080px) {
+        .intro {
+          grid-template-columns: 1fr;
+        }
+
+        .notes {
+          grid-template-columns: 1fr;
+        }
+
+        .notes-header,
+        .header,
+        .footer,
+        .toolbar {
+          flex-direction: column;
+          align-items: start;
+        }
+
+        .shot-frame {
+          min-height: 320px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          width: calc(100vw - 16px);
+          margin: 8px auto 24px;
+          padding: 16px;
+          border-radius: 18px;
+        }
+
+        .toolbar {
+          width: calc(100vw - 16px);
+        }
+
+        .toolbar-actions {
+          width: 100%;
+          flex-direction: column;
+        }
+
+        .toolbar button {
+          width: 100%;
+        }
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+
+        .toolbar {
+          display: none;
+        }
+
+        .page {
+          width: 100%;
+          margin: 0;
+          border: 0;
+          box-shadow: none;
+          background: white;
+          color: #172033;
+        }
+
+        .hero-card,
+        .notes-card,
+        .note {
+          background: white;
+          color: #172033;
+        }
+
+        .note p,
+        .header p,
+        .hero-card p,
+        .notes-header p,
+        .footer,
+        .quick-list li {
+          color: #55627a;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <div>
+        Guia visual interactiva para agentes. Puedes verla en pantalla y tambien imprimirla si lo necesitas.
+      </div>
+      <div class="toolbar-actions">
+        <button onclick="window.print()">Imprimir / Guardar PDF</button>
+      </div>
+    </div>
+
+    <main class="page">
+      <header class="header">
+        <div>
+          <h1>Manual Visual del Dashboard de Agentes</h1>
+          <p>Referencia rapida para operacion diaria en el chat de ELECSA. Usa esta pantalla para capacitar agentes y explicar cada zona del dashboard.</p>
+        </div>
+        <span class="badge">Guia en pantalla</span>
+      </header>
+
+      <section class="intro">
+        <article class="hero-card">
+          <h2>Pantalla principal del dashboard</h2>
+          <p>Esta captura resume la vista que usa el agente durante su turno. Si luego reemplazas la imagen por una version acotada desde Gimp, este documento la mostrara automaticamente.</p>
+          <div class="shot-frame">
+            <img src="./captura-dashboard-agentes.png" alt="Captura del dashboard de agentes" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <div class="shot-placeholder" style="display:none;">
+              <strong>Falta la imagen de la captura</strong>
+              Guarda la captura en esta misma carpeta con el nombre:
+              <br />
+              <strong>captura-dashboard-agentes.png</strong>
+              <br /><br />
+              Tamaño base actual: 1914 x 961 px
+            </div>
+          </div>
+        </article>
+
+        <aside class="hero-card">
+          <h2>Como usar esta guia</h2>
+          <p>La imagen muestra el dashboard real. Debajo tienes una lectura numerada por zonas para usarla en capacitacion o como consulta rapida durante la operacion.</p>
+          <ul class="quick-list">
+            <li><strong>Primero:</strong> identifica alertas, no leidos y sucursal.</li>
+            <li><strong>Luego:</strong> revisa si el chat ya tiene agente asignado.</li>
+            <li><strong>Despues:</strong> abre la conversacion y confirma contexto antes de responder.</li>
+            <li><strong>Si usas Gimp:</strong> puedes reemplazar esta imagen por una version con flechas, numeros o recuadros sin tocar el HTML.</li>
+            <li><strong>Ruta esperada:</strong> la imagen siempre debe llamarse <strong>captura-dashboard-agentes.png</strong>.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="notes-card">
+        <div class="notes-header">
+          <div>
+            <h2>Lectura guiada de la interfaz</h2>
+            <p>Estas 12 cotas describen lo que el agente debe entender al mirar el dashboard.</p>
+          </div>
+          <span class="badge">12 puntos clave</span>
+        </div>
+
+        <div class="notes">
+          <article class="note">
+            <span class="note-number">1</span>
+            <div>
+              <h2>Menú lateral</h2>
+              <p>Aquí navegas entre Conversaciones, Reportes, Productos, Agentes y Configuración. Para operación diaria, tu pantalla principal es Conversaciones.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">2</span>
+            <div>
+              <h2>Buscador</h2>
+              <p>Úsalo para localizar chats por nombre visible o número del cliente. Es la forma más rápida de recuperar una conversación específica.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">3</span>
+            <div>
+              <h2>Badge de sucursal</h2>
+              <p>Indica qué sucursal detectó el sistema para ese cliente. Revísalo antes de responder para confirmar que el chat corresponde a tu zona.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">4</span>
+            <div>
+              <h2>Agente asignado</h2>
+              <p>Muestra quién está atendiendo actualmente la conversación. Si ya hay responsable, evita responder duplicado sin coordinación.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">5</span>
+            <div>
+              <h2>Badge WhatsApp</h2>
+              <p>Señala que el sistema también notificó esta conversación por WhatsApp a agentes de la sucursal correspondiente.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">6</span>
+            <div>
+              <h2>No leídos</h2>
+              <p>El número azul muestra mensajes pendientes de revisar. Prioriza primero los chats con alerta humana y luego los no leídos más recientes.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">7</span>
+            <div>
+              <h2>Conversación abierta</h2>
+              <p>En el panel derecho revisas el historial completo. Antes de contestar, lee contexto, archivos adjuntos y mensajes previos de Sofía.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">8</span>
+            <div>
+              <h2>Etiquetar</h2>
+              <p>Usa etiquetas para clasificar la oportunidad: Nuevo, Interesado, Cotización, Seguimiento, Ganado, Perdido o Recurrente.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">9</span>
+            <div>
+              <h2>Retomar IA</h2>
+              <p>Devuelve el control a Sofía solo cuando la conversación vuelva a una consulta simple y ya no requiera atención humana directa.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">10</span>
+            <div>
+              <h2>Reabrir o cerrar</h2>
+              <p>Usa estos botones para reactivar un caso o cerrarlo cuando ya no haya pendiente. Al cerrar, la conversación sale de la lista activa.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">11</span>
+            <div>
+              <h2>Campo de respuesta</h2>
+              <p>Aquí escribes mensajes y adjuntas archivos. Responde con contexto, sin repetir preguntas que Sofía ya resolvió si hace falta.</p>
+            </div>
+          </article>
+
+          <article class="note">
+            <span class="note-number">12</span>
+            <div>
+              <h2>Barra de estado</h2>
+              <p>Resume alertas activas, conversaciones abiertas, mensajes sin leer y distribución entre IA y humanos. Úsala como indicador rápido del turno.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>Documento de apoyo para capacitacion interna de agentes ELECSA.</span>
+        <span>Archivo base listo para reemplazar la captura por una version acotada.</span>
+      </footer>
+    </main>
+  </body>
+</html>
