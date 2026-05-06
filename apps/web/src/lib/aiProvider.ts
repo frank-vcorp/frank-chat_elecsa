@@ -937,7 +937,9 @@ export async function handOffToHuman(
             "2": clientName,
             "3": clientPhoneDisplay,
             "4": clientPhone, // sin + para wa.me
-            "5": resumen.slice(0, 350) + `\n\n🖥️ https://frank-chat-elecsa-web.vercel.app/dashboard`,
+            // FIX-20260506-01 — Mantener {{5}} como resumen puro; agregar URL dentro de la variable
+            // rompió el payload que originalmente sí funcionaba con la plantilla aprobada.
+            "5": resumen.slice(0, 400),
           });
         } else {
           // Fallback a texto libre (solo funciona si el agente escribió en las últimas 24h)

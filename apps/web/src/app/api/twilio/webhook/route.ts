@@ -71,6 +71,17 @@ function getContentType(mime: string | null): "text" | "image" | "document" | "v
 }
 
 /**
+ * FIX-20260506-01 — Respuesta TwiML consistente para Twilio.
+ * Respaldo: context/interconsultas/DICTAMEN_FIX-20260506-01.md
+ */
+function twilioAck(status = 200) {
+  return new NextResponse("<Response></Response>", {
+    status,
+    headers: { "Content-Type": "text/xml; charset=utf-8" },
+  });
+}
+
+/**
  * Twilio webhook endpoint for incoming WhatsApp messages.
  * Logs every request to the `system_logs` Firestore collection and processes
  * contacts, conversations, messages, and optional AI replies.
@@ -99,7 +110,7 @@ export async function POST(request: NextRequest) {
         status: messageStatus,
         timestamp: FieldValue.serverTimestamp(),
       });
-      return new NextResponse("OK", { status: 200 });
+      return twilioAck();
     }
 
     // ----------------------------------------------------------------------
@@ -121,10 +132,7 @@ export async function POST(request: NextRequest) {
         error: "Missing From or Body",
         timestamp: FieldValue.serverTimestamp(),
       });
-      return NextResponse.json(
-        { error: "Missing From or Body" },
-        { status: 400 },
-      );
+      return twilioAck(400);
     }
 
     // Strip the "whatsapp:" prefix to get the raw phone number
@@ -260,10 +268,7 @@ export async function POST(request: NextRequest) {
       console.log(
         `[Webhook] Conversation assigned to ${currentConv?.assignedTo}, skipping AI response.`,
       );
-      return NextResponse.json({
-        status: "success",
-        message: "Message saved, AI skipped",
-      });
+      return twilioAck();
     }
 
     console.log("[Webhook] Triggering AI response");
@@ -454,9 +459,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Respond to Twilio with an empty <Response> to acknowledge receipt
-    return new NextResponse("<Response></Response>", {
-      headers: { "Content-Type": "text/xml" },
-    });
+    return twilioAck();
   } catch (error: any) {
     console.error("[Webhook] Critical error:", error);
     await adminDb.collection("system_logs").add({
@@ -465,9 +468,6 @@ export async function POST(request: NextRequest) {
       stack: error.stack,
       timestamp: FieldValue.serverTimestamp(),
     });
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return twilioAck(500);
   }
 }
