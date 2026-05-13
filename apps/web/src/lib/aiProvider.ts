@@ -9,6 +9,13 @@ import { sendWhatsAppMessage, sendWhatsAppTemplate } from "@/lib/twilio";
 const db = getFirestore();
 
 /**
+ * @intervention IMPL-20260513-05
+ * @see context/SPECs/SPEC-ARCH-20260513-04_wa-sesion-agentes.md
+ */
+const CLOSE_CHAT_REMINDER =
+  "No olvides cerrar la conversación en el chat cuando termines de atenderla.";
+
+/**
  * Obtiene el catálogo de productos activos de Firestore y lo formatea
  * como texto para inyectarlo al prompt de Sofía.
  * Formato optimizado para que la IA pueda buscar por SKU o descripción.
@@ -695,6 +702,70 @@ export function detectBranchByCity(cityText: string): string | null {
   return null;
 }
 
+/** IMPL-20260513-03: Enmascara número de teléfono dejando solo los últimos 4 dígitos visibles */
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length <= 4) return "****";
+  return `****${digits.slice(-4)}`;
+}
+
+/**
+ * @intervention IMPL-20260513-04
+ * @see context/interconsultas/DICTAMEN_FIX-20260513-01.md
+ */
+function resolveAgentWaDeliveryMode(
+  sessionActive: boolean,
+  templateSid?: string | null,
+): "template" | "session" {
+  if (sessionActive) return "session";
+  return templateSid ? "template" : "session";
+}
+
+/**
+ * IMPL-20260513-03: Crea un registro inicial de intento de aviso WA a agente
+ * en la colección agent_wa_logs. Devuelve un callback para resolverlo a sent/failed.
+ * Un documento = un intento. Se identifica por eventId único.
+ */
+async function createAgentWaLogAttempt(params: {
+  conversationId: string;
+  agentId: string;
+  agentName: string;
+  agentWhatsapp: string;
+  branch: string;
+  triggerSource: "handoff_auto" | "manual_assignment";
+  intendedDeliveryMode: "template" | "session";
+  templateSid?: string | null;
+}): Promise<(status: "sent" | "failed", error?: { code?: string; message?: string }) => Promise<void>> {
+  const eventId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const docRef = db.collection("agent_wa_logs").doc(eventId);
+  await docRef.set({
+    eventId,
+    conversationId: params.conversationId,
+    agentId: params.agentId,
+    agentName: params.agentName,
+    agentWhatsappMasked: maskPhone(params.agentWhatsapp),
+    branch: params.branch,
+    triggerSource: params.triggerSource,
+    messageKind: "primary_alert",
+    intendedDeliveryMode: params.intendedDeliveryMode,
+    effectiveDeliveryMode: params.intendedDeliveryMode,
+    templateSid: params.templateSid ?? null,
+    status: "attempted",
+    attemptedAt: FieldValue.serverTimestamp(),
+    resolvedAt: null,
+    errorCode: null,
+    errorMessage: null,
+  });
+  return async (status, error) => {
+    await docRef.update({
+      status,
+      resolvedAt: FieldValue.serverTimestamp(),
+      ...(error?.code != null ? { errorCode: String(error.code).slice(0, 50) } : {}),
+      ...(error?.message != null ? { errorMessage: String(error.message).slice(0, 500) } : {}),
+    });
+  };
+}
+
 /** Create a hand‑off alert and assign the conversation to a human/branch */
 export async function handOffToHuman(
   conversationId: string,
@@ -875,7 +946,8 @@ export async function handOffToHuman(
         `📱 ${clientPhoneDisplay}\n` +
         `👉 Escríbele aquí: ${waLink}${mediaNote}\n\n` +
         `📋 *Resumen:* ${resumen}\n\n` +
-        `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard`;
+        `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard\n\n` +
+        `⚠️ ${CLOSE_CHAT_REMINDER}`;
 
       const notifiedAgents: string[] = [];
       const notifiedAgentsInfo: { name: string; whatsapp: string }[] = [];
@@ -925,29 +997,68 @@ export async function handOffToHuman(
 
         // Sanitizar número: eliminar espacios y asegurar formato E.164
         const agentPhone = (data.whatsapp as string).replace(/\s+/g, "");
+        const agentName = (data.name as string) || agentDoc.id;
 
-        // ⚠️ PRODUCCIÓN: Requiere TWILIO_WA_TEMPLATE_SID en variables de entorno de Vercel.
-        // Valor: HX9681962ec5a7cfe9fbd9acf119235f5a (plantilla aprobada por Meta)
-        // Sin esta variable, el sistema usa texto libre que solo funciona en ventana 24h.
+        // IMPL-20260513-04: Verificar ventana activa de sesión WA del agente
+        const sessionUntilRaw = data.waSessionOpenUntil;
+        const sessionActive = sessionUntilRaw
+          ? (sessionUntilRaw.toDate ? sessionUntilRaw.toDate() : new Date(sessionUntilRaw)) > new Date()
+          : false;
+
         const templateSid = process.env.TWILIO_WA_TEMPLATE_SID;
-        if (templateSid) {
-          // Usar plantilla aprobada por Meta (necesario para usuarios fuera de ventana 24h)
-          await sendWhatsAppTemplate(agentPhone, templateSid, {
-            "1": branchNameWA,
-            "2": clientName,
-            "3": clientPhoneDisplay,
-            "4": clientPhone, // sin + para wa.me
-            // FIX-20260506-01 — Mantener {{5}} como resumen puro; agregar URL dentro de la variable
-            // rompió el payload que originalmente sí funcionaba con la plantilla aprobada.
-            "5": resumen.slice(0, 400),
-          });
-        } else {
-          // Fallback a texto libre (solo funciona si el agente escribió en las últimas 24h)
-          await sendWhatsAppMessage(agentPhone, notifyText);
+        const deliveryMode = resolveAgentWaDeliveryMode(sessionActive, templateSid);
+
+        // IMPL-20260513-03: Registrar intento de aviso principal
+        const logResolve = await createAgentWaLogAttempt({
+          conversationId,
+          agentId: agentDoc.id,
+          agentName,
+          agentWhatsapp: agentPhone,
+          branch: targetBranchWA,
+          triggerSource: "handoff_auto",
+          intendedDeliveryMode: deliveryMode,
+          templateSid: deliveryMode === "template" ? (templateSid ?? null) : null,
+        });
+
+        let primaryAlertSent = false;
+        try {
+          if (sessionActive) {
+            // Ventana activa: mensaje libre con recordatorio de cierre de conversación
+            const sessionText =
+              `🔔 *Cliente listo para atender — ${branchNameWA}*\n\n` +
+              `👤 *${clientName}*\n` +
+              `📱 ${clientPhoneDisplay}\n` +
+              `👉 Escríbele aquí: ${waLink}${mediaNote}\n\n` +
+              `📋 *Resumen:* ${resumen}\n\n` +
+              `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard\n\n` +
+              `⚠️ No olvides cerrar la conversación en el chat cuando termines de atenderla.`;
+            await sendWhatsAppMessage(agentPhone, sessionText);
+          } else if (templateSid) {
+            // ⚠️ PRODUCCIÓN: Requiere TWILIO_WA_TEMPLATE_SID en variables de entorno de Vercel.
+            // Valor: HX9681962ec5a7cfe9fbd9acf119235f5a (plantilla aprobada por Meta)
+            await sendWhatsAppTemplate(agentPhone, templateSid, {
+              "1": branchNameWA,
+              "2": clientName,
+              "3": clientPhoneDisplay,
+              "4": clientPhone, // sin + para wa.me
+              // FIX-20260506-01 — Mantener {{5}} como resumen puro
+              "5": resumen.slice(0, 400),
+            });
+          } else {
+            // Fallback texto libre (sin plantilla ni sesión activa)
+            await sendWhatsAppMessage(agentPhone, notifyText);
+          }
+          await logResolve("sent");
+          primaryAlertSent = true;
+        } catch (sendErr: any) {
+          const errCode = String(sendErr?.code || sendErr?.status || "").slice(0, 50);
+          const errMsg = String(sendErr?.message || "").slice(0, 500);
+          await logResolve("failed", { code: errCode, message: errMsg });
+          console.error(`[WA-Notify] Error enviando a agente ${agentName}:`, sendErr);
         }
 
-        // Si hay media, reenviarla al agente para que pueda cotizar
-        if (hasMedia && contactInfo.mediaUrl) {
+        // Si hay media, reenviarla al agente para cotizar (auxiliar — no entra en log primario)
+        if (primaryAlertSent && hasMedia && contactInfo.mediaUrl) {
           await sendWhatsAppMessage(
             agentPhone,
             `📎 Archivo del cliente ${clientName}:`,
@@ -956,8 +1067,10 @@ export async function handOffToHuman(
           );
         }
 
-        notifiedAgents.push(agentPhone);
-        notifiedAgentsInfo.push({ name: data.name || agentPhone, whatsapp: agentPhone });
+        if (primaryAlertSent) {
+          notifiedAgents.push(agentPhone);
+          notifiedAgentsInfo.push({ name: agentName, whatsapp: agentPhone });
+        }
       }
 
       if (notifiedAgents.length > 0) {
@@ -1077,24 +1190,65 @@ export async function notifyAgentManualAssignment(
     }
 
     const templateSid = process.env.TWILIO_WA_TEMPLATE_SID;
-    if (templateSid) {
-      await sendWhatsAppTemplate(agentPhone, templateSid, {
-        "1": branchName,
-        "2": clientName,
-        "3": clientPhoneDisplay,
-        "4": clientPhone,
-        "5": resumen.slice(0, 400),
-      });
-    } else {
-      const waLink = `https://wa.me/${clientPhone}`;
-      const notifyText =
-        `🔔 *Conversación asignada — ${branchName}*\n\n` +
-        `👤 *${clientName}*\n` +
-        `📱 ${clientPhoneDisplay}\n` +
-        `👉 Escríbele aquí: ${waLink}\n\n` +
-        `📋 *Resumen:* ${resumen}\n\n` +
-        `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard`;
-      await sendWhatsAppMessage(agentPhone, notifyText);
+
+    // IMPL-20260513-04: Verificar ventana activa de sesión WA del agente
+    const sessionUntilRaw = agentData.waSessionOpenUntil;
+    const sessionActive = sessionUntilRaw
+      ? (sessionUntilRaw.toDate ? sessionUntilRaw.toDate() : new Date(sessionUntilRaw)) > new Date()
+      : false;
+    const deliveryMode = resolveAgentWaDeliveryMode(sessionActive, templateSid);
+
+    const waLink = `https://wa.me/${clientPhone}`;
+
+    // IMPL-20260513-03: Registrar intento de aviso principal
+    const logResolve = await createAgentWaLogAttempt({
+      conversationId,
+      agentId,
+      agentName: (agentData.name as string) || agentId,
+      agentWhatsapp: agentPhone,
+      branch: branchId,
+      triggerSource: "manual_assignment",
+      intendedDeliveryMode: deliveryMode,
+      templateSid: deliveryMode === "template" ? (templateSid ?? null) : null,
+    });
+
+    try {
+      if (sessionActive) {
+        // Ventana activa: mensaje libre con recordatorio de cierre
+        const sessionText =
+          `🔔 *Conversación asignada — ${branchName}*\n\n` +
+          `👤 *${clientName}*\n` +
+          `📱 ${clientPhoneDisplay}\n` +
+          `👉 Escríbele aquí: ${waLink}\n\n` +
+          `📋 *Resumen:* ${resumen}\n\n` +
+          `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard\n\n` +
+          `⚠️ No olvides cerrar la conversación en el chat cuando termines de atenderla.`;
+        await sendWhatsAppMessage(agentPhone, sessionText);
+      } else if (templateSid) {
+        await sendWhatsAppTemplate(agentPhone, templateSid, {
+          "1": branchName,
+          "2": clientName,
+          "3": clientPhoneDisplay,
+          "4": clientPhone,
+          "5": resumen.slice(0, 400),
+        });
+      } else {
+        const fallbackText =
+          `🔔 *Conversación asignada — ${branchName}*\n\n` +
+          `👤 *${clientName}*\n` +
+          `📱 ${clientPhoneDisplay}\n` +
+          `👉 Escríbele aquí: ${waLink}\n\n` +
+          `📋 *Resumen:* ${resumen}\n\n` +
+          `🖥️ Ver en el chat:\nhttps://frank-chat-elecsa-web.vercel.app/dashboard\n\n` +
+          `⚠️ ${CLOSE_CHAT_REMINDER}`;
+        await sendWhatsAppMessage(agentPhone, fallbackText);
+      }
+      await logResolve("sent");
+    } catch (sendErr: any) {
+      const errCode = String(sendErr?.code || sendErr?.status || "").slice(0, 50);
+      const errMsg = String(sendErr?.message || "").slice(0, 500);
+      await logResolve("failed", { code: errCode, message: errMsg });
+      throw sendErr;
     }
 
     // Marcar canalizado y dejar nota interna

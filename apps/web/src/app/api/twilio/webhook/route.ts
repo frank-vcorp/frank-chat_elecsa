@@ -89,6 +89,21 @@ function twilioAck(status = 200) {
 }
 
 /**
+ * @intervention IMPL-20260513-05
+ * @see context/SPECs/SPEC-ARCH-20260513-04_wa-sesion-agentes.md
+ */
+const AGENT_WINDOW_ACK_TEXT =
+  "Recibido. Tus próximos avisos podrán llegar por mensaje normal mientras tu ventana siga activa. No olvides cerrar la conversación en el chat.";
+
+/**
+ * @intervention IMPL-20260513-04
+ * @see context/SPECs/SPEC-ARCH-20260513-04_wa-sesion-agentes.md
+ */
+function normalizeWhatsappDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+/**
  * Twilio webhook endpoint for incoming WhatsApp messages.
  * Logs every request to the `system_logs` Firestore collection and processes
  * contacts, conversations, messages, and optional AI replies.
@@ -144,6 +159,42 @@ export async function POST(request: NextRequest) {
 
     // Strip the "whatsapp:" prefix to get the raw phone number
     const phoneNumber = from.replace("whatsapp:", "");
+
+    // ----------------------------------------------------------------------
+    // 1.5 Detectar si el remitente es un agente humano (SPEC-ARCH-20260513-04)
+    // Si coincide con agents.whatsapp → abrir/refrescar ventana activa y salir.
+    // NO se crea contacto ni conversación de cliente.
+    // ----------------------------------------------------------------------
+    {
+      const phoneNorm = normalizeWhatsappDigits(phoneNumber);
+      const agentsForWASnap = await adminDb
+        .collection("agents")
+        .where("active", "==", true)
+        .where("type", "==", "human")
+        .get();
+      const agentMatch = agentsForWASnap.docs.find((d) => {
+        const wa = d.data().whatsapp as string | undefined;
+        return wa ? normalizeWhatsappDigits(wa) === phoneNorm : false;
+      });
+      if (agentMatch) {
+        const sessionUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const sanitizedText = (body || "").slice(0, 200).replace(/[\n\r]+/g, " ").trim();
+        await adminDb.collection("agents").doc(agentMatch.id).update({
+          waSessionOpenUntil: sessionUntil,
+          lastAgentInboundAt: FieldValue.serverTimestamp(),
+          lastAgentInboundText: sanitizedText,
+        });
+        try {
+          await sendWhatsAppMessage(phoneNumber, AGENT_WINDOW_ACK_TEXT, to);
+        } catch (ackError) {
+          console.error("[Webhook] No se pudo enviar acuse WA al agente:", ackError);
+        }
+        console.log(
+          `[Webhook] Agente ${agentMatch.data().name || agentMatch.id} respondió vía WA → ventana activa hasta ${sessionUntil.toISOString()}`,
+        );
+        return twilioAck();
+      }
+    }
 
     // ----------------------------------------------------------------------
     // 2. Get or Create Contact

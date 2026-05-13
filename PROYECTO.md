@@ -174,6 +174,23 @@
 - [✓] Actualización de `docs/GUIA_AGENTES.md` para permitir seguimiento por WhatsApp manteniendo el cierre en dashboard
 - [✓] Checkpoint de cierre consolidado: `Checkpoints/CHK_2026-05-06_CIERRE_OPERATIVO_FIX-20260506-01.md`
 
+## Actualización ARQUITECTURA (2026-05-13) — Observabilidad WA a agentes
+
+- [/] Logging operativo por agente para avisos WhatsApp — `ARCH-20260513-03`
+  - [✓] SPEC creada: `context/SPECs/SPEC-ARCH-20260513-03_log-wa-agentes.md`
+  - [✓] Implementar persistencia estructurada por envío a agente (`template` vs `session`)
+  - [✓] Cubrir handoff automático y asignación manual
+  - [ ] Validar durante primeros días de operación si la estrategia WA cambia correctamente de plantilla a sesión
+  - [✓] Checkpoint técnico: `Checkpoints/CHK_2026-05-13_IMPL-20260513-04_wa-sesion-agentes.md`
+
+- [/] Ventana activa WA con agentes humanos — `ARCH-20260513-04`
+  - [✓] SPEC creada: `context/SPECs/SPEC-ARCH-20260513-04_wa-sesion-agentes.md`
+  - [✓] Detectar en webhook si el número entrante pertenece a un agente
+  - [✓] Abrir/refrescar ventana activa de 24h por agente
+  - [✓] Enviar avisos como `session` cuando el agente ya respondió previamente
+  - [✓] Mantener aviso con recordatorio de cerrar la conversación en el chat
+  - [ ] Validar runtime con agentes reales y números configurados en Firestore
+
 ## Notas y Referencias
 
 - [Walkthrough](file:///home/frank/.gemini/antigravity/brain/d6b92051-db0c-4877-b893-cba9bed684ec/walkthrough.md)
