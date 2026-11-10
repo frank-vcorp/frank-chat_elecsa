@@ -242,7 +242,15 @@ export async function testAgentWithContext(
   return callClaude(finalPrompt, [{ role: "user", content: message }]);
 }
 
-/** Claude 3.5 Haiku — Motor principal de Sofía con Function Calling */
+/**
+ * Haiku 5.5. El pensamiento adaptativo viene encendido y cuenta dentro de
+ * max_tokens; lo apagamos para que el cupo de 600 tokens sea solo la respuesta
+ * y el precio se quede en el tramo de $0.10 / $0.50 por millón.
+ */
+const SOFIA_MODEL = "claude-haiku-5-5";
+const SOFIA_THINKING = { type: "disabled" as const };
+
+/** Claude Haiku 5.5 — Motor principal de Sofía con Function Calling */
 async function callClaude(
   systemPrompt: string,
   conversationHistory: any[],
@@ -256,8 +264,9 @@ async function callClaude(
   while (iterations < MAX_ITERATIONS) {
     iterations++;
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: SOFIA_MODEL,
       max_tokens: 600,
+      thinking: SOFIA_THINKING,
       system: systemPrompt,
       tools: [
         {
@@ -917,8 +926,9 @@ export async function handOffToHuman(
 
           const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
           const resp = await anthropic.messages.create({
-            model: "claude-haiku-4-5-20251001",
+            model: SOFIA_MODEL,
             max_tokens: 120,
+            thinking: SOFIA_THINKING,
             messages: [
               {
                 role: "user",
@@ -928,8 +938,8 @@ export async function handOffToHuman(
             ],
           });
 
-          const blk = resp.content[0];
-          if (blk.type === "text") resumen = blk.text.trim();
+          const blk = resp.content.find((block) => block.type === "text");
+          if (blk?.type === "text") resumen = blk.text.trim();
         }
       } catch {
         // Fallback al último mensaje si Claude falla
@@ -1172,8 +1182,9 @@ export async function notifyAgentManualAssignment(
 
         const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
         const resp = await anthropic.messages.create({
-          model: "claude-haiku-4-5-20251001",
+          model: SOFIA_MODEL,
           max_tokens: 120,
+          thinking: SOFIA_THINKING,
           messages: [
             {
               role: "user",
@@ -1182,8 +1193,8 @@ export async function notifyAgentManualAssignment(
             },
           ],
         });
-        const blk = resp.content[0];
-        if (blk.type === "text") resumen = blk.text.trim();
+        const blk = resp.content.find((block) => block.type === "text");
+        if (blk?.type === "text") resumen = blk.text.trim();
       }
     } catch {
       // fallback al lastMessage
