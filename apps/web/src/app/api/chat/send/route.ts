@@ -3,6 +3,11 @@ import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { sendWhatsAppMessage } from "@/lib/twilio";
 import { Message, Conversation } from "@/lib/types";
+import {
+  handOffToHuman,
+  CONCRETE_BRANCH_IDS,
+  assigneeIsBranchPlaceholder,
+} from "@/lib/aiProvider";
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,19 +64,53 @@ export async function POST(request: NextRequest) {
 
     await newMessageRef.set(newMessage);
 
-    const currentAssignedTo =
-      convData.assignedTo && convData.assignedTo !== "ai"
-        ? convData.assignedTo
-        : "human";
+    // Si el chat ya tiene sucursal pero sigue en Sofía, en "human" o en el id
+    // de la sucursal, responder desde el dashboard no debe dejarlo sin agente.
+    const branch = convData.branch;
+    const shouldAssignBranchAgent =
+      Boolean(phoneNumber) &&
+      Boolean(branch && CONCRETE_BRANCH_IDS.has(branch)) &&
+      (!convData.assignedTo ||
+        convData.assignedTo === "ai" ||
+        assigneeIsBranchPlaceholder(convData.assignedTo));
 
-    // 5. Update Conversation
-    await convRef.update({
+    let handedOff = false;
+    if (shouldAssignBranchAgent) {
+      try {
+        await handOffToHuman(
+          conversationId,
+          "Respuesta enviada desde el dashboard sin agente de sucursal",
+          undefined,
+          {
+            phone: phoneNumber,
+            name: convData.displayName,
+            lastMessage: content || undefined,
+            mediaUrl: mediaUrl || undefined,
+            mediaMimeType: mediaType || undefined,
+          },
+        );
+        handedOff = true;
+      } catch (assignError) {
+        console.error("[chat/send] No se pudo asignar agente de sucursal:", assignError);
+      }
+    }
+
+    const updateData: Record<string, unknown> = {
       lastMessage: content || (mediaUrl ? "📎 Archivo adjunto" : ""),
       lastMessageAt: FieldValue.serverTimestamp(),
-      assignedTo: currentAssignedTo,
       needsHuman: false,
       unreadCount: 0, // Reset unread count since we replied
-    });
+    };
+    // No pisar el uid que acaba de escribir handOffToHuman.
+    if (!handedOff) {
+      updateData.assignedTo =
+        convData.assignedTo && convData.assignedTo !== "ai"
+          ? convData.assignedTo
+          : "human";
+    }
+
+    // 5. Update Conversation
+    await convRef.update(updateData);
 
     return NextResponse.json({ success: true });
   } catch (error) {

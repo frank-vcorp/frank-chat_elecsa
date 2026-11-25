@@ -427,6 +427,31 @@ Formato: Texto plano, directo y profesional.`;
   return callOpenAI(systemPrompt, conversationText);
 }
 
+/** Sucursales con agente propio. "general" no cuenta: no hay a quién asignar. */
+export const CONCRETE_BRANCH_IDS = new Set<string>([
+  "guadalajara",
+  "coahuila",
+  "leon",
+  "queretaro",
+  "toluca",
+  "monterrey",
+  "centro",
+  "armas",
+  "veracruz",
+  "slp",
+  "puebla",
+]);
+
+/**
+ * assignedTo quedó como marcador, no como uid de un agente.
+ * "human" lo escribe /api/chat/send; el id de sucursal lo deja handOffToHuman
+ * si el bloque de agentes no alcanza a sobreescribirlo.
+ */
+export function assigneeIsBranchPlaceholder(assignedTo?: string | null): boolean {
+  if (!assignedTo) return false;
+  return assignedTo === "human" || CONCRETE_BRANCH_IDS.has(assignedTo);
+}
+
 // Configuración de sucursales y mapeo de ciudades (Robusta: acentos, abreviaturas, variaciones)
 const BRANCHES_CONFIG: Record<
   string,
@@ -898,6 +923,43 @@ export async function handOffToHuman(
       const branchConfigWA = BRANCHES_CONFIG[targetBranchWA as keyof typeof BRANCHES_CONFIG];
       const branchNameWA = branchConfigWA?.displayName || targetBranchWA;
 
+      // Asignar antes del resumen con Claude. Si el resumen o el envío WA
+      // se tardan, el chat ya no se queda con assignedTo = id de sucursal.
+      const targetAliases = [
+        targetBranchWA.toLowerCase(),
+        branchConfigWA?.displayName?.toLowerCase(),
+      ].filter(Boolean) as string[];
+
+      const matchingAgents = agentsSnapWA.docs.filter((agentDoc) => {
+        const data = agentDoc.data();
+        const agentBranches: string[] = (data.branches || (data.branch ? [data.branch] : []))
+          .map((b: string) => b.toLowerCase());
+        // Supervisores y admins solo ven en dashboard, NO reciben WA
+        if (data.role === "supervisor" || data.role === "admin") return false;
+        const isMatch =
+          targetBranchWA === "general" ||
+          agentBranches.some((b) => targetAliases.includes(b));
+        console.log(`[WA-Notify] Agente ${data.name || data.email} — branches=${JSON.stringify(agentBranches)} role=${data.role} whatsapp=${data.whatsapp || "NO"} targetAliases=${JSON.stringify(targetAliases)} → match=${isMatch}`);
+        return isMatch;
+      });
+      console.log(`[WA-Notify] matchingAgents para "${targetBranchWA}": ${matchingAgents.length}`);
+
+      const primaryAgent =
+        matchingAgents.find((d) => d.data().whatsapp && !["supervisor", "admin"].includes(d.data().role)) ||
+        matchingAgents.find((d) => d.data().whatsapp) ||
+        matchingAgents[0];
+
+      console.log(`[WA-Notify] primaryAgent=${primaryAgent ? (primaryAgent.data().name || primaryAgent.id) : "NINGUNO"}`);
+
+      if (primaryAgent) {
+        const pad = primaryAgent.data();
+        await db.collection("conversations").doc(conversationId).update({
+          assignedTo: primaryAgent.id,
+          assignedToName: pad.name || pad.email || "Agente",
+          waCanalizado: false, // Se actualiza a true después del envío WA
+        });
+      }
+
       // Número limpio para wa.me (sin +, sin whatsapp:)
       const clientPhone = contactInfo.phone.replace("whatsapp:", "").replace(/\D/g, "");
       const clientPhoneDisplay = contactInfo.phone.replace("whatsapp:", "");
@@ -961,45 +1023,6 @@ export async function handOffToHuman(
 
       const notifiedAgents: string[] = [];
       const notifiedAgentsInfo: { name: string; whatsapp: string }[] = [];
-
-      // Filtrar agentes que corresponden a la sucursal
-      // Incluye alias: tanto el branchId ("slp") como el displayName ("San Luis Potosí")
-      const targetBranchConfig = BRANCHES_CONFIG[targetBranchWA as keyof typeof BRANCHES_CONFIG];
-      const targetAliases = [
-        targetBranchWA.toLowerCase(),
-        targetBranchConfig?.displayName?.toLowerCase(),
-      ].filter(Boolean) as string[];
-
-      const matchingAgents = agentsSnapWA.docs.filter((agentDoc) => {
-        const data = agentDoc.data();
-        const agentBranches: string[] = (data.branches || (data.branch ? [data.branch] : []))
-          .map((b: string) => b.toLowerCase());
-        // Supervisores y admins solo ven en dashboard, NO reciben WA
-        if (data.role === "supervisor" || data.role === "admin") return false;
-        const isMatch =
-          targetBranchWA === "general" ||
-          agentBranches.some((b) => targetAliases.includes(b));
-        console.log(`[WA-Notify] Agente ${data.name || data.email} — branches=${JSON.stringify(agentBranches)} role=${data.role} whatsapp=${data.whatsapp || "NO"} targetAliases=${JSON.stringify(targetAliases)} → match=${isMatch}`);
-        return isMatch;
-      });
-      console.log(`[WA-Notify] matchingAgents para "${targetBranchWA}": ${matchingAgents.length}`);
-
-      // Asignar la conversación al primer agente de la sucursal (con WA preferido)
-      const primaryAgent =
-        matchingAgents.find((d) => d.data().whatsapp && !["supervisor", "admin"].includes(d.data().role)) ||
-        matchingAgents.find((d) => d.data().whatsapp) ||
-        matchingAgents[0];
-
-      console.log(`[WA-Notify] primaryAgent=${primaryAgent ? (primaryAgent.data().name || primaryAgent.id) : "NINGUNO"}`);
-
-      if (primaryAgent) {
-        const pad = primaryAgent.data();
-        await db.collection("conversations").doc(conversationId).update({
-          assignedTo: primaryAgent.id,
-          assignedToName: pad.name || pad.email || "Agente",
-          waCanalizado: false, // Se actualiza a true después del envío WA
-        });
-      }
 
       for (const agentDoc of matchingAgents) {
         const data = agentDoc.data();

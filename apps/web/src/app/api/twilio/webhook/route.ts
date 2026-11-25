@@ -10,6 +10,8 @@ import {
   getBranchesListText,
   normalizeText,
   getAllCities,
+  CONCRETE_BRANCH_IDS,
+  assigneeIsBranchPlaceholder,
 } from "@/lib/aiProvider";
 import {
   sendWhatsAppMessage,
@@ -39,6 +41,14 @@ function detectEscalation(response: string): boolean {
     /te env[ií]a (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
     /el equipo de.*te env[ií]a (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
     /en unos momentos te (envío|envio|mando|paso|comparto)/i,
+    // Sofía conjuga en plural o en futuro ("te enviaremos", "te enviamos",
+    // "te llega la propuesta") y el presente de arriba no las cubre.
+    /te (enviamos|enviaremos|pasamos|mandamos|llega|llegar[aá]) (la |una |el )?(propuesta|cotizaci[oó]n|presupuesto)/i,
+    /te la (enviamos|enviaremos|mando|mandamos|paso|pasamos|comparto|compartimos)/i,
+    /en unos minutos te (llega|llegar[aá]|enviamos|enviaremos|pasamos|mandamos|la paso|la mando|la enviamos)/i,
+    /generar tu propuesta/i,
+    /damos aviso al equipo/i,
+    /ya est[aá] en proceso con el equipo/i,
     /ya tengo todo.*propuesta/i,
     /cotización lista/i,
     // Frases de "te conecto" / "déjame conectarte" — handoff explícito
@@ -391,6 +401,35 @@ export async function POST(request: NextRequest) {
           return twilioAck();
         }
       }
+    }
+
+    // Chat ya etiquetado por ciudad, pero assignedTo sigue siendo "human" o el
+    // id de la sucursal y no hay nombre de agente. El cliente no vuelve a decir
+    // la ciudad, así que el early-warning de arriba no reasigna.
+    const storedBranch = currentConv?.branch as string | undefined;
+    if (
+      !isAssignedToAi &&
+      storedBranch &&
+      CONCRETE_BRANCH_IDS.has(storedBranch) &&
+      assigneeIsBranchPlaceholder(currentConv?.assignedTo) &&
+      !currentConv?.assignedToName
+    ) {
+      console.log(
+        `[Webhook] Chat ${conversationId} en ${storedBranch} sin agente — asignando sucursal.`,
+      );
+      await handOffToHuman(
+        conversationId,
+        `Asignación pendiente de sucursal ${storedBranch}`,
+        undefined,
+        {
+          phone: phoneNumber,
+          name: profileName || undefined,
+          lastMessage: body || undefined,
+          mediaUrl: mediaUrl || undefined,
+          mediaMimeType: mediaContentType || undefined,
+        },
+      );
+      return twilioAck();
     }
 
     if (!isAssignedToAi) {
