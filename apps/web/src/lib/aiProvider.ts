@@ -792,6 +792,12 @@ function maskPhone(phone: string): string {
 }
 
 /**
+ * ContentSid de la plantilla utility elecsa_notificacion_agente_2.
+ * Variables, en orden: plaza, nombre, teléfono, número de wa.me, resumen.
+ */
+const AGENT_WA_TEMPLATE_SID = "HXdac90198674c3cf6a35c4e466be106ca";
+
+/**
  * @intervention IMPL-20260513-04
  * @see context/interconsultas/DICTAMEN_FIX-20260513-01.md
  */
@@ -1086,7 +1092,7 @@ export async function handOffToHuman(
           ? (sessionUntilRaw.toDate ? sessionUntilRaw.toDate() : new Date(sessionUntilRaw)) > new Date()
           : false;
 
-        const templateSid = process.env.TWILIO_WA_TEMPLATE_SID;
+        const templateSid = AGENT_WA_TEMPLATE_SID;
         const deliveryMode = resolveAgentWaDeliveryMode(sessionActive, templateSid);
 
         // IMPL-20260513-03: Registrar intento de aviso principal
@@ -1115,8 +1121,7 @@ export async function handOffToHuman(
               `⚠️ No olvides cerrar la conversación en el chat cuando termines de atenderla.`;
             await sendWhatsAppMessage(agentPhone, sessionText);
           } else if (templateSid) {
-            // ⚠️ PRODUCCIÓN: Requiere TWILIO_WA_TEMPLATE_SID en variables de entorno de Vercel.
-            // Valor: HX9681962ec5a7cfe9fbd9acf119235f5a (plantilla aprobada por Meta)
+            // Plantilla utility elecsa_notificacion_agente_2 (aprobada por Meta).
             await sendWhatsAppTemplate(agentPhone, templateSid, {
               "1": branchNameWA,
               "2": clientName,
@@ -1271,7 +1276,7 @@ export async function notifyAgentManualAssignment(
       // fallback al lastMessage
     }
 
-    const templateSid = process.env.TWILIO_WA_TEMPLATE_SID;
+    const templateSid = AGENT_WA_TEMPLATE_SID;
 
     // IMPL-20260513-04: Verificar ventana activa de sesión WA del agente
     const sessionUntilRaw = agentData.waSessionOpenUntil;
