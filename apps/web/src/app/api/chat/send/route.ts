@@ -67,7 +67,10 @@ export async function POST(request: NextRequest) {
     // Si el chat ya tiene sucursal pero sigue en Sofía, en "human" o en el id
     // de la sucursal, responder desde el dashboard no debe dejarlo sin agente.
     const branch = convData.branch;
+    // Solo un chat creado a partir de ahora. Uno anterior no se reasigna desde el panel.
+    const isNewChat = Boolean((convData as { createdAt?: unknown }).createdAt);
     const shouldAssignBranchAgent =
+      isNewChat &&
       Boolean(phoneNumber) &&
       Boolean(branch && CONCRETE_BRANCH_IDS.has(branch)) &&
       (!convData.assignedTo ||

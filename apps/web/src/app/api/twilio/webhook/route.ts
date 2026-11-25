@@ -11,7 +11,6 @@ import {
   pickNearestCity,
   mentionsQuoteRequest,
   CONCRETE_BRANCH_IDS,
-  assigneeIsBranchPlaceholder,
 } from "@/lib/aiProvider";
 import {
   sendWhatsAppMessage,
@@ -65,21 +64,12 @@ function extractCityMention(text: string): string | null {
   return pickNearestCity(text);
 }
 
-/** El hilo ya habla de cotización, propuesta o precio (mensaje actual o los recientes). */
-async function threadMentionsQuote(conversationId: string, currentText: string): Promise<boolean> {
-  if (mentionsQuoteRequest(currentText)) return true;
-  try {
-    const snap = await adminDb
-      .collection("messages")
-      .where("conversationId", "==", conversationId)
-      .orderBy("createdAt", "desc")
-      .limit(30)
-      .get();
-    return snap.docs.some((d) => mentionsQuoteRequest((d.data().content as string) || ""));
-  } catch (e) {
-    console.warn("[Webhook] No se pudo revisar cotización en el hilo:", e);
-    return false;
-  }
+/**
+ * Los chats abiertos antes de esta regla no traen createdAt.
+ * No se reasignan cuando el cliente escribe otra vez.
+ */
+function isForwardAssignmentChat(conv: { createdAt?: unknown } | undefined): boolean {
+  return Boolean(conv?.createdAt);
 }
 
 /**
@@ -256,9 +246,10 @@ export async function POST(request: NextRequest) {
         lastMessage: body,
         lastMessageAt: FieldValue.serverTimestamp() as any,
         unreadCount: 1,
+        createdAt: FieldValue.serverTimestamp() as any,
         ...(profileName
-          ? { displayName: profileName, displayNameSource: "whatsapp" }
-          : {}),
+        ? { displayName: profileName, displayNameSource: "whatsapp" }
+        : {}),
       };
       await newConvRef.set(newConversation);
     } else {
@@ -356,9 +347,11 @@ export async function POST(request: NextRequest) {
               lastSofiaContent,
             );
           const wasEscalating = detectEscalation(lastSofiaContent);
-          // Ciudad recién dicha y el hilo ya es una cotización: asignar ya,
-          // sin esperar a que Sofía vuelva a decir «te envío la propuesta».
-          if (askedBranch || wasEscalating || quoteInThread) {
+          // Chat nuevo: la ciudad se acaba de decir y el hilo ya es cotización.
+          // Un chat anterior no entra: no tiene createdAt y no se reasigna.
+          const quoteNow =
+            isForwardAssignmentChat(currentConv) && quoteInThread;
+          if (askedBranch || wasEscalating || quoteNow) {
             escalationContextActive = true;
           }
           console.log(
@@ -368,7 +361,7 @@ export async function POST(request: NextRequest) {
           console.warn("[Webhook] No se pudo leer último mensaje para handoff temprano:", e);
         }
 
-        if (escalationContextActive) {
+        if (escalationContextActive && isForwardAssignmentChat(currentConv)) {
           console.log(
             `[Webhook] Early handoff: cliente confirmó '${earlyCity}' → asignando agente de '${earlyBranch}' sin esperar respuesta de Sofía.`,
           );
@@ -397,7 +390,10 @@ export async function POST(request: NextRequest) {
         if (currentConv?.branch !== earlyBranch) {
           await conversationRef.update({ branch: earlyBranch });
         }
-        if (!currentConv?.assignedToName || currentConv?.assignedTo === "human") {
+        if (
+          isForwardAssignmentChat(currentConv) &&
+          (!currentConv?.assignedToName || currentConv?.assignedTo === "human")
+        ) {
           console.log(
             `[Webhook] Conversación en humano sin agente concreto — re-ejecutando handoff para asignar agente de '${earlyBranch}'.`,
           );
@@ -416,61 +412,6 @@ export async function POST(request: NextRequest) {
           return twilioAck();
         }
       }
-    }
-
-    // La sucursal ya estaba guardada y el hilo es una cotización, pero este
-    // mensaje no repite la ciudad («ok», «sí»). Igual se asigna al agente.
-    const storedBranch = currentConv?.branch as string | undefined;
-    if (
-      isAssignedToAi &&
-      storedBranch &&
-      CONCRETE_BRANCH_IDS.has(storedBranch) &&
-      (await threadMentionsQuote(conversationId, body))
-    ) {
-      console.log(
-        `[Webhook] Cotización con sucursal ${storedBranch} ya conocida — asignando agente.`,
-      );
-      await handOffToHuman(
-        conversationId,
-        `Cotización con sucursal ${storedBranch} ya conocida`,
-        undefined,
-        {
-          phone: phoneNumber,
-          name: profileName || undefined,
-          lastMessage: body || undefined,
-          mediaUrl: mediaUrl || undefined,
-          mediaMimeType: mediaContentType || undefined,
-        },
-      );
-      return twilioAck();
-    }
-
-    // Chat ya etiquetado por ciudad, pero assignedTo sigue siendo "human" o el
-    // id de la sucursal y no hay nombre de agente. El cliente no vuelve a decir
-    // la ciudad, así que el early-warning de arriba no reasigna.
-    if (
-      !isAssignedToAi &&
-      storedBranch &&
-      CONCRETE_BRANCH_IDS.has(storedBranch) &&
-      assigneeIsBranchPlaceholder(currentConv?.assignedTo) &&
-      !currentConv?.assignedToName
-    ) {
-      console.log(
-        `[Webhook] Chat ${conversationId} en ${storedBranch} sin agente — asignando sucursal.`,
-      );
-      await handOffToHuman(
-        conversationId,
-        `Asignación pendiente de sucursal ${storedBranch}`,
-        undefined,
-        {
-          phone: phoneNumber,
-          name: profileName || undefined,
-          lastMessage: body || undefined,
-          mediaUrl: mediaUrl || undefined,
-          mediaMimeType: mediaContentType || undefined,
-        },
-      );
-      return twilioAck();
     }
 
     if (!isAssignedToAi) {
@@ -550,7 +491,10 @@ export async function POST(request: NextRequest) {
           (detectedCityForQuote ? detectBranchByCity(detectedCityForQuote) : null) ||
           (currentConv?.branch && currentConv.branch !== "general" ? currentConv.branch : null) ||
           (earlyBranch && CONCRETE_BRANCH_IDS.has(earlyBranch) ? earlyBranch : null);
+        // Solo chats creados a partir de ahora. Uno anterior, aunque ya tenga
+        // sucursal y hable de precio, no se reasigna en este mensaje.
         const quoteWithKnownCity =
+          isForwardAssignmentChat(currentConv) &&
           Boolean(branchForQuote && CONCRETE_BRANCH_IDS.has(branchForQuote)) &&
           (mentionsQuoteRequest(body) || mentionsQuoteRequest(sofiaReply));
 

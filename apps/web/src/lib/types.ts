@@ -57,6 +57,8 @@ export interface Conversation {
   status: ConversationStatus;
   lastMessage: string;
   lastMessageAt: Timestamp;
+  /** Presente solo en chats creados después de la regla de asignación por sucursal. */
+  createdAt?: Timestamp;
   unreadCount: number;
   needsHuman?: boolean;
   tags?: string[];
