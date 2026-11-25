@@ -8,8 +8,9 @@ import {
   detectBranchByCity,
   detectEstadoSinSucursal,
   getBranchesListText,
-  normalizeText,
-  getAllCities,
+  pickNearestCity,
+  mentionsQuoteRequest,
+  CONCRETE_BRANCH_IDS,
 } from "@/lib/aiProvider";
 import {
   sendWhatsAppMessage,
@@ -39,6 +40,14 @@ function detectEscalation(response: string): boolean {
     /te env[ií]a (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
     /el equipo de.*te env[ií]a (la |una |el )?(propuesta|cotización|cotizacion|presupuesto)/i,
     /en unos momentos te (envío|envio|mando|paso|comparto)/i,
+    // Sofía conjuga en plural o en futuro ("te enviaremos", "te enviamos",
+    // "te llega la propuesta") y el presente de arriba no las cubre.
+    /te (enviamos|enviaremos|pasamos|mandamos|llega|llegar[aá]) (la |una |el )?(propuesta|cotizaci[oó]n|presupuesto)/i,
+    /te la (enviamos|enviaremos|mando|mandamos|paso|pasamos|comparto|compartimos)/i,
+    /en unos minutos te (llega|llegar[aá]|enviamos|enviaremos|pasamos|mandamos|la paso|la mando|la enviamos)/i,
+    /generar tu propuesta/i,
+    /damos aviso al equipo/i,
+    /ya est[aá] en proceso con el equipo/i,
     /ya tengo todo.*propuesta/i,
     /cotización lista/i,
     // Frases de "te conecto" / "déjame conectarte" — handoff explícito
@@ -50,19 +59,17 @@ function detectEscalation(response: string): boolean {
   return escalationPatterns.some((pattern) => pattern.test(response));
 }
 
-/** Extrae menciones de ciudades en el mensaje del usuario o historial */
+/** Ciudad que decide la sucursal. Una alcaldía o ciudad concreta gana sobre «CDMX». */
 function extractCityMention(text: string): string | null {
-  // Lista de ciudades/términos a detectar (ordenadas por especificidad)
-  // Nota: normalizeText maneja acentos y getAllCities viene ordenado por longitud
-  const cityPatterns = getAllCities();
+  return pickNearestCity(text);
+}
 
-  const normalized = normalizeText(text);
-  for (const city of cityPatterns) {
-    if (normalized.includes(city)) {
-      return city;
-    }
-  }
-  return null;
+/**
+ * Los chats abiertos antes de esta regla no traen createdAt.
+ * No se reasignan cuando el cliente escribe otra vez.
+ */
+function isForwardAssignmentChat(conv: { createdAt?: unknown } | undefined): boolean {
+  return Boolean(conv?.createdAt);
 }
 
 /**
@@ -239,9 +246,10 @@ export async function POST(request: NextRequest) {
         lastMessage: body,
         lastMessageAt: FieldValue.serverTimestamp() as any,
         unreadCount: 1,
+        createdAt: FieldValue.serverTimestamp() as any,
         ...(profileName
-          ? { displayName: profileName, displayNameSource: "whatsapp" }
-          : {}),
+        ? { displayName: profileName, displayNameSource: "whatsapp" }
+        : {}),
       };
       await newConvRef.set(newConversation);
     } else {
@@ -317,13 +325,19 @@ export async function POST(request: NextRequest) {
       if (isAssignedToAi) {
         // ¿El último mensaje de Sofía estaba pidiendo la sucursal o escalando?
         let escalationContextActive = currentConv?.needsHuman === true;
+        let quoteInThread = mentionsQuoteRequest(body);
         try {
           const lastMsgsSnap = await adminDb
             .collection("messages")
             .where("conversationId", "==", conversationId)
             .orderBy("createdAt", "desc")
-            .limit(5)
+            .limit(30)
             .get();
+          if (!quoteInThread) {
+            quoteInThread = lastMsgsSnap.docs.some((d) =>
+              mentionsQuoteRequest((d.data().content as string) || ""),
+            );
+          }
           const lastSofiaMsg = lastMsgsSnap.docs.find(
             (d) => d.data().senderType === "agent",
           );
@@ -333,17 +347,21 @@ export async function POST(request: NextRequest) {
               lastSofiaContent,
             );
           const wasEscalating = detectEscalation(lastSofiaContent);
-          if (askedBranch || wasEscalating) {
+          // Chat nuevo: la ciudad se acaba de decir y el hilo ya es cotización.
+          // Un chat anterior no entra: no tiene createdAt y no se reasigna.
+          const quoteNow =
+            isForwardAssignmentChat(currentConv) && quoteInThread;
+          if (askedBranch || wasEscalating || quoteNow) {
             escalationContextActive = true;
           }
           console.log(
-            `[Webhook] Early handoff context — needsHuman=${currentConv?.needsHuman} askedBranch=${askedBranch} wasEscalating=${wasEscalating}`,
+            `[Webhook] Early handoff context — needsHuman=${currentConv?.needsHuman} askedBranch=${askedBranch} wasEscalating=${wasEscalating} quote=${quoteInThread}`,
           );
         } catch (e) {
           console.warn("[Webhook] No se pudo leer último mensaje para handoff temprano:", e);
         }
 
-        if (escalationContextActive) {
+        if (escalationContextActive && isForwardAssignmentChat(currentConv)) {
           console.log(
             `[Webhook] Early handoff: cliente confirmó '${earlyCity}' → asignando agente de '${earlyBranch}' sin esperar respuesta de Sofía.`,
           );
@@ -372,7 +390,10 @@ export async function POST(request: NextRequest) {
         if (currentConv?.branch !== earlyBranch) {
           await conversationRef.update({ branch: earlyBranch });
         }
-        if (!currentConv?.assignedToName || currentConv?.assignedTo === "human") {
+        if (
+          isForwardAssignmentChat(currentConv) &&
+          (!currentConv?.assignedToName || currentConv?.assignedTo === "human")
+        ) {
           console.log(
             `[Webhook] Conversación en humano sin agente concreto — re-ejecutando handoff para asignar agente de '${earlyBranch}'.`,
           );
@@ -464,10 +485,22 @@ export async function POST(request: NextRequest) {
         const isUserEscalating = detectEscalation(body);
         const isAiEscalating = detectEscalation(sofiaReply);
         const isMediaEscalation = !!mediaUrl; // imagen/PDF siempre va a humano
+        const detectedCityForQuote =
+          extractCityMention(body) || extractCityMention(sofiaReply);
+        const branchForQuote =
+          (detectedCityForQuote ? detectBranchByCity(detectedCityForQuote) : null) ||
+          (currentConv?.branch && currentConv.branch !== "general" ? currentConv.branch : null) ||
+          (earlyBranch && CONCRETE_BRANCH_IDS.has(earlyBranch) ? earlyBranch : null);
+        // Solo chats creados a partir de ahora. Uno anterior, aunque ya tenga
+        // sucursal y hable de precio, no se reasigna en este mensaje.
+        const quoteWithKnownCity =
+          isForwardAssignmentChat(currentConv) &&
+          Boolean(branchForQuote && CONCRETE_BRANCH_IDS.has(branchForQuote)) &&
+          (mentionsQuoteRequest(body) || mentionsQuoteRequest(sofiaReply));
 
-        if (isUserEscalating || isAiEscalating || isMediaEscalation) {
+        if (isUserEscalating || isAiEscalating || isMediaEscalation || quoteWithKnownCity) {
           console.log(
-            `[Webhook] Escalation detected (User: ${isUserEscalating}, AI: ${isAiEscalating}, Media: ${isMediaEscalation})`,
+            `[Webhook] Escalation detected (User: ${isUserEscalating}, AI: ${isAiEscalating}, Media: ${isMediaEscalation}, QuoteWithCity: ${quoteWithKnownCity})`,
           );
 
           // Try to detect city from user's message or sofia's reply
@@ -478,7 +511,7 @@ export async function POST(request: NextRequest) {
           const branchFromConv = currentConv?.branch && currentConv.branch !== "general"
             ? currentConv.branch
             : null;
-          const branch = branchFromMessage || branchFromConv;
+          const branch = branchFromMessage || branchFromConv || branchForQuote;
           const effectiveCity = detectedCity || (branchFromConv ? `(sucursal: ${branchFromConv})` : null);
 
           console.log(
