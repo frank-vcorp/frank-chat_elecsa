@@ -717,23 +717,71 @@ export function normalizeText(text: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Remover acentos
+    .replace(/\./g, "") // «A.» y «D.F.» no deben partir la zona
     .trim();
+}
+
+/**
+ * «CDMX», «Ciudad de México» y «DF» nombran la zona, no la sucursal.
+ * Si el mismo texto también trae una alcaldía o ciudad concreta, esa gana.
+ * «CDMX Centro» no entra aquí: ya nombra la sucursal Centro.
+ */
+const GENERIC_CDMX_TERMS = new Set([
+  "cdmx",
+  "ciudad de mexico",
+  "df",
+  "mexico df",
+]);
+
+type CityHit = { city: string; branchId: string };
+
+function matchCities(text: string): CityHit[] {
+  let normalized = normalizeText(text);
+  const patterns: CityHit[] = [];
+  for (const [branchId, config] of Object.entries(BRANCHES_CONFIG)) {
+    for (const city of config.cities) {
+      patterns.push({ city: normalizeText(city), branchId });
+    }
+  }
+  patterns.sort((a, b) => b.city.length - a.city.length || a.city.localeCompare(b.city));
+
+  const hits: CityHit[] = [];
+  const seen = new Set<string>();
+  for (const pattern of patterns) {
+    if (!pattern.city || seen.has(pattern.city)) continue;
+    const idx = normalized.indexOf(pattern.city);
+    if (idx === -1) continue;
+    hits.push(pattern);
+    seen.add(pattern.city);
+    normalized =
+      normalized.slice(0, idx) +
+      " ".repeat(pattern.city.length) +
+      normalized.slice(idx + pattern.city.length);
+  }
+  return hits;
+}
+
+function preferSpecificCity(hits: CityHit[]): CityHit | null {
+  if (hits.length === 0) return null;
+  const specific = hits.filter((hit) => !GENERIC_CDMX_TERMS.has(hit.city));
+  const pool = specific.length > 0 ? specific : hits;
+  return pool[0];
+}
+
+/** Ciudad que decide la sucursal. Tlalpan gana sobre «Ciudad de México». */
+export function pickNearestCity(text: string): string | null {
+  return preferSpecificCity(matchCities(text))?.city ?? null;
 }
 
 /** Detecta la sucursal basándose en una ciudad mencionada */
 export function detectBranchByCity(cityText: string): string | null {
-  const normalized = normalizeText(cityText);
+  return preferSpecificCity(matchCities(cityText))?.branchId ?? null;
+}
 
-  for (const [branchId, config] of Object.entries(BRANCHES_CONFIG)) {
-    for (const city of config.cities) {
-      const normalizedCity = normalizeText(city);
-      if (normalized.includes(normalizedCity)) {
-        return branchId;
-      }
-    }
-  }
-
-  return null;
+/** El cliente o Sofía ya están en una cotización, propuesta o precio. */
+export function mentionsQuoteRequest(text?: string | null): boolean {
+  if (!text) return false;
+  return /cotiz|propuesta|precio/i.test(text);
 }
 
 /** IMPL-20260513-03: Enmascara número de teléfono dejando solo los últimos 4 dígitos visibles */

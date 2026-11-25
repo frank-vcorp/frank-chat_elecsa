@@ -8,8 +8,8 @@ import {
   detectBranchByCity,
   detectEstadoSinSucursal,
   getBranchesListText,
-  normalizeText,
-  getAllCities,
+  pickNearestCity,
+  mentionsQuoteRequest,
   CONCRETE_BRANCH_IDS,
   assigneeIsBranchPlaceholder,
 } from "@/lib/aiProvider";
@@ -60,19 +60,26 @@ function detectEscalation(response: string): boolean {
   return escalationPatterns.some((pattern) => pattern.test(response));
 }
 
-/** Extrae menciones de ciudades en el mensaje del usuario o historial */
+/** Ciudad que decide la sucursal. Una alcaldía o ciudad concreta gana sobre «CDMX». */
 function extractCityMention(text: string): string | null {
-  // Lista de ciudades/términos a detectar (ordenadas por especificidad)
-  // Nota: normalizeText maneja acentos y getAllCities viene ordenado por longitud
-  const cityPatterns = getAllCities();
+  return pickNearestCity(text);
+}
 
-  const normalized = normalizeText(text);
-  for (const city of cityPatterns) {
-    if (normalized.includes(city)) {
-      return city;
-    }
+/** El hilo ya habla de cotización, propuesta o precio (mensaje actual o los recientes). */
+async function threadMentionsQuote(conversationId: string, currentText: string): Promise<boolean> {
+  if (mentionsQuoteRequest(currentText)) return true;
+  try {
+    const snap = await adminDb
+      .collection("messages")
+      .where("conversationId", "==", conversationId)
+      .orderBy("createdAt", "desc")
+      .limit(30)
+      .get();
+    return snap.docs.some((d) => mentionsQuoteRequest((d.data().content as string) || ""));
+  } catch (e) {
+    console.warn("[Webhook] No se pudo revisar cotización en el hilo:", e);
+    return false;
   }
-  return null;
 }
 
 /**
@@ -327,13 +334,19 @@ export async function POST(request: NextRequest) {
       if (isAssignedToAi) {
         // ¿El último mensaje de Sofía estaba pidiendo la sucursal o escalando?
         let escalationContextActive = currentConv?.needsHuman === true;
+        let quoteInThread = mentionsQuoteRequest(body);
         try {
           const lastMsgsSnap = await adminDb
             .collection("messages")
             .where("conversationId", "==", conversationId)
             .orderBy("createdAt", "desc")
-            .limit(5)
+            .limit(30)
             .get();
+          if (!quoteInThread) {
+            quoteInThread = lastMsgsSnap.docs.some((d) =>
+              mentionsQuoteRequest((d.data().content as string) || ""),
+            );
+          }
           const lastSofiaMsg = lastMsgsSnap.docs.find(
             (d) => d.data().senderType === "agent",
           );
@@ -343,11 +356,13 @@ export async function POST(request: NextRequest) {
               lastSofiaContent,
             );
           const wasEscalating = detectEscalation(lastSofiaContent);
-          if (askedBranch || wasEscalating) {
+          // Ciudad recién dicha y el hilo ya es una cotización: asignar ya,
+          // sin esperar a que Sofía vuelva a decir «te envío la propuesta».
+          if (askedBranch || wasEscalating || quoteInThread) {
             escalationContextActive = true;
           }
           console.log(
-            `[Webhook] Early handoff context — needsHuman=${currentConv?.needsHuman} askedBranch=${askedBranch} wasEscalating=${wasEscalating}`,
+            `[Webhook] Early handoff context — needsHuman=${currentConv?.needsHuman} askedBranch=${askedBranch} wasEscalating=${wasEscalating} quote=${quoteInThread}`,
           );
         } catch (e) {
           console.warn("[Webhook] No se pudo leer último mensaje para handoff temprano:", e);
@@ -403,10 +418,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // La sucursal ya estaba guardada y el hilo es una cotización, pero este
+    // mensaje no repite la ciudad («ok», «sí»). Igual se asigna al agente.
+    const storedBranch = currentConv?.branch as string | undefined;
+    if (
+      isAssignedToAi &&
+      storedBranch &&
+      CONCRETE_BRANCH_IDS.has(storedBranch) &&
+      (await threadMentionsQuote(conversationId, body))
+    ) {
+      console.log(
+        `[Webhook] Cotización con sucursal ${storedBranch} ya conocida — asignando agente.`,
+      );
+      await handOffToHuman(
+        conversationId,
+        `Cotización con sucursal ${storedBranch} ya conocida`,
+        undefined,
+        {
+          phone: phoneNumber,
+          name: profileName || undefined,
+          lastMessage: body || undefined,
+          mediaUrl: mediaUrl || undefined,
+          mediaMimeType: mediaContentType || undefined,
+        },
+      );
+      return twilioAck();
+    }
+
     // Chat ya etiquetado por ciudad, pero assignedTo sigue siendo "human" o el
     // id de la sucursal y no hay nombre de agente. El cliente no vuelve a decir
     // la ciudad, así que el early-warning de arriba no reasigna.
-    const storedBranch = currentConv?.branch as string | undefined;
     if (
       !isAssignedToAi &&
       storedBranch &&
@@ -503,10 +544,19 @@ export async function POST(request: NextRequest) {
         const isUserEscalating = detectEscalation(body);
         const isAiEscalating = detectEscalation(sofiaReply);
         const isMediaEscalation = !!mediaUrl; // imagen/PDF siempre va a humano
+        const detectedCityForQuote =
+          extractCityMention(body) || extractCityMention(sofiaReply);
+        const branchForQuote =
+          (detectedCityForQuote ? detectBranchByCity(detectedCityForQuote) : null) ||
+          (currentConv?.branch && currentConv.branch !== "general" ? currentConv.branch : null) ||
+          (earlyBranch && CONCRETE_BRANCH_IDS.has(earlyBranch) ? earlyBranch : null);
+        const quoteWithKnownCity =
+          Boolean(branchForQuote && CONCRETE_BRANCH_IDS.has(branchForQuote)) &&
+          (mentionsQuoteRequest(body) || mentionsQuoteRequest(sofiaReply));
 
-        if (isUserEscalating || isAiEscalating || isMediaEscalation) {
+        if (isUserEscalating || isAiEscalating || isMediaEscalation || quoteWithKnownCity) {
           console.log(
-            `[Webhook] Escalation detected (User: ${isUserEscalating}, AI: ${isAiEscalating}, Media: ${isMediaEscalation})`,
+            `[Webhook] Escalation detected (User: ${isUserEscalating}, AI: ${isAiEscalating}, Media: ${isMediaEscalation}, QuoteWithCity: ${quoteWithKnownCity})`,
           );
 
           // Try to detect city from user's message or sofia's reply
@@ -517,7 +567,7 @@ export async function POST(request: NextRequest) {
           const branchFromConv = currentConv?.branch && currentConv.branch !== "general"
             ? currentConv.branch
             : null;
-          const branch = branchFromMessage || branchFromConv;
+          const branch = branchFromMessage || branchFromConv || branchForQuote;
           const effectiveCity = detectedCity || (branchFromConv ? `(sucursal: ${branchFromConv})` : null);
 
           console.log(
